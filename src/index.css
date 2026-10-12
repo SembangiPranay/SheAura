@@ -48,8 +48,8 @@ img { display: block; width: 100%; }
 .arrow-link .icon { width: 16px; }
 .hero-content .arrow-link { padding: 15px 21px; border: 0; background: var(--paper); color: var(--ink); }
 .hero-botanical { position: absolute; z-index: 1; bottom: -11%; width: 31%; height: 55%; opacity: .48; background-size: cover; filter: saturate(.85) sepia(.12); pointer-events: none; }
-.hero-botanical-left { left: -8%; background-image: url("/campaign/scarlet-botanical.png"); background-position: left 72%; background-size: 270%; -webkit-mask-image: linear-gradient(90deg, #000 20%, transparent 95%); mask-image: linear-gradient(90deg, #000 20%, transparent 95%); }
-.hero-botanical-right { right: -8%; background-image: url("/campaign/highlighter-glow-still.png"); background-position: right 66%; background-size: 260%; -webkit-mask-image: linear-gradient(270deg, #000 20%, transparent 95%); mask-image: linear-gradient(270deg, #000 20%, transparent 95%); }
+.hero-botanical-left { left: -8%; background-position: left 72%; background-size: 270%; -webkit-mask-image: linear-gradient(90deg, #000 20%, transparent 95%); mask-image: linear-gradient(90deg, #000 20%, transparent 95%); }
+.hero-botanical-right { right: -8%; background-position: right 66%; background-size: 260%; -webkit-mask-image: linear-gradient(270deg, #000 20%, transparent 95%); mask-image: linear-gradient(270deg, #000 20%, transparent 95%); }
 .scroll-note { position: absolute; z-index: 2; right: 40px; bottom: 32px; display: flex; align-items: center; gap: 12px; font-size: 8px; letter-spacing: .2em; text-transform: uppercase; transform: rotate(90deg); transform-origin: right; }
 .scroll-note span { width: 46px; height: 1px; background: white; }
 

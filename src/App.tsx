@@ -1,9 +1,19 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 
+export const resolveAsset = (path: string): string => {
+  if (!path) return "";
+  if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("data:") || path.startsWith("blob:")) {
+    return path;
+  }
+  const base = import.meta.env.BASE_URL || "./";
+  const cleanPath = path.replace(/^\.?\//, "");
+  return base.endsWith("/") ? `${base}${cleanPath}` : `${base}/${cleanPath}`;
+};
+
 const photos = {
   hero: "https://images.unsplash.com/photo-1434730737257-3e97ad16f4b6?auto=format&fit=crop&w=2200&q=90",
   lipstick: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=900&q=85",
-  makeup: "/products/products.png",
+  makeup: resolveAsset("/products/products.png"),
   skincare: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?auto=format&fit=crop&w=900&q=85",
   model: "https://images.unsplash.com/photo-1675773051474-55c4b7d2cf53?auto=format&fit=crop&w=1400&q=90",
   floral: "https://images.unsplash.com/photo-1536568033156-c6bf7b18dfba?auto=format&fit=crop&w=900&q=85",
@@ -13,12 +23,12 @@ const photos = {
   oil: "https://images.unsplash.com/photo-1695972235594-8478ab831602?auto=format&fit=crop&w=900&q=85",
   ingredients: "https://images.unsplash.com/photo-1726758004519-7ccecda8b076?auto=format&fit=crop&w=1800&q=90",
   arches: "https://images.unsplash.com/photo-1543682388-4b46a14c91db?auto=format&fit=crop&w=2000&q=90",
-  scarletPortrait: "/campaign/scarlet-portrait.png",
-  scarletBotanical: "/campaign/scarlet-botanical.png",
-  blushPortrait: "/campaign/pink-blossom-portrait.png",
-  blushStill: "/campaign/pink-blossom-still.png",
-  highlighterPortrait: "/campaign/highlighter-glow-portrait.png",
-  highlighterBotanical: "/campaign/highlighter-glow-still.png",
+  scarletPortrait: resolveAsset("/campaign/scarlet-portrait.png"),
+  scarletBotanical: resolveAsset("/campaign/scarlet-botanical.png"),
+  blushPortrait: resolveAsset("/campaign/pink-blossom-portrait.png"),
+  blushStill: resolveAsset("/campaign/pink-blossom-still.png"),
+  highlighterPortrait: resolveAsset("/campaign/highlighter-glow-portrait.png"),
+  highlighterBotanical: resolveAsset("/campaign/highlighter-glow-still.png"),
 };
 
 type IconName = "search" | "user" | "bag" | "arrow" | "leaf" | "drop" | "sparkle" | "instagram" | "play" | "pause" | "volume" | "volumeX" | "close" | "check" | "external";
@@ -85,7 +95,7 @@ const reels: Reel[] = [
     subtitle: "Soft-Focus Silk Powder Flush",
     productName: "Pink Blossom Blush",
     category: "blush",
-    videoUrl: "/reels/reel-01-perfect-blush.mp4",
+    videoUrl: resolveAsset("/reels/reel-01-perfect-blush.mp4"),
     poster: photos.blushPortrait,
     instagramUrl: "https://www.instagram.com/reel/DeV_UkRpvGw/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
@@ -106,7 +116,7 @@ const reels: Reel[] = [
     subtitle: "Botanical Emollient Glide",
     productName: "Scarlet Rose Lipstick",
     category: "lips",
-    videoUrl: "/reels/reel-02-nothing-better-lipstick.mp4",
+    videoUrl: resolveAsset("/reels/reel-02-nothing-better-lipstick.mp4"),
     poster: photos.scarletPortrait,
     instagramUrl: "https://www.instagram.com/reel/DeO8B16hEAz/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
@@ -127,7 +137,7 @@ const reels: Reel[] = [
     subtitle: "From Subtle Nude to Bold Statement",
     productName: "Scarlet Rose Lipstick",
     category: "lips",
-    videoUrl: "/reels/reel-03-everyday-glam.mp4",
+    videoUrl: resolveAsset("/reels/reel-03-everyday-glam.mp4"),
     poster: photos.scarletBotanical,
     instagramUrl: "https://www.instagram.com/reel/DeLrsOLMSyo/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
@@ -148,7 +158,7 @@ const reels: Reel[] = [
     subtitle: "Silky Sensation on Bare Lips",
     productName: "Scarlet Rose Lipstick",
     category: "lips",
-    videoUrl: "/reels/reel-04-grwm-lipsticks.mp4",
+    videoUrl: resolveAsset("/reels/reel-04-grwm-lipsticks.mp4"),
     poster: photos.lipstick,
     instagramUrl: "https://www.instagram.com/reel/DeJ0vGmMjxv/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
@@ -169,7 +179,7 @@ const reels: Reel[] = [
     subtitle: "Liquid Shimmer & Luxury Glow",
     productName: "Molten Glow Highlighter",
     category: "glow",
-    videoUrl: "/reels/reel-05-body-highlighter-oil.mp4",
+    videoUrl: resolveAsset("/reels/reel-05-body-highlighter-oil.mp4"),
     poster: photos.highlighterBotanical,
     instagramUrl: "https://www.instagram.com/reel/DeG5GujBNVT/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
@@ -190,7 +200,7 @@ const reels: Reel[] = [
     subtitle: "Second-Skin Complexion Blend",
     productName: "Pink Blossom Blush",
     category: "glow",
-    videoUrl: "/reels/reel-06-not-a-filter-foundation.mp4",
+    videoUrl: resolveAsset("/reels/reel-06-not-a-filter-foundation.mp4"),
     poster: photos.foundation,
     instagramUrl: "https://www.instagram.com/reel/DeEq7-Azk_P/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
@@ -211,7 +221,7 @@ const reels: Reel[] = [
     subtitle: "Natural Glow with Heritage Elegance",
     productName: "Pink Blossom Blush",
     category: "routine",
-    videoUrl: "/reels/reel-07-traditional-glow.mp4",
+    videoUrl: resolveAsset("/reels/reel-07-traditional-glow.mp4"),
     poster: photos.blushPortrait,
     instagramUrl: "https://www.instagram.com/reel/Dd_2YLhR6P4/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
@@ -232,7 +242,7 @@ const reels: Reel[] = [
     subtitle: "Signature Minimal GRWM Routine",
     productName: "Pink Blossom Blush",
     category: "blush",
-    videoUrl: "/reels/reel-08-orchid-peach-grwm.mp4",
+    videoUrl: resolveAsset("/reels/reel-08-orchid-peach-grwm.mp4"),
     poster: photos.blushStill,
     instagramUrl: "https://www.instagram.com/reel/Dd-wD1Oz39K/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
@@ -253,7 +263,7 @@ const reels: Reel[] = [
     subtitle: "Full Bebo Vibes & Liquid Light",
     productName: "Molten Glow Highlighter",
     category: "glow",
-    videoUrl: "/reels/reel-09-moonflower-highlighter.mp4",
+    videoUrl: resolveAsset("/reels/reel-09-moonflower-highlighter.mp4"),
     poster: photos.highlighterPortrait,
     instagramUrl: "https://www.instagram.com/reel/Dd6SWx_tJjp/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
@@ -274,7 +284,7 @@ const reels: Reel[] = [
     subtitle: "First Impressions & Formula Swatches",
     productName: "Scarlet Rose Lipstick",
     category: "routine",
-    videoUrl: "/reels/reel-10-pr-review-unboxing.mp4",
+    videoUrl: resolveAsset("/reels/reel-10-pr-review-unboxing.mp4"),
     poster: photos.model,
     instagramUrl: "https://www.instagram.com/reel/Dd62wF7SbMG/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
@@ -309,6 +319,7 @@ function ReelCard({
 
   useEffect(() => {
     if (videoRef.current) {
+      videoRef.current.muted = true;
       videoRef.current.play().catch(() => {});
     }
   }, []);
@@ -1228,8 +1239,8 @@ export default function App() {
       <section className="hero">
         <img className="hero-bg" src={photos.hero} alt="" />
         <div className="hero-wash" />
-        <div className="hero-botanical hero-botanical-left" />
-        <div className="hero-botanical hero-botanical-right" />
+        <div className="hero-botanical hero-botanical-left" style={{ backgroundImage: `url(${photos.scarletBotanical})` }} />
+        <div className="hero-botanical hero-botanical-right" style={{ backgroundImage: `url(${photos.highlighterBotanical})` }} />
         <header className="nav shell">
           <a className="brand brand-light" href="#">SHE’AURA<span>YOUR AURA · YOUR STORY</span></a>
           <nav className={menuOpen ? "nav-links open" : "nav-links"}>
