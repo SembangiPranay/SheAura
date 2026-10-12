@@ -1,0 +1,10 @@
+{
+  "description": "Delivers a visually appealing, user-friendly interface tailored to showcase content effectively, enhancing user engagement and experience.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
