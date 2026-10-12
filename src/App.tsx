@@ -3,7 +3,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 const photos = {
   hero: "https://images.unsplash.com/photo-1434730737257-3e97ad16f4b6?auto=format&fit=crop&w=2200&q=90",
   lipstick: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=900&q=85",
-  makeup: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=900&q=85",
+  makeup: "/products/products.png",
   skincare: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?auto=format&fit=crop&w=900&q=85",
   model: "https://images.unsplash.com/photo-1675773051474-55c4b7d2cf53?auto=format&fit=crop&w=1400&q=90",
   floral: "https://images.unsplash.com/photo-1536568033156-c6bf7b18dfba?auto=format&fit=crop&w=900&q=85",
@@ -1376,7 +1376,7 @@ export default function App() {
           <ArrowLink>Our process</ArrowLink>
         </div>
         <div className="formula-visual">
-          <img src={photos.makeup} alt="Warm rose-toned beauty product texture" />
+          <img src={photos.makeup} alt="SHE’AURA luxury beauty collection" />
           <div className="formula-points">
             <div><b>01</b><span>Sensory<br />textures</span></div>
             <div><b>02</b><span>Skin-loving<br />ingredients</span></div>
