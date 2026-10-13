@@ -23,251 +23,169 @@ img { display: block; width: 100%; }
 .eyebrow { margin: 0 0 24px; font-size: 9px; font-weight: 600; letter-spacing: .3em; text-transform: uppercase; }
 .eyebrow.dark { color: #7b5b4c; }
 
-/* Procedural 3D Luxury Sacred Aura Entrance */
-.luxury-sacred-overlay {
+/* Authentic Haute-Couture Brand Intro (Reference: Editorial Typography Entrance) */
+.brand-intro-curtain {
   position: fixed;
   inset: 0;
   z-index: 20000;
-  overflow: hidden;
-  background: #070302;
-  color: #f8f0e5;
-  cursor: pointer;
-  opacity: 1;
-  transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1), filter 0.85s ease;
-  will-change: opacity, transform, filter;
-}
-
-.luxury-sacred-overlay.is-exiting {
-  opacity: 0;
-  transform: scale(1.06);
-  filter: blur(12px);
-  pointer-events: none;
-}
-
-.luxury-sacred-canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  display: block;
-}
-
-/* Ambient Top Controls */
-.luxury-sacred-top-bar {
-  position: absolute;
-  top: 28px;
-  left: 32px;
-  right: 32px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  z-index: 10;
-  pointer-events: auto;
-}
-
-.luxury-sacred-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
-  border-radius: 999px;
-  background: rgba(18, 8, 6, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(223, 184, 149, 0.32);
-  color: #f4e8dc;
-  font-family: inherit;
-  font-size: 8.5px;
-  font-weight: 500;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  justify-content: center;
+  background: #faf6f0;
+  color: #1b100c;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transform: translateY(0);
+  transition: transform 0.85s cubic-bezier(0.85, 0, 0.15, 1);
+  will-change: transform;
+  overflow: hidden;
+  user-select: none;
 }
 
-.luxury-sacred-pill:hover {
-  background: rgba(35, 16, 12, 0.88);
-  border-color: rgba(223, 184, 149, 0.75);
-  color: #dfb895;
-  transform: translateY(-1px);
+.brand-intro-curtain.is-exiting {
+  transform: translateY(-100%);
 }
 
-.pill-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  transition: background 0.25s ease;
-}
-
-.pill-arrow {
-  font-size: 11px;
-  line-height: 1;
-  transition: transform 0.25s ease;
-}
-
-.luxury-sacred-pill:hover .pill-arrow {
-  transform: translateX(3px);
-}
-
-/* Centered Sacred Typography & Wordmark */
-.luxury-sacred-center {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+.brand-intro-content {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  pointer-events: auto;
-  z-index: 10;
   width: min(92vw, 680px);
-  transition: opacity 0.75s ease, transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 0 20px;
 }
 
-.luxury-sacred-center.center-exiting {
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(1.08);
-}
-
-.luxury-sacred-kicker {
-  font-size: 9.5px;
-  letter-spacing: 0.38em;
-  text-indent: 0.38em;
-  text-transform: uppercase;
-  color: #dfb895;
-  margin: 0 0 22px;
-  font-weight: 500;
-  animation: kickerGlow 3s ease-in-out infinite alternate;
-}
-
-@keyframes kickerGlow {
-  from { opacity: 0.85; text-shadow: 0 0 10px rgba(223, 184, 149, 0.3); }
-  to { opacity: 1; text-shadow: 0 0 22px rgba(223, 184, 149, 0.65); }
-}
-
-.luxury-sacred-brand-wrap {
-  position: relative;
+/* Calligraphic ink signature flourish */
+.brand-intro-signature {
+  width: min(260px, 60vw);
+  height: 60px;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
+  margin-bottom: 6px;
 }
 
-.luxury-sacred-wordmark {
+.brand-signature-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.signature-stroke {
+  stroke-dasharray: 450;
+  stroke-dashoffset: 450;
+  animation: drawInk 0.85s cubic-bezier(0.35, 0, 0.25, 1) forwards;
+}
+
+.signature-accent-stroke {
+  stroke-dasharray: 180;
+  stroke-dashoffset: 180;
+  animation: drawAccent 0.6s 0.3s cubic-bezier(0.35, 0, 0.25, 1) forwards;
+}
+
+@keyframes drawInk {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes drawAccent {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Sculpted Wordmark with Staggered Character Baseline Unmask */
+.brand-intro-wordmark-wrap {
+  position: relative;
+  overflow: hidden;
+  padding: 6px 0;
+}
+
+.brand-intro-wordmark {
   margin: 0;
-  font: 500 clamp(54px, 8.5vw, 108px) / 0.82 "Cormorant Garamond", serif;
-  letter-spacing: -0.04em;
-  color: #f9eedf;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  font: 400 clamp(44px, 8.5vw, 92px) / 0.88 "Cormorant Garamond", serif;
+  letter-spacing: 0.14em;
+  color: #1b100c;
 }
 
-/* Specular Molten Gold Sheen Sweep Across the Logo */
-.gold-text-shimmer {
-  background: linear-gradient(
-    105deg,
-    #e8c8a7 0%,
-    #dfb895 28%,
-    #ffffff 48%,
-    #dfb895 62%,
-    #c49466 85%,
-    #e8c8a7 100%
-  );
-  background-size: 240% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: goldSheen 4.2s linear infinite;
+.char-mask {
   display: inline-block;
-  filter: drop-shadow(0 4px 20px rgba(223, 184, 149, 0.35));
+  overflow: hidden;
+  padding: 0 2px;
 }
 
-@keyframes goldSheen {
-  0% { background-position: 240% center; }
-  100% { background-position: -240% center; }
+.char-glyph {
+  display: inline-block;
+  transform: translateY(115%);
+  animation: charReveal 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.luxury-sacred-tagline {
-  display: block;
-  margin-top: 18px;
-  font-size: 8.5px;
-  letter-spacing: 0.55em;
-  text-indent: 0.55em;
-  color: rgba(244, 232, 220, 0.72);
-  text-transform: uppercase;
+@keyframes charReveal {
+  from {
+    transform: translateY(115%);
+    opacity: 0;
+    filter: blur(4px);
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+    filter: blur(0);
+  }
 }
 
-/* Interactive Enter Prompt */
-.luxury-sacred-cta-wrap {
-  margin-top: 48px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
+/* Expanding Golden Hairline Rule */
+.brand-intro-hairline {
+  width: 0;
+  height: 1px;
+  background: #c59868;
+  margin: 22px auto 14px;
+  transition: width 0.85s 0.65s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.luxury-sacred-enter-btn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 42px;
-  border-radius: 999px;
-  background: #f7ebe0;
-  color: #240a06;
-  border: 1px solid #dfb895;
-  font-family: "Cormorant Garamond", serif;
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: 0.26em;
-  text-transform: uppercase;
-  cursor: pointer;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45), 0 0 28px rgba(223, 184, 149, 0.4);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+.brand-intro-hairline.expanded {
+  width: 68px;
 }
 
-.luxury-sacred-enter-btn:hover {
-  background: #ffffff;
-  transform: translateY(-2px) scale(1.03);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55), 0 0 42px rgba(223, 184, 149, 0.6);
-}
-
-.enter-btn-halo {
-  position: absolute;
-  inset: -4px;
-  border-radius: 999px;
-  border: 1px solid rgba(223, 184, 149, 0.65);
-  animation: haloBreathe 2.4s ease-in-out infinite;
-  pointer-events: none;
-}
-
-@keyframes haloBreathe {
-  0% { transform: scale(1); opacity: 0.8; }
-  50% { transform: scale(1.08); opacity: 0.25; }
-  100% { transform: scale(1); opacity: 0.8; }
-}
-
-.enter-btn-arrow {
-  font-size: 15px;
-  transition: transform 0.25s ease;
-}
-
-.luxury-sacred-enter-btn:hover .enter-btn-arrow {
-  transform: translateX(4px);
-}
-
-.luxury-sacred-hint {
+/* Tagline Breathing In with Tracked Micro-Caps */
+.brand-intro-tagline {
   margin: 0;
-  font-size: 8px;
-  letter-spacing: 0.28em;
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.52em;
+  text-indent: 0.52em;
   text-transform: uppercase;
-  color: rgba(244, 232, 220, 0.55);
-  animation: hintBreathe 2s infinite ease-in-out;
+  color: #7b5847;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.75s 0.8s ease, transform 0.75s 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes hintBreathe {
-  0%, 100% { opacity: 0.45; }
-  50% { opacity: 0.85; }
+.brand-intro-tagline.visible {
+  opacity: 0.95;
+  transform: translateY(0);
 }
 
+/* Discrete Tap Hint */
+.brand-intro-skip-hint {
+  position: absolute;
+  bottom: -70px;
+  font-size: 8px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #9c8376;
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+
+.brand-intro-curtain:hover .brand-intro-skip-hint {
+  opacity: 0.95;
+}
+
+/* Hero CTA Group */
 .hero-cta-group {
   display: flex;
   align-items: center;
@@ -279,7 +197,7 @@ img { display: block; width: 100%; }
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 14px 22px;
+  padding: 13px 22px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.12);
   border: 1px solid rgba(255, 255, 255, 0.35);
@@ -306,26 +224,21 @@ img { display: block; width: 100%; }
 }
 
 @media (max-width: 600px) {
-  .luxury-sacred-top-bar {
-    top: 16px;
-    left: 16px;
-    right: 16px;
+  .brand-intro-signature {
+    width: 200px;
+    height: 48px;
   }
-  .luxury-sacred-pill {
-    padding: 8px 14px;
+  .brand-intro-wordmark {
+    font-size: 40px;
+    letter-spacing: 0.1em;
+  }
+  .brand-intro-hairline.expanded {
+    width: 48px;
+  }
+  .brand-intro-tagline {
     font-size: 7.5px;
-  }
-  .luxury-sacred-kicker {
-    margin-bottom: 14px;
-    font-size: 8px;
-  }
-  .luxury-sacred-cta-wrap {
-    margin-top: 32px;
-  }
-  .luxury-sacred-enter-btn {
-    padding: 13px 30px;
-    font-size: 14px;
-    letter-spacing: 0.22em;
+    letter-spacing: 0.4em;
+    text-indent: 0.4em;
   }
   .hero-cta-group {
     flex-direction: column;

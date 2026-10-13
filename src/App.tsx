@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import LuxurySacredEntrance from "./LuxurySacredEntrance";
+import BrandIntro from "./BrandIntro";
 
 export const resolveAsset = (path: string): string => {
   if (!path) return "";
@@ -1009,7 +1009,7 @@ export default function App() {
   if (selectedProduct) {
     return (
       <>
-        {showOpeningIntro && <LuxurySacredEntrance onComplete={completeOpeningIntro} />}
+        {showOpeningIntro && <BrandIntro onComplete={completeOpeningIntro} />}
         <ProductPage
           product={selectedProduct}
           onBack={() => {
@@ -1036,7 +1036,7 @@ export default function App() {
 
   return (
     <>
-      {showOpeningIntro && <LuxurySacredEntrance onComplete={completeOpeningIntro} />}
+      {showOpeningIntro && <BrandIntro onComplete={completeOpeningIntro} />}
       <main>
       <section className="hero">
         <img className="hero-bg" src={photos.hero} alt="" />
@@ -1076,10 +1076,10 @@ export default function App() {
               type="button"
               className="hero-film-trigger"
               onClick={() => setShowOpeningIntro(true)}
-              aria-label="Play 3D Brand Experience"
+              aria-label="Replay Brand Intro"
             >
               <Icon name="play" />
-              <span>Experience The Ritual</span>
+              <span>Replay Intro</span>
             </button>
           </div>
         </div>
