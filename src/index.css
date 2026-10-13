@@ -34,18 +34,31 @@ img { display: block; width: 100%; }
   background: #faf6f0;
   color: #1b100c;
   cursor: default;
-  transform: translate3d(0, 0, 0);
-  transition: transform 1.05s cubic-bezier(0.77, 0, 0.175, 1);
-  will-change: transform;
   overflow: hidden;
   user-select: none;
-  box-shadow: 0 0 0 transparent;
+  touch-action: none;
+  transform: translate3d(0, 0, 0);
+  animation: curtainLift 1.05s cubic-bezier(0.76, 0, 0.24, 1) 1.85s forwards;
+  will-change: transform;
 }
 
-.brand-intro-curtain.is-exiting {
-  transform: translate3d(0, -100%, 0);
-  box-shadow: 0 45px 100px rgba(18, 9, 6, 0.38);
-  pointer-events: none;
+@keyframes curtainLift {
+  0% {
+    transform: translate3d(0, 0, 0);
+    box-shadow: 0 0 0 transparent;
+  }
+  1% {
+    box-shadow: 0 40px 90px rgba(27, 16, 12, 0.35);
+  }
+  80% {
+    pointer-events: none;
+  }
+  100% {
+    transform: translate3d(0, -100%, 0);
+    box-shadow: 0 40px 90px rgba(27, 16, 12, 0.35);
+    pointer-events: none;
+    visibility: hidden;
+  }
 }
 
 .brand-intro-content {
@@ -56,14 +69,19 @@ img { display: block; width: 100%; }
   text-align: center;
   width: min(92vw, 680px);
   padding: 0 20px;
-  transform: translate3d(0, 0, 0);
-  transition: transform 0.95s cubic-bezier(0.77, 0, 0.175, 1), opacity 0.75s cubic-bezier(0.77, 0, 0.175, 1);
+  animation: introContentGlide 0.95s cubic-bezier(0.76, 0, 0.24, 1) 1.85s forwards;
   will-change: transform, opacity;
 }
 
-.brand-intro-content.is-exiting-content {
-  transform: translate3d(0, -32px, 0);
-  opacity: 0.15;
+@keyframes introContentGlide {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, -36px, 0);
+    opacity: 0.15;
+  }
 }
 
 /* Calligraphic ink signature flourish */
@@ -154,11 +172,16 @@ img { display: block; width: 100%; }
   height: 1px;
   background: #c59868;
   margin: 22px auto 14px;
-  transition: width 0.85s 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: hairlineExpand 0.75s 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.brand-intro-hairline.expanded {
-  width: 68px;
+@keyframes hairlineExpand {
+  from {
+    width: 0;
+  }
+  to {
+    width: 68px;
+  }
 }
 
 /* Tagline Breathing In with Tracked Micro-Caps */
@@ -172,12 +195,18 @@ img { display: block; width: 100%; }
   color: #7b5847;
   opacity: 0;
   transform: translateY(8px);
-  transition: opacity 0.75s 0.8s ease, transform 0.75s 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: taglineFadeIn 0.7s 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.brand-intro-tagline.visible {
-  opacity: 0.95;
-  transform: translateY(0);
+@keyframes taglineFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 0.95;
+    transform: translateY(0);
+  }
 }
 
 /* Hero CTA Group */
@@ -311,35 +340,7 @@ img { display: block; width: 100%; }
 }
 
 .hero { position: relative; height: 850px; overflow: hidden; background: #5d2b1e; color: white; }
-
-/* Standby state while BrandIntro is playing */
-.hero.hero-standby .hero-bg,
-.hero.hero-standby .nav,
-.hero.hero-standby .hero-content,
-.hero.hero-standby .brand-animated .brand-name,
-.hero.hero-standby .brand-animated .brand-tagline {
-  animation: none !important;
-  opacity: 0;
-}
-
-/* Synchronous luxury reveal when curtain unveils */
-.hero.hero-unveiled .hero-bg {
-  animation: heroImageReveal 1.6s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-.hero.hero-unveiled .nav {
-  animation: navReveal 1.05s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-.hero.hero-unveiled .hero-content {
-  animation: heroCopyReveal 1.15s 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-.hero.hero-unveiled .brand-animated .brand-name {
-  animation: brandNameReveal 1.15s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-.hero.hero-unveiled .brand-animated .brand-tagline {
-  animation: brandTaglineReveal 0.8s 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.hero-bg { position: absolute; inset: 0; height: 100%; object-fit: cover; object-position: 58% 48%; filter: sepia(.32) saturate(.85); animation: heroImageReveal 1.4s cubic-bezier(.2,.78,.22,1) both; }
+.hero-bg { position: absolute; inset: 0; height: 100%; object-fit: cover; object-position: 58% 48%; filter: sepia(.32) saturate(.85); animation: heroImageReveal 1.5s 1.85s cubic-bezier(.16, 1, .3, 1) both; }
 .hero-wash { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(31, 7, 3, .92) 0%, rgba(69, 21, 12, .68) 34%, rgba(72, 24, 16, .12) 68%), linear-gradient(0deg, rgba(20, 8, 3, .5), transparent 45%), linear-gradient(rgba(114,53,31,.23), rgba(106,45,28,.3)); }
 .nav { position: relative; z-index: 5; top: 18px; height: 72px; display: flex; align-items: center; justify-content: space-between; padding: 0 25px; border: 1px solid rgba(255,255,255,.2); border-radius: 999px; background: linear-gradient(90deg, rgba(43,10,5,.6), rgba(91,51,36,.25)); box-shadow: 0 15px 45px rgba(30,8,3,.18); backdrop-filter: blur(13px); }
 .nav::after { content: ""; position: absolute; left: 38px; right: 38px; bottom: -19px; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,224,196,.55), transparent); }
@@ -347,8 +348,8 @@ img { display: block; width: 100%; }
 .brand span { margin-top: 8px; font: 5px "Montserrat", sans-serif; letter-spacing: .45em; text-align: center; }
 .brand-light { color: white; }
 .brand-animated { perspective: 700px; }
-.brand-animated .brand-name { display: inline-block; margin: 0; font: inherit; letter-spacing: inherit; animation: brandNameReveal 1.15s cubic-bezier(.2,.82,.22,1) both; transform-origin: 50% 100%; }
-.brand-animated .brand-tagline { animation: brandTaglineReveal .8s .48s cubic-bezier(.2,.82,.22,1) both; }
+.brand-animated .brand-name { display: inline-block; margin: 0; font: inherit; letter-spacing: inherit; animation: brandNameReveal 1.15s 1.95s cubic-bezier(.2,.82,.22,1) both; transform-origin: 50% 100%; }
+.brand-animated .brand-tagline { animation: brandTaglineReveal .8s 2.25s cubic-bezier(.2,.82,.22,1) both; }
 
 @keyframes brandNameReveal {
   0% { opacity: 0; transform: translate3d(0, 18px, 0) rotateX(-68deg); filter: blur(8px); letter-spacing: .08em; }
@@ -376,7 +377,7 @@ img { display: block; width: 100%; }
 .nav-actions button { position: relative; padding: 0; border: 0; background: none; color: white; }
 .nav-actions .bag span { position: absolute; top: -9px; right: -7px; min-width: 14px; height: 14px; border-radius: 50%; background: var(--cream); color: var(--ink); font-size: 8px; line-height: 14px; }
 .menu-button { display: none; }
-.hero-content { position: relative; z-index: 2; padding-top: 142px; animation: heroCopyReveal .95s .18s cubic-bezier(.2,.82,.22,1) both; }
+.hero-content { position: relative; z-index: 2; padding-top: 142px; animation: heroCopyReveal 1.15s 2.05s cubic-bezier(.2,.82,.22,1) both; }
 .hero-content h1 { margin: 0 0 28px; max-width: 530px; font: 500 84px/.82 "Cormorant Garamond", serif; letter-spacing: -.045em; }
 .hero-copy { margin-bottom: 34px; font-size: 12px; line-height: 1.7; }
 .arrow-link { display: inline-flex; align-items: center; gap: 28px; width: max-content; padding: 14px 0 10px; border-bottom: 1px solid var(--ink); font-size: 9px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; transition: gap .25s; }
@@ -384,20 +385,20 @@ img { display: block; width: 100%; }
 .arrow-link.light { border-color: rgba(255,255,255,.7); }
 .arrow-link .icon { width: 16px; }
 .hero-content .arrow-link { padding: 15px 21px; border: 0; background: var(--paper); color: var(--ink); }
-.hero .nav { animation: navReveal .85s cubic-bezier(.2,.82,.22,1) both; }
+.hero .nav { animation: navReveal 1.05s 1.9s cubic-bezier(.2,.82,.22,1) both; }
 
 @keyframes heroImageReveal {
-  from { opacity: 0; transform: scale(1.08); filter: blur(3px) sepia(.32) saturate(.85); }
-  to { opacity: 1; transform: scale(1); filter: blur(0px) sepia(.32) saturate(.85); }
+  from { opacity: 0; transform: scale(1.06); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 @keyframes navReveal {
-  from { opacity: 0; transform: translateY(-22px); }
+  from { opacity: 0; transform: translateY(-20px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes heroCopyReveal {
-  from { opacity: 0; transform: translateY(28px); }
+  from { opacity: 0; transform: translateY(24px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .hero-botanical { position: absolute; z-index: 1; bottom: -11%; width: 31%; height: 55%; opacity: .48; background-size: cover; filter: saturate(.85) sepia(.12); pointer-events: none; }

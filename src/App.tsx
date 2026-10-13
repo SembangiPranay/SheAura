@@ -1003,19 +1003,13 @@ export default function App() {
   const [cartCount, setCartCount] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [activeModalReel, setActiveModalReel] = useState<Reel | null>(null);
-  const [introStage, setIntroStage] = useState<"active" | "unveiling" | "completed">("active");
-  const handleStartUnveil = useCallback(() => setIntroStage("unveiling"), []);
-  const handleCompleteIntro = useCallback(() => setIntroStage("completed"), []);
+  const [showIntro, setShowIntro] = useState(true);
+  const handleCompleteIntro = useCallback(() => setShowIntro(false), []);
 
   if (selectedProduct) {
     return (
       <>
-        {introStage !== "completed" && (
-          <BrandIntro
-            onStartUnveil={handleStartUnveil}
-            onComplete={handleCompleteIntro}
-          />
-        )}
+        {showIntro && <BrandIntro onComplete={handleCompleteIntro} />}
         <ProductPage
           product={selectedProduct}
           onBack={() => {
@@ -1042,14 +1036,9 @@ export default function App() {
 
   return (
     <>
-      {introStage !== "completed" && (
-        <BrandIntro
-          onStartUnveil={handleStartUnveil}
-          onComplete={handleCompleteIntro}
-        />
-      )}
+      {showIntro && <BrandIntro onComplete={handleCompleteIntro} />}
       <main>
-      <section className={`hero ${introStage === "active" ? "hero-standby" : "hero-unveiled"}`}>
+      <section className="hero">
         <img className="hero-bg" src={photos.hero} alt="" />
         <div className="hero-wash" />
         <div className="hero-botanical hero-botanical-left" style={{ backgroundImage: `url(${photos.scarletBotanical})` }} />
@@ -1086,7 +1075,7 @@ export default function App() {
             <button
               type="button"
               className="hero-film-trigger"
-              onClick={() => setIntroStage("active")}
+              onClick={() => setShowIntro(true)}
               aria-label="Replay Brand Intro"
             >
               <Icon name="play" />

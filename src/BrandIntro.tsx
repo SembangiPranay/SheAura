@@ -1,70 +1,36 @@
-import { useState, useEffect, useCallback } from "react";
+import { useEffect } from "react";
 
 interface BrandIntroProps {
-  onStartUnveil?: () => void;
   onComplete: () => void;
 }
 
-export default function BrandIntro({ onStartUnveil, onComplete }: BrandIntroProps) {
-  const [phase, setPhase] = useState<"drawing" | "revealing" | "settled" | "unveiling">("drawing");
-
-  const startUnveiling = useCallback(() => {
-    if (phase === "unveiling") return;
-    setPhase("unveiling");
-    if (onStartUnveil) {
-      onStartUnveil();
-    }
-    setTimeout(() => {
+export default function BrandIntro({ onComplete }: BrandIntroProps) {
+  useEffect(() => {
+    // Fail-safe unmount timer: 1.85s dwell + 1.05s curtain lift + buffer = 2.95s
+    const timer = setTimeout(() => {
       onComplete();
-    }, 950);
-  }, [phase, onStartUnveil, onComplete]);
+    }, 2950);
 
-  useEffect(() => {
-    // Stage 1: Calligraphy flourish ink path writes smoothly (0ms -> 420ms)
-    const t1 = setTimeout(() => {
-      setPhase("revealing");
-    }, 420);
-
-    // Stage 2: Letter-by-letter glyphs and golden hairline breathe in (420ms -> 1180ms)
-    const t2 = setTimeout(() => {
-      setPhase("settled");
-    }, 1180);
-
-    // Stage 3: Natural poise pause, then automatically & cleanly glides open into hero (1850ms)
-    const t3 = setTimeout(() => {
-      startUnveiling();
-    }, 1850);
-
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-    };
-  }, [startUnveiling]);
-
-  // Subtle keyboard escape for instant bypass if desired
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" || e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        startUnveiling();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [startUnveiling]);
+    return () => clearTimeout(timer);
+  }, [onComplete]);
 
   const letters = ["S", "H", "E", "’", "A", "U", "R", "A"];
 
   return (
     <div
-      className={`brand-intro-curtain ${phase === "unveiling" ? "is-exiting" : ""}`}
-      aria-hidden={phase === "unveiling"}
+      className="brand-intro-curtain"
+      onAnimationEnd={(e) => {
+        // Unmount smoothly when the curtainLift keyframe finishes
+        if (e.animationName === "curtainLift") {
+          onComplete();
+        }
+      }}
+      aria-hidden="true"
       role="presentation"
     >
-      <div className={`brand-intro-content ${phase === "unveiling" ? "is-exiting-content" : ""}`}>
+      <div className="brand-intro-content">
         {/* Couture Calligraphic Signature Flourish */}
-        <div className={`brand-intro-signature ${phase !== "drawing" ? "drawn" : ""}`}>
+        <div className="brand-intro-signature">
           <svg
             className="brand-signature-svg"
             viewBox="0 0 280 80"
@@ -100,7 +66,7 @@ export default function BrandIntro({ onStartUnveil, onComplete }: BrandIntroProp
                 <span
                   className="char-glyph"
                   style={{
-                    animationDelay: `${0.32 + index * 0.045}s`,
+                    animationDelay: `${0.22 + index * 0.045}s`,
                   }}
                 >
                   {char}
@@ -111,10 +77,10 @@ export default function BrandIntro({ onStartUnveil, onComplete }: BrandIntroProp
         </div>
 
         {/* Expanding Golden Hairline Accent */}
-        <div className={`brand-intro-hairline ${phase !== "drawing" ? "expanded" : ""}`} />
+        <div className="brand-intro-hairline" />
 
         {/* Tagline Breathing In with Tracked Micro-Caps */}
-        <p className={`brand-intro-tagline ${phase !== "drawing" ? "visible" : ""}`}>
+        <p className="brand-intro-tagline">
           YOUR AURA · YOUR STORY
         </p>
       </div>
