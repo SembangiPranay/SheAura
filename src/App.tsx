@@ -1003,13 +1003,19 @@ export default function App() {
   const [cartCount, setCartCount] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [activeModalReel, setActiveModalReel] = useState<Reel | null>(null);
-  const [showOpeningIntro, setShowOpeningIntro] = useState(true);
-  const completeOpeningIntro = useCallback(() => setShowOpeningIntro(false), []);
+  const [introStage, setIntroStage] = useState<"active" | "unveiling" | "completed">("active");
+  const handleStartUnveil = useCallback(() => setIntroStage("unveiling"), []);
+  const handleCompleteIntro = useCallback(() => setIntroStage("completed"), []);
 
   if (selectedProduct) {
     return (
       <>
-        {showOpeningIntro && <BrandIntro onComplete={completeOpeningIntro} />}
+        {introStage !== "completed" && (
+          <BrandIntro
+            onStartUnveil={handleStartUnveil}
+            onComplete={handleCompleteIntro}
+          />
+        )}
         <ProductPage
           product={selectedProduct}
           onBack={() => {
@@ -1036,9 +1042,14 @@ export default function App() {
 
   return (
     <>
-      {showOpeningIntro && <BrandIntro onComplete={completeOpeningIntro} />}
+      {introStage !== "completed" && (
+        <BrandIntro
+          onStartUnveil={handleStartUnveil}
+          onComplete={handleCompleteIntro}
+        />
+      )}
       <main>
-      <section className="hero">
+      <section className={`hero ${introStage === "active" ? "hero-standby" : "hero-unveiled"}`}>
         <img className="hero-bg" src={photos.hero} alt="" />
         <div className="hero-wash" />
         <div className="hero-botanical hero-botanical-left" style={{ backgroundImage: `url(${photos.scarletBotanical})` }} />
@@ -1075,7 +1086,7 @@ export default function App() {
             <button
               type="button"
               className="hero-film-trigger"
-              onClick={() => setShowOpeningIntro(true)}
+              onClick={() => setIntroStage("active")}
               aria-label="Replay Brand Intro"
             >
               <Icon name="play" />

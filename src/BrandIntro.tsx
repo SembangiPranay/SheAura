@@ -1,90 +1,68 @@
 import { useState, useEffect, useCallback } from "react";
 
 interface BrandIntroProps {
+  onStartUnveil?: () => void;
   onComplete: () => void;
 }
 
-export default function BrandIntro({ onComplete }: BrandIntroProps) {
-  const [phase, setPhase] = useState<"drawing" | "revealing" | "settled" | "exiting">("drawing");
+export default function BrandIntro({ onStartUnveil, onComplete }: BrandIntroProps) {
+  const [phase, setPhase] = useState<"drawing" | "revealing" | "settled" | "unveiling">("drawing");
 
-  const handleFinish = useCallback(() => {
-    if (phase === "exiting") return;
-    setPhase("exiting");
+  const startUnveiling = useCallback(() => {
+    if (phase === "unveiling") return;
+    setPhase("unveiling");
+    if (onStartUnveil) {
+      onStartUnveil();
+    }
     setTimeout(() => {
       onComplete();
-    }, 800);
-  }, [phase, onComplete]);
+    }, 950);
+  }, [phase, onStartUnveil, onComplete]);
 
   useEffect(() => {
-    // Phase 1: Calligraphy flourish / monogram draws (0ms -> 500ms)
+    // Stage 1: Calligraphy flourish ink path writes smoothly (0ms -> 420ms)
     const t1 = setTimeout(() => {
       setPhase("revealing");
-    }, 450);
+    }, 420);
 
-    // Phase 2: Letters finish staggering in and tagline expands (500ms -> 1200ms)
+    // Stage 2: Letter-by-letter glyphs and golden hairline breathe in (420ms -> 1180ms)
     const t2 = setTimeout(() => {
       setPhase("settled");
-    }, 1300);
+    }, 1180);
 
-    // Phase 3: Smooth curtain unveil into the boutique (2200ms)
+    // Stage 3: Natural poise pause, then automatically & cleanly glides open into hero (1850ms)
     const t3 = setTimeout(() => {
-      handleFinish();
-    }, 2350);
+      startUnveiling();
+    }, 1850);
 
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
     };
-  }, [handleFinish]);
+  }, [startUnveiling]);
 
-  // Click anywhere, scroll, or press key to skip immediately
+  // Subtle keyboard escape for instant bypass if desired
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Enter" || e.key === "Escape" || e.key === " ") {
+      if (e.key === "Escape" || e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        handleFinish();
+        startUnveiling();
       }
     };
-    const handleWheel = (e: WheelEvent) => {
-      if (Math.abs(e.deltaY) > 20) {
-        handleFinish();
-      }
-    };
-    let touchY = 0;
-    const handleTouchStart = (e: TouchEvent) => {
-      touchY = e.touches[0].clientY;
-    };
-    const handleTouchEnd = (e: TouchEvent) => {
-      if (touchY - e.changedTouches[0].clientY > 30) {
-        handleFinish();
-      }
-    };
-
     window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("wheel", handleWheel, { passive: true });
-    window.addEventListener("touchstart", handleTouchStart, { passive: true });
-    window.addEventListener("touchend", handleTouchEnd, { passive: true });
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("wheel", handleWheel);
-      window.removeEventListener("touchstart", handleTouchStart);
-      window.removeEventListener("touchend", handleTouchEnd);
-    };
-  }, [handleFinish]);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [startUnveiling]);
 
   const letters = ["S", "H", "E", "’", "A", "U", "R", "A"];
 
   return (
     <div
-      className={`brand-intro-curtain ${phase === "exiting" ? "is-exiting" : ""}`}
-      onClick={handleFinish}
-      role="dialog"
-      aria-modal="true"
-      aria-label="She’Aura Brand Entrance"
+      className={`brand-intro-curtain ${phase === "unveiling" ? "is-exiting" : ""}`}
+      aria-hidden={phase === "unveiling"}
+      role="presentation"
     >
-      <div className="brand-intro-content">
+      <div className={`brand-intro-content ${phase === "unveiling" ? "is-exiting-content" : ""}`}>
         {/* Couture Calligraphic Signature Flourish */}
         <div className={`brand-intro-signature ${phase !== "drawing" ? "drawn" : ""}`}>
           <svg
@@ -122,7 +100,7 @@ export default function BrandIntro({ onComplete }: BrandIntroProps) {
                 <span
                   className="char-glyph"
                   style={{
-                    animationDelay: `${0.35 + index * 0.045}s`,
+                    animationDelay: `${0.32 + index * 0.045}s`,
                   }}
                 >
                   {char}
@@ -139,11 +117,6 @@ export default function BrandIntro({ onComplete }: BrandIntroProps) {
         <p className={`brand-intro-tagline ${phase !== "drawing" ? "visible" : ""}`}>
           YOUR AURA · YOUR STORY
         </p>
-
-        {/* Discrete Tap Hint */}
-        <span className="brand-intro-skip-hint">
-          Click anywhere to enter boutique
-        </span>
       </div>
     </div>
   );
