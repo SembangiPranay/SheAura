@@ -23,14 +23,370 @@ img { display: block; width: 100%; }
 .eyebrow { margin: 0 0 24px; font-size: 9px; font-weight: 600; letter-spacing: .3em; text-transform: uppercase; }
 .eyebrow.dark { color: #7b5b4c; }
 
+/* Cinematic 3D Entrance Sequence */
+.cinematic-entrance-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #090503;
+  color: #f8f0e5;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), filter 0.8s ease;
+  will-change: opacity, transform, filter;
+  cursor: pointer;
+}
+
+.cinematic-entrance-overlay.is-exiting {
+  opacity: 0;
+  transform: scale(1.06);
+  filter: blur(14px);
+  pointer-events: none;
+}
+
+.cinematic-entrance-theater {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #090503;
+}
+
+.cinematic-entrance-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  /* Scale slightly so the corner margins push the bottom-right watermark out of view */
+  transform: scale(1.055);
+  transform-origin: center center;
+  pointer-events: none;
+}
+
+/* Precision luxury dark gradient mask cleanly concealing the Gemini watermark in bottom-right */
+.cinematic-corner-clean-mask {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: min(320px, 35vw);
+  height: min(260px, 30vh);
+  background: radial-gradient(ellipse at 88% 85%, #080402 45%, rgba(8, 4, 2, 0.96) 62%, rgba(8, 4, 2, 0) 100%);
+  pointer-events: none;
+  z-index: 4;
+}
+
+/* Ambient cinema vignette */
+.cinematic-ambient-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(8, 4, 2, 0) 60%, rgba(8, 4, 2, 0.5) 100%);
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Ambient Top Bar Controls */
+.cinematic-top-bar {
+  position: absolute;
+  top: 24px;
+  left: 28px;
+  right: 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.cinematic-sound-pill,
+.cinematic-skip-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(18, 10, 8, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(223, 184, 149, 0.28);
+  color: #f3e8d8;
+  font-family: inherit;
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.cinematic-sound-pill:hover,
+.cinematic-skip-pill:hover {
+  background: rgba(35, 18, 14, 0.85);
+  border-color: rgba(223, 184, 149, 0.7);
+  color: #dfb895;
+  transform: translateY(-1px);
+}
+
+.cinematic-sound-pill .icon,
+.cinematic-skip-pill .icon {
+  width: 13px;
+  height: 13px;
+}
+
+/* Enter Ritual button area at 00:04 */
+.cinematic-enter-wrap {
+  position: absolute;
+  bottom: 58px;
+  left: 50%;
+  transform: translate(-50%, 20px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.cinematic-enter-wrap.visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  pointer-events: auto;
+}
+
+.cinematic-enter-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 36px;
+  border-radius: 999px;
+  background: #f4e8dc;
+  color: #240d07;
+  border: 1px solid #dfb895;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 0 24px rgba(223, 184, 149, 0.35);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.cinematic-enter-btn:hover {
+  background: #ffffff;
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55), 0 0 36px rgba(223, 184, 149, 0.55);
+}
+
+.cinematic-enter-btn .icon {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.25s ease;
+}
+
+.cinematic-enter-btn:hover .icon {
+  transform: translateX(4px);
+}
+
+.cinematic-enter-glow {
+  position: absolute;
+  inset: -2px;
+  border-radius: 999px;
+  border: 1px solid rgba(223, 184, 149, 0.6);
+  animation: enterPulse 2.4s infinite ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes enterPulse {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.08); opacity: 0.2; }
+  100% { transform: scale(1); opacity: 0.8; }
+}
+
+.cinematic-scroll-hint {
+  margin: 0;
+  font-size: 8px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: rgba(243, 232, 216, 0.65);
+  animation: hintBreathe 2s infinite ease-in-out;
+}
+
+@keyframes hintBreathe {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.9; }
+}
+
+.hero-cta-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.hero-film-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 22px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #ffffff;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.hero-film-trigger:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: #ffffff;
+  transform: translateY(-2px);
+}
+
+.hero-film-trigger .icon {
+  width: 12px;
+  height: 12px;
+}
+
+@media (max-width: 600px) {
+  .cinematic-top-bar {
+    top: 16px;
+    left: 16px;
+    right: 16px;
+  }
+  .cinematic-sound-pill,
+  .cinematic-skip-pill {
+    padding: 8px 14px;
+    font-size: 7.5px;
+  }
+  .cinematic-enter-wrap {
+    bottom: 36px;
+    gap: 10px;
+  }
+  .cinematic-enter-btn {
+    padding: 13px 28px;
+    font-size: 14px;
+    letter-spacing: 0.2em;
+  }
+  .hero-cta-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .hero-film-trigger {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Featured reel carousel: one focused player, quiet poster navigation. */
+.reels-featured-layout { position: relative; display: grid; grid-template-columns: minmax(32px, 1fr) minmax(280px, 560px) minmax(32px, 1fr); align-items: center; gap: 18px; max-width: 980px; margin: 0 auto; padding: 0 24px 30px; }
+.reels-featured-active { min-width: 0; transition: opacity .3s ease, transform .45s cubic-bezier(.2,.8,.2,1); }
+.reels-featured-active .reel-card { width: 100%; margin: 0; }
+.reels-featured-arrow { display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid rgba(42,26,20,.25); border-radius: 50%; background: var(--paper); transition: background .25s, transform .25s; }
+.reels-featured-arrow:hover { background: var(--cream); transform: scale(1.06); }
+.reels-featured-arrow .icon { width: 17px; }
+.reels-featured-arrow.prev { justify-self: end; }
+.reels-featured-arrow.prev .icon { transform: rotate(180deg); }
+.reels-featured-arrow.next { justify-self: start; }
+.reels-thumbnails { grid-column: 1 / -1; display: flex; gap: 12px; overflow-x: auto; padding: 8px 2px 2px; scrollbar-width: thin; }
+.reel-thumbnail { flex: 0 0 86px; padding: 0; border: 0; background: transparent; color: #80695e; text-align: left; opacity: .58; transition: opacity .25s, transform .25s; }
+.reel-thumbnail:hover, .reel-thumbnail.active { opacity: 1; transform: translateY(-3px); }
+.reel-thumbnail img { width: 86px; height: 108px; object-fit: cover; border-radius: 44px 44px 4px 4px; margin-bottom: 7px; }
+.reel-thumbnail.active img { outline: 2px solid var(--rose); outline-offset: 3px; }
+.reel-thumbnail span { display: block; overflow: hidden; font: 500 12px/1.05 "Cormorant Garamond", serif; white-space: nowrap; text-overflow: ellipsis; }
+@media (max-width: 700px) {
+  .reels-featured-layout { grid-template-columns: 34px minmax(0, 1fr) 34px; gap: 8px; padding-inline: 10px; }
+  .reels-featured-arrow { width: 34px; height: 34px; }
+  .reel-thumbnail { flex-basis: 70px; }
+  .reel-thumbnail img { width: 70px; height: 88px; }
+}
+
+/* Keep the focused reel comfortable on narrow touch screens.  These rules are
+   intentionally scoped to the featured experience so the desktop runway and
+   other cards retain their original proportions. */
+@media (max-width: 600px) {
+  .reels-section { overflow: hidden; }
+  .reels-header-wrap { width: min(100% - 28px, 680px); }
+  .reels-header-wrap .section-heading { display: block; margin-bottom: 0; }
+  .reels-eyebrow-row { align-items: flex-start; }
+  .reels-eyebrow-row .eyebrow { margin-bottom: 0; line-height: 1.45; }
+  .reels-live-pulse { white-space: nowrap; }
+  .reels-header-wrap h2 { font-size: clamp(42px, 13vw, 58px); line-height: .88; }
+  .reels-header-wrap .section-heading > div > p:last-child { max-width: 34em; margin-top: 16px; line-height: 1.65; }
+  .reels-featured-layout {
+    grid-template-columns: 30px minmax(0, 1fr) 30px;
+    gap: 5px;
+    width: 100%;
+    padding: 0 8px 22px;
+  }
+  .reels-featured-arrow { width: 30px; height: 42px; border-radius: 999px; }
+  .reels-featured-arrow .icon { width: 14px; }
+  .reels-featured-active .reel-card { height: min(124vw, 540px); min-height: 410px; border-radius: 18px; }
+  .reel-top-row { top: 12px; left: 12px; right: 12px; gap: 6px; }
+  .reel-creator-pill { max-width: calc(100% - 82px); min-height: 38px; padding: 7px 10px; }
+  .reel-creator-pill span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .reel-icon-btn { width: 38px; height: 38px; }
+  .reel-live-badge { display: none; }
+  .reel-center-play { opacity: 1; top: 42%; }
+  .reel-play-circle { width: 50px; height: 50px; }
+  .reel-bottom-sheet { left: 12px; right: 12px; bottom: 12px; }
+  .reel-quote { font-size: 9px; line-height: 1.45; }
+  .reel-product-card { min-height: 60px; gap: 9px; padding: 8px; }
+  .reel-prod-thumb { width: 42px; height: 42px; }
+  .reel-quick-add { width: 36px; height: 36px; }
+  .reels-thumbnails { gap: 10px; padding: 9px 4px 4px; scroll-snap-type: x proximity; scrollbar-width: none; }
+  .reels-thumbnails::-webkit-scrollbar { display: none; }
+  .reel-thumbnail { flex-basis: 72px; scroll-snap-align: start; }
+  .reel-thumbnail img { width: 72px; height: 90px; border-radius: 36px 36px 5px 5px; }
+  .reel-thumbnail span { font-size: 11px; line-height: 1.1; }
+  .reels-filters button, .reels-flow-toggle { min-height: 40px; }
+}
+
 .hero { position: relative; height: 850px; overflow: hidden; background: #5d2b1e; color: white; }
-.hero-bg { position: absolute; inset: 0; height: 100%; object-fit: cover; object-position: 58% 48%; filter: sepia(.32) saturate(.85); }
+.hero-bg { position: absolute; inset: 0; height: 100%; object-fit: cover; object-position: 58% 48%; filter: sepia(.32) saturate(.85); animation: heroImageReveal 1.4s cubic-bezier(.2,.78,.22,1) both; }
 .hero-wash { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(31, 7, 3, .92) 0%, rgba(69, 21, 12, .68) 34%, rgba(72, 24, 16, .12) 68%), linear-gradient(0deg, rgba(20, 8, 3, .5), transparent 45%), linear-gradient(rgba(114,53,31,.23), rgba(106,45,28,.3)); }
 .nav { position: relative; z-index: 5; top: 18px; height: 72px; display: flex; align-items: center; justify-content: space-between; padding: 0 25px; border: 1px solid rgba(255,255,255,.2); border-radius: 999px; background: linear-gradient(90deg, rgba(43,10,5,.6), rgba(91,51,36,.25)); box-shadow: 0 15px 45px rgba(30,8,3,.18); backdrop-filter: blur(13px); }
 .nav::after { content: ""; position: absolute; left: 38px; right: 38px; bottom: -19px; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,224,196,.55), transparent); }
 .brand { display: flex; flex-direction: column; width: max-content; font-family: "Cormorant Garamond", serif; font-size: 31px; line-height: .7; letter-spacing: -.05em; }
 .brand span { margin-top: 8px; font: 5px "Montserrat", sans-serif; letter-spacing: .45em; text-align: center; }
 .brand-light { color: white; }
+.brand-animated { perspective: 700px; }
+.brand-animated .brand-name { display: inline-block; margin: 0; font: inherit; letter-spacing: inherit; animation: brandNameReveal 1.15s cubic-bezier(.2,.82,.22,1) both; transform-origin: 50% 100%; }
+.brand-animated .brand-tagline { animation: brandTaglineReveal .8s .48s cubic-bezier(.2,.82,.22,1) both; }
+
+@keyframes brandNameReveal {
+  0% { opacity: 0; transform: translate3d(0, 18px, 0) rotateX(-68deg); filter: blur(8px); letter-spacing: .08em; }
+  55% { opacity: 1; filter: blur(0); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0) rotateX(0); letter-spacing: -.05em; }
+}
+
+@keyframes brandTaglineReveal {
+  0% { opacity: 0; transform: translateY(7px); letter-spacing: .75em; }
+  100% { opacity: .9; transform: translateY(0); letter-spacing: .45em; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-bg,
+  .hero .nav,
+  .hero-content,
+  .brand-animated .brand-name,
+  .brand-animated .brand-tagline { animation: none; }
+}
 .nav-links { display: flex; gap: 38px; margin-left: auto; margin-right: 64px; }
 .nav-links a { position: relative; font-size: 10px; }
 .nav-links a::after { content: ""; position: absolute; left: 0; right: 100%; bottom: -8px; height: 1px; background: currentColor; transition: right .25s; }
@@ -39,7 +395,7 @@ img { display: block; width: 100%; }
 .nav-actions button { position: relative; padding: 0; border: 0; background: none; color: white; }
 .nav-actions .bag span { position: absolute; top: -9px; right: -7px; min-width: 14px; height: 14px; border-radius: 50%; background: var(--cream); color: var(--ink); font-size: 8px; line-height: 14px; }
 .menu-button { display: none; }
-.hero-content { position: relative; z-index: 2; padding-top: 142px; }
+.hero-content { position: relative; z-index: 2; padding-top: 142px; animation: heroCopyReveal .95s .18s cubic-bezier(.2,.82,.22,1) both; }
 .hero-content h1 { margin: 0 0 28px; max-width: 530px; font: 500 84px/.82 "Cormorant Garamond", serif; letter-spacing: -.045em; }
 .hero-copy { margin-bottom: 34px; font-size: 12px; line-height: 1.7; }
 .arrow-link { display: inline-flex; align-items: center; gap: 28px; width: max-content; padding: 14px 0 10px; border-bottom: 1px solid var(--ink); font-size: 9px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; transition: gap .25s; }
@@ -47,6 +403,22 @@ img { display: block; width: 100%; }
 .arrow-link.light { border-color: rgba(255,255,255,.7); }
 .arrow-link .icon { width: 16px; }
 .hero-content .arrow-link { padding: 15px 21px; border: 0; background: var(--paper); color: var(--ink); }
+.hero .nav { animation: navReveal .85s cubic-bezier(.2,.82,.22,1) both; }
+
+@keyframes heroImageReveal {
+  from { opacity: 0; transform: scale(1.06); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes navReveal {
+  from { opacity: 0; transform: translateY(-22px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes heroCopyReveal {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 .hero-botanical { position: absolute; z-index: 1; bottom: -11%; width: 31%; height: 55%; opacity: .48; background-size: cover; filter: saturate(.85) sepia(.12); pointer-events: none; }
 .hero-botanical-left { left: -8%; background-position: left 72%; background-size: 270%; -webkit-mask-image: linear-gradient(90deg, #000 20%, transparent 95%); mask-image: linear-gradient(90deg, #000 20%, transparent 95%); }
 .hero-botanical-right { right: -8%; background-position: right 66%; background-size: 260%; -webkit-mask-image: linear-gradient(270deg, #000 20%, transparent 95%); mask-image: linear-gradient(270deg, #000 20%, transparent 95%); }

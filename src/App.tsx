@@ -717,163 +717,19 @@ function ReelsSection({
   onOpenReel: (reel: Reel) => void;
 }) {
   const [filter, setFilter] = useState<string>("all");
-  const [isFlowing, setIsFlowing] = useState<boolean>(true);
-  const [isDragging, setIsDragging] = useState<boolean>(false);
-
-  const trackInnerRef = useRef<HTMLDivElement>(null);
-  const currentXRef = useRef<number>(0);
-  const targetXRef = useRef<number>(0);
-  const halfWidthRef = useRef<number>(0);
-  const isHoveredRef = useRef<boolean>(false);
-  const isFlowingRef = useRef<boolean>(true);
-  const isInteractingRef = useRef<boolean>(false);
-  const dragStartXRef = useRef<number>(0);
-  const dragInitialTargetRef = useRef<number>(0);
-  const dragDistanceRef = useRef<number>(0);
-  const rafIdRef = useRef<number | null>(null);
-
-  // Sync isFlowing state with ref for RAF loop
-  useEffect(() => {
-    isFlowingRef.current = isFlowing;
-  }, [isFlowing]);
+  const [activeId, setActiveId] = useState(reels[0].id);
 
   const filteredReels = useMemo(() => {
     return filter === "all" ? reels : reels.filter((r) => r.category === filter);
   }, [filter]);
 
-  // Construct a seamless infinite loop array: Set A + Set B (exact clone)
-  const displayReels = useMemo(() => {
-    if (filteredReels.length === 0) return [];
-    let base = [...filteredReels];
-    while (base.length < 8) {
-      base = [...base, ...filteredReels];
-    }
-    return [...base, ...base];
-  }, [filteredReels]);
-
-  // Recalculate half-width whenever layout updates
-  const updateHalfWidth = useCallback(() => {
-    if (trackInnerRef.current) {
-      const totalWidth = trackInnerRef.current.scrollWidth;
-      halfWidthRef.current = totalWidth / 2;
-    }
-  }, []);
-
   useEffect(() => {
-    updateHalfWidth();
-    currentXRef.current = 0;
-    targetXRef.current = 0;
-    if (trackInnerRef.current) {
-      trackInnerRef.current.style.transform = "translate3d(0px, 0, 0)";
-    }
-    const t = setTimeout(updateHalfWidth, 80);
-    return () => clearTimeout(t);
-  }, [filter, displayReels, updateHalfWidth]);
+    if (!filteredReels.some((reel) => reel.id === activeId)) setActiveId(filteredReels[0]?.id || reels[0].id);
+  }, [filter, filteredReels, activeId]);
 
-  useEffect(() => {
-    window.addEventListener("resize", updateHalfWidth);
-    return () => window.removeEventListener("resize", updateHalfWidth);
-  }, [updateHalfWidth]);
-
-  // High performance RequestAnimationFrame animation loop
-  useEffect(() => {
-    let lastTime = performance.now();
-
-    const animate = (time: number) => {
-      const deltaMs = Math.min(time - lastTime, 40);
-      lastTime = time;
-
-      const hw = halfWidthRef.current;
-      if (hw > 0) {
-        // Continuous smooth drift (44px per second)
-        if (isFlowingRef.current && !isHoveredRef.current && !isInteractingRef.current) {
-          const pixelsPerSec = 44;
-          targetXRef.current += (pixelsPerSec * deltaMs) / 1000;
-        }
-
-        // Silky exponential lerp to target position
-        const diff = targetXRef.current - currentXRef.current;
-        const lerpFactor = isInteractingRef.current ? 0.35 : 0.085;
-        currentXRef.current += diff * lerpFactor;
-
-        // Seamless wrap around boundaries
-        while (currentXRef.current >= hw) {
-          currentXRef.current -= hw;
-          targetXRef.current -= hw;
-        }
-        while (currentXRef.current < 0) {
-          currentXRef.current += hw;
-          targetXRef.current += hw;
-        }
-
-        if (trackInnerRef.current) {
-          trackInnerRef.current.style.transform = `translate3d(-${currentXRef.current.toFixed(2)}px, 0, 0)`;
-        }
-      }
-
-      rafIdRef.current = requestAnimationFrame(animate);
-    };
-
-    rafIdRef.current = requestAnimationFrame(animate);
-    return () => {
-      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
-    };
-  }, []);
-
-  // Glide cleanly by cards without breaking auto-flow
-  const glide = useCallback((direction: "left" | "right", count = 1) => {
-    const cardStep = 319; // card width (295px) + gap (24px)
-    const delta = direction === "right" ? cardStep * count : -cardStep * count;
-    targetXRef.current += delta;
-  }, []);
-
-  // Mouse drag handlers
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button !== 0) return;
-    isInteractingRef.current = true;
-    setIsDragging(true);
-    dragStartXRef.current = e.clientX;
-    dragInitialTargetRef.current = targetXRef.current;
-    dragDistanceRef.current = 0;
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isInteractingRef.current) return;
-    const delta = dragStartXRef.current - e.clientX;
-    dragDistanceRef.current = Math.abs(delta);
-    targetXRef.current = dragInitialTargetRef.current + delta;
-  };
-
-  const handleMouseUp = () => {
-    isInteractingRef.current = false;
-    setIsDragging(false);
-  };
-
-  // Touch swipe handlers
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 0) return;
-    isInteractingRef.current = true;
-    dragStartXRef.current = e.touches[0].clientX;
-    dragInitialTargetRef.current = targetXRef.current;
-    dragDistanceRef.current = 0;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isInteractingRef.current || e.touches.length === 0) return;
-    const delta = dragStartXRef.current - e.touches[0].clientX;
-    dragDistanceRef.current = Math.abs(delta);
-    targetXRef.current = dragInitialTargetRef.current + delta;
-  };
-
-  const handleTouchEnd = () => {
-    isInteractingRef.current = false;
-  };
-
-  const handleReelClick = (reel: Reel) => {
-    // If the user dragged more than 8 pixels, don't open the modal
-    if (dragDistanceRef.current > 8) return;
-    onOpenReel(reel);
-  };
+  const activeIndex = Math.max(0, filteredReels.findIndex((reel) => reel.id === activeId));
+  const activeReel = filteredReels[activeIndex] || filteredReels[0] || reels[0];
+  const move = (direction: number) => setActiveId(filteredReels[(activeIndex + direction + filteredReels.length) % filteredReels.length].id);
 
   return (
     <section className="reels-section" id="rituals">
@@ -906,27 +762,11 @@ function ReelsSection({
               ))}
             </div>
             <div className="reels-motion-controls">
-              <button
-                className={`reels-flow-toggle ${isFlowing ? "active" : ""}`}
-                onClick={() => setIsFlowing(!isFlowing)}
-                title={isFlowing ? "Pause auto-flow" : "Start auto-flow"}
-              >
-                <Icon name={isFlowing ? "pause" : "play"} />
-                <span>{isFlowing ? "Motion Flow On" : "Motion Paused"}</span>
-              </button>
               <div className="reels-arrow-btns">
-                <button
-                  onClick={() => glide("left")}
-                  aria-label="Previous reel"
-                  title="Glide Left"
-                >
+                <button onClick={() => move(-1)} aria-label="Previous reel" title="Previous reel">
                   <Icon name="arrow" />
                 </button>
-                <button
-                  onClick={() => glide("right")}
-                  aria-label="Next reel"
-                  title="Glide Right"
-                >
+                <button onClick={() => move(1)} aria-label="Next reel" title="Next reel">
                   <Icon name="arrow" />
                 </button>
               </div>
@@ -935,57 +775,12 @@ function ReelsSection({
         </div>
       </div>
 
-      {/* Infinite Flowing Reels Runway Stage */}
-      <div className="reels-stage-wrap">
-        <div className="reels-stage-mask left" />
-        <div className="reels-stage-mask right" />
-
-        <button
-          className="reels-runway-arrow left"
-          onClick={() => glide("left")}
-          aria-label="Previous reel"
-          title="Scroll Left"
-        >
-          <Icon name="arrow" />
-        </button>
-
-        <button
-          className="reels-runway-arrow right"
-          onClick={() => glide("right")}
-          aria-label="Next reel"
-          title="Scroll Right"
-        >
-          <Icon name="arrow" />
-        </button>
-
-        <div
-          className={`reels-carousel-track ${isDragging ? "is-dragging" : ""}`}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={() => {
-            isInteractingRef.current = false;
-            setIsDragging(false);
-            isHoveredRef.current = false;
-          }}
-          onMouseEnter={() => {
-            isHoveredRef.current = true;
-          }}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          <div className="reels-track-inner" ref={trackInnerRef}>
-            {displayReels.map((reel, index) => (
-              <ReelCard
-                key={`${reel.id}-${index}`}
-                reel={reel}
-                onOpenReel={handleReelClick}
-                onSelectProduct={onSelectProduct}
-                onAddBag={onAddBag}
-              />
-            ))}
-          </div>
+      <div className="reels-featured-layout">
+        <button className="reels-featured-arrow prev" onClick={() => move(-1)} aria-label="Previous reel"><Icon name="arrow" /></button>
+        <div className="reels-featured-active"><ReelCard reel={activeReel} onOpenReel={onOpenReel} onSelectProduct={onSelectProduct} onAddBag={onAddBag} /></div>
+        <button className="reels-featured-arrow next" onClick={() => move(1)} aria-label="Next reel"><Icon name="arrow" /></button>
+        <div className="reels-thumbnails" aria-label="Choose a reel">
+          {filteredReels.map((reel) => <button key={reel.id} className={`reel-thumbnail ${reel.id === activeReel.id ? "active" : ""}`} onClick={() => setActiveId(reel.id)}><img src={reel.poster} alt="" /><span>{reel.title}</span></button>)}
         </div>
       </div>
 
@@ -1080,6 +875,158 @@ function CommunityStrip() {
         <span>AS SEEN ON INSTAGRAM · TAG #MYSHEAURA TO BE FEATURED · 100% BOTANICAL EXTRACTS · SCULPTED TEXTURES · VEGAN & CRUELTY FREE · YOUR AURA, YOUR STORY ·&nbsp;</span>
       </div>
     </section>
+  );
+}
+
+function CinematicHeroEntrance({ onComplete }: { onComplete: () => void }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isMuted, setIsMuted] = useState(true);
+  const [isExiting, setIsExiting] = useState(false);
+  const [showEnterButton, setShowEnterButton] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
+
+  const videoSrc = useMemo(() => resolveAsset("/hero/sheaura-hero-entrance.mp4"), []);
+
+  const handleEnter = useCallback(() => {
+    if (isExiting) return;
+    setIsExiting(true);
+    setTimeout(() => {
+      onComplete();
+    }, 750);
+  }, [isExiting, onComplete]);
+
+  // When video reaches reveal phase (around 2.5s), show the interactive Enter CTA
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      if (videoRef.current.currentTime >= 2.5 && !showEnterButton) {
+        setShowEnterButton(true);
+      }
+    }
+  };
+
+  const handleVideoEnded = () => {
+    setShowEnterButton(true);
+  };
+
+  // Autoplay video on mount
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = true;
+      videoRef.current.play().catch(() => {});
+    }
+  }, []);
+
+  // Listen for keyboard, scroll, and touch gestures to transition smoothly into the site
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === "Escape" || e.key === " ") {
+        e.preventDefault();
+        handleEnter();
+      }
+    };
+    const handleWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) > 25) {
+        handleEnter();
+      }
+    };
+    let touchStartY = 0;
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0].clientY;
+    };
+    const handleTouchEnd = (e: TouchEvent) => {
+      const touchEndY = e.changedTouches[0].clientY;
+      if (touchStartY - touchEndY > 35) {
+        handleEnter();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("wheel", handleWheel, { passive: true });
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchend", handleTouchEnd, { passive: true });
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("wheel", handleWheel);
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [handleEnter]);
+
+  const toggleSound = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+  return (
+    <div
+      className={`cinematic-entrance-overlay ${isExiting ? "is-exiting" : ""} ${videoReady ? "is-ready" : ""}`}
+      onClick={handleEnter}
+      role="dialog"
+      aria-modal="true"
+      aria-label="She’Aura 3D Brand Experience"
+    >
+      <div className="cinematic-entrance-theater">
+        <video
+          ref={videoRef}
+          src={videoSrc}
+          playsInline
+          autoPlay
+          muted={isMuted}
+          onTimeUpdate={handleTimeUpdate}
+          onEnded={handleVideoEnded}
+          onCanPlay={() => setVideoReady(true)}
+          className="cinematic-entrance-video"
+        />
+
+        {/* Precision luxury gradient mask cleanly hiding the corner watermark */}
+        <div className="cinematic-corner-clean-mask" aria-hidden="true" />
+        <div className="cinematic-ambient-vignette" aria-hidden="true" />
+
+        {/* Ambient Top Bar */}
+        <div className="cinematic-top-bar" onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            className="cinematic-sound-pill"
+            onClick={toggleSound}
+            aria-label={isMuted ? "Unmute brand experience" : "Mute audio"}
+          >
+            <Icon name={isMuted ? "volumeX" : "volume"} />
+            <span>{isMuted ? "Sound on" : "Sound off"}</span>
+          </button>
+
+          <button
+            type="button"
+            className="cinematic-skip-pill"
+            onClick={handleEnter}
+            aria-label="Skip to collection"
+          >
+            <span>Skip to Collection</span>
+            <Icon name="arrow" />
+          </button>
+        </div>
+
+        {/* Interactive Enter CTA aligned with the video's end reveal */}
+        <div className={`cinematic-enter-wrap ${showEnterButton ? "visible" : ""}`}>
+          <button
+            type="button"
+            className="cinematic-enter-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEnter();
+            }}
+            aria-label="Enter She’Aura Ritual"
+          >
+            <span className="cinematic-enter-glow" />
+            <span className="cinematic-enter-text">ENTER RITUAL</span>
+            <Icon name="arrow" />
+          </button>
+          <p className="cinematic-scroll-hint">Click anywhere or scroll to explore</p>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1206,10 +1153,13 @@ export default function App() {
   const [cartCount, setCartCount] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [activeModalReel, setActiveModalReel] = useState<Reel | null>(null);
+  const [showOpeningIntro, setShowOpeningIntro] = useState(true);
+  const completeOpeningIntro = useCallback(() => setShowOpeningIntro(false), []);
 
   if (selectedProduct) {
     return (
       <>
+        {showOpeningIntro && <CinematicHeroEntrance onComplete={completeOpeningIntro} />}
         <ProductPage
           product={selectedProduct}
           onBack={() => {
@@ -1235,14 +1185,19 @@ export default function App() {
   }
 
   return (
-    <main>
+    <>
+      {showOpeningIntro && <CinematicHeroEntrance onComplete={completeOpeningIntro} />}
+      <main>
       <section className="hero">
         <img className="hero-bg" src={photos.hero} alt="" />
         <div className="hero-wash" />
         <div className="hero-botanical hero-botanical-left" style={{ backgroundImage: `url(${photos.scarletBotanical})` }} />
         <div className="hero-botanical hero-botanical-right" style={{ backgroundImage: `url(${photos.highlighterBotanical})` }} />
         <header className="nav shell">
-          <a className="brand brand-light" href="#">SHE’AURA<span>YOUR AURA · YOUR STORY</span></a>
+           <a className="brand brand-light brand-animated" href="#" aria-label="She Aura">
+             <span className="brand-name" aria-hidden="true">SHE’AURA</span>
+             <span className="brand-tagline">YOUR AURA · YOUR STORY</span>
+           </a>
           <nav className={menuOpen ? "nav-links open" : "nav-links"}>
             {["Shop", "Collections", "Skincare", "Makeup", "About", "Journal"].map((item) => (
               <a
@@ -1265,7 +1220,18 @@ export default function App() {
           <p className="eyebrow">Beauty in your element</p>
           <h1>A Ritual<br />Beyond<br />Beauty.</h1>
           <p className="hero-copy">Thoughtful formulas. Sensory textures.<br />A more radiant you, every day.</p>
-          <ArrowLink light>Explore the collection</ArrowLink>
+          <div className="hero-cta-group">
+            <ArrowLink light>Explore the collection</ArrowLink>
+            <button
+              type="button"
+              className="hero-film-trigger"
+              onClick={() => setShowOpeningIntro(true)}
+              aria-label="Play 3D Brand Experience"
+            >
+              <Icon name="play" />
+              <span>Experience The Ritual</span>
+            </button>
+          </div>
         </div>
         <div className="scroll-note">Scroll to discover <span /></div>
       </section>
@@ -1438,6 +1404,7 @@ export default function App() {
           onSwitchReel={setActiveModalReel}
         />
       )}
-    </main>
+      </main>
+    </>
   );
 }
