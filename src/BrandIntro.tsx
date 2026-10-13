@@ -6,10 +6,10 @@ interface BrandIntroProps {
 
 export default function BrandIntro({ onComplete }: BrandIntroProps) {
   useEffect(() => {
-    // Fail-safe unmount timer: 1.85s dwell + 1.05s curtain lift + buffer = 2.95s
+    // Fail-safe unmount timer: 1.85s dwell + 1.05s blend-in dissolve = ~2.9s
     const timer = setTimeout(() => {
       onComplete();
-    }, 2950);
+    }, 2900);
 
     return () => clearTimeout(timer);
   }, [onComplete]);
@@ -20,8 +20,8 @@ export default function BrandIntro({ onComplete }: BrandIntroProps) {
     <div
       className="brand-intro-curtain"
       onAnimationEnd={(e) => {
-        // Unmount smoothly when the curtainLift keyframe finishes
-        if (e.animationName === "curtainLift") {
+        // Unmount smoothly when the introBlendOut keyframe finishes
+        if (e.animationName === "introBlendOut") {
           onComplete();
         }
       }}
