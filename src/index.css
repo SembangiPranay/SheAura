@@ -23,79 +23,42 @@ img { display: block; width: 100%; }
 .eyebrow { margin: 0 0 24px; font-size: 9px; font-weight: 600; letter-spacing: .3em; text-transform: uppercase; }
 .eyebrow.dark { color: #7b5b4c; }
 
-/* Cinematic 3D Entrance Sequence */
-.cinematic-entrance-overlay {
+/* Procedural 3D Luxury Sacred Aura Entrance */
+.luxury-sacred-overlay {
   position: fixed;
   inset: 0;
   z-index: 20000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #090503;
-  color: #f8f0e5;
   overflow: hidden;
-  opacity: 1;
-  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), filter 0.8s ease;
-  will-change: opacity, transform, filter;
+  background: #070302;
+  color: #f8f0e5;
   cursor: pointer;
+  opacity: 1;
+  transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1), filter 0.85s ease;
+  will-change: opacity, transform, filter;
 }
 
-.cinematic-entrance-overlay.is-exiting {
+.luxury-sacred-overlay.is-exiting {
   opacity: 0;
   transform: scale(1.06);
-  filter: blur(14px);
+  filter: blur(12px);
   pointer-events: none;
 }
 
-.cinematic-entrance-theater {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  background: #090503;
-}
-
-.cinematic-entrance-video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center center;
-  /* Scale slightly so the corner margins push the bottom-right watermark out of view */
-  transform: scale(1.055);
-  transform-origin: center center;
-  pointer-events: none;
-}
-
-/* Precision luxury dark gradient mask cleanly concealing the Gemini watermark in bottom-right */
-.cinematic-corner-clean-mask {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  width: min(320px, 35vw);
-  height: min(260px, 30vh);
-  background: radial-gradient(ellipse at 88% 85%, #080402 45%, rgba(8, 4, 2, 0.96) 62%, rgba(8, 4, 2, 0) 100%);
-  pointer-events: none;
-  z-index: 4;
-}
-
-/* Ambient cinema vignette */
-.cinematic-ambient-vignette {
+.luxury-sacred-canvas {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at center, rgba(8, 4, 2, 0) 60%, rgba(8, 4, 2, 0.5) 100%);
+  width: 100%;
+  height: 100%;
   pointer-events: none;
-  z-index: 3;
+  display: block;
 }
 
-/* Ambient Top Bar Controls */
-.cinematic-top-bar {
+/* Ambient Top Controls */
+.luxury-sacred-top-bar {
   position: absolute;
-  top: 24px;
-  left: 28px;
-  right: 28px;
+  top: 28px;
+  left: 32px;
+  right: 32px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -103,18 +66,17 @@ img { display: block; width: 100%; }
   pointer-events: auto;
 }
 
-.cinematic-sound-pill,
-.cinematic-skip-pill {
+.luxury-sacred-pill {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   padding: 10px 18px;
   border-radius: 999px;
-  background: rgba(18, 10, 8, 0.65);
+  background: rgba(18, 8, 6, 0.65);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(223, 184, 149, 0.28);
-  color: #f3e8d8;
+  border: 1px solid rgba(223, 184, 149, 0.32);
+  color: #f4e8dc;
   font-family: inherit;
   font-size: 8.5px;
   font-weight: 500;
@@ -124,105 +86,186 @@ img { display: block; width: 100%; }
   transition: all 0.25s ease;
 }
 
-.cinematic-sound-pill:hover,
-.cinematic-skip-pill:hover {
-  background: rgba(35, 18, 14, 0.85);
-  border-color: rgba(223, 184, 149, 0.7);
+.luxury-sacred-pill:hover {
+  background: rgba(35, 16, 12, 0.88);
+  border-color: rgba(223, 184, 149, 0.75);
   color: #dfb895;
   transform: translateY(-1px);
 }
 
-.cinematic-sound-pill .icon,
-.cinematic-skip-pill .icon {
-  width: 13px;
-  height: 13px;
+.pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  transition: background 0.25s ease;
 }
 
-/* Enter Ritual button area at 00:04 */
-.cinematic-enter-wrap {
+.pill-arrow {
+  font-size: 11px;
+  line-height: 1;
+  transition: transform 0.25s ease;
+}
+
+.luxury-sacred-pill:hover .pill-arrow {
+  transform: translateX(3px);
+}
+
+/* Centered Sacred Typography & Wordmark */
+.luxury-sacred-center {
   position: absolute;
-  bottom: 58px;
+  top: 50%;
   left: 50%;
-  transform: translate(-50%, 20px);
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  pointer-events: auto;
+  z-index: 10;
+  width: min(92vw, 680px);
+  transition: opacity 0.75s ease, transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.luxury-sacred-center.center-exiting {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(1.08);
+}
+
+.luxury-sacred-kicker {
+  font-size: 9.5px;
+  letter-spacing: 0.38em;
+  text-indent: 0.38em;
+  text-transform: uppercase;
+  color: #dfb895;
+  margin: 0 0 22px;
+  font-weight: 500;
+  animation: kickerGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes kickerGlow {
+  from { opacity: 0.85; text-shadow: 0 0 10px rgba(223, 184, 149, 0.3); }
+  to { opacity: 1; text-shadow: 0 0 22px rgba(223, 184, 149, 0.65); }
+}
+
+.luxury-sacred-brand-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.luxury-sacred-wordmark {
+  margin: 0;
+  font: 500 clamp(54px, 8.5vw, 108px) / 0.82 "Cormorant Garamond", serif;
+  letter-spacing: -0.04em;
+  color: #f9eedf;
+}
+
+/* Specular Molten Gold Sheen Sweep Across the Logo */
+.gold-text-shimmer {
+  background: linear-gradient(
+    105deg,
+    #e8c8a7 0%,
+    #dfb895 28%,
+    #ffffff 48%,
+    #dfb895 62%,
+    #c49466 85%,
+    #e8c8a7 100%
+  );
+  background-size: 240% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: goldSheen 4.2s linear infinite;
+  display: inline-block;
+  filter: drop-shadow(0 4px 20px rgba(223, 184, 149, 0.35));
+}
+
+@keyframes goldSheen {
+  0% { background-position: 240% center; }
+  100% { background-position: -240% center; }
+}
+
+.luxury-sacred-tagline {
+  display: block;
+  margin-top: 18px;
+  font-size: 8.5px;
+  letter-spacing: 0.55em;
+  text-indent: 0.55em;
+  color: rgba(244, 232, 220, 0.72);
+  text-transform: uppercase;
+}
+
+/* Interactive Enter Prompt */
+.luxury-sacred-cta-wrap {
+  margin-top: 48px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 14px;
-  z-index: 10;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.cinematic-enter-wrap.visible {
-  opacity: 1;
-  transform: translate(-50%, 0);
-  pointer-events: auto;
-}
-
-.cinematic-enter-btn {
+.luxury-sacred-enter-btn {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 14px;
-  padding: 15px 36px;
+  gap: 12px;
+  padding: 16px 42px;
   border-radius: 999px;
-  background: #f4e8dc;
-  color: #240d07;
+  background: #f7ebe0;
+  color: #240a06;
   border: 1px solid #dfb895;
   font-family: "Cormorant Garamond", serif;
   font-size: 16px;
   font-weight: 600;
-  letter-spacing: 0.24em;
+  letter-spacing: 0.26em;
   text-transform: uppercase;
   cursor: pointer;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 0 24px rgba(223, 184, 149, 0.35);
-  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45), 0 0 28px rgba(223, 184, 149, 0.4);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.cinematic-enter-btn:hover {
+.luxury-sacred-enter-btn:hover {
   background: #ffffff;
   transform: translateY(-2px) scale(1.03);
-  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55), 0 0 36px rgba(223, 184, 149, 0.55);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55), 0 0 42px rgba(223, 184, 149, 0.6);
 }
 
-.cinematic-enter-btn .icon {
-  width: 14px;
-  height: 14px;
-  transition: transform 0.25s ease;
-}
-
-.cinematic-enter-btn:hover .icon {
-  transform: translateX(4px);
-}
-
-.cinematic-enter-glow {
+.enter-btn-halo {
   position: absolute;
-  inset: -2px;
+  inset: -4px;
   border-radius: 999px;
-  border: 1px solid rgba(223, 184, 149, 0.6);
-  animation: enterPulse 2.4s infinite ease-in-out;
+  border: 1px solid rgba(223, 184, 149, 0.65);
+  animation: haloBreathe 2.4s ease-in-out infinite;
   pointer-events: none;
 }
 
-@keyframes enterPulse {
+@keyframes haloBreathe {
   0% { transform: scale(1); opacity: 0.8; }
-  50% { transform: scale(1.08); opacity: 0.2; }
+  50% { transform: scale(1.08); opacity: 0.25; }
   100% { transform: scale(1); opacity: 0.8; }
 }
 
-.cinematic-scroll-hint {
+.enter-btn-arrow {
+  font-size: 15px;
+  transition: transform 0.25s ease;
+}
+
+.luxury-sacred-enter-btn:hover .enter-btn-arrow {
+  transform: translateX(4px);
+}
+
+.luxury-sacred-hint {
   margin: 0;
   font-size: 8px;
-  letter-spacing: 0.25em;
+  letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: rgba(243, 232, 216, 0.65);
+  color: rgba(244, 232, 220, 0.55);
   animation: hintBreathe 2s infinite ease-in-out;
 }
 
 @keyframes hintBreathe {
   0%, 100% { opacity: 0.45; }
-  50% { opacity: 0.9; }
+  50% { opacity: 0.85; }
 }
 
 .hero-cta-group {
@@ -263,24 +306,26 @@ img { display: block; width: 100%; }
 }
 
 @media (max-width: 600px) {
-  .cinematic-top-bar {
+  .luxury-sacred-top-bar {
     top: 16px;
     left: 16px;
     right: 16px;
   }
-  .cinematic-sound-pill,
-  .cinematic-skip-pill {
+  .luxury-sacred-pill {
     padding: 8px 14px;
     font-size: 7.5px;
   }
-  .cinematic-enter-wrap {
-    bottom: 36px;
-    gap: 10px;
+  .luxury-sacred-kicker {
+    margin-bottom: 14px;
+    font-size: 8px;
   }
-  .cinematic-enter-btn {
-    padding: 13px 28px;
+  .luxury-sacred-cta-wrap {
+    margin-top: 32px;
+  }
+  .luxury-sacred-enter-btn {
+    padding: 13px 30px;
     font-size: 14px;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.22em;
   }
   .hero-cta-group {
     flex-direction: column;

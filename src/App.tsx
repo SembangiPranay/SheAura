@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import LuxurySacredEntrance from "./LuxurySacredEntrance";
 
 export const resolveAsset = (path: string): string => {
   if (!path) return "";
@@ -878,157 +879,6 @@ function CommunityStrip() {
   );
 }
 
-function CinematicHeroEntrance({ onComplete }: { onComplete: () => void }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [isMuted, setIsMuted] = useState(true);
-  const [isExiting, setIsExiting] = useState(false);
-  const [showEnterButton, setShowEnterButton] = useState(false);
-  const [videoReady, setVideoReady] = useState(false);
-
-  const videoSrc = useMemo(() => resolveAsset("/hero/sheaura-hero-entrance.mp4"), []);
-
-  const handleEnter = useCallback(() => {
-    if (isExiting) return;
-    setIsExiting(true);
-    setTimeout(() => {
-      onComplete();
-    }, 750);
-  }, [isExiting, onComplete]);
-
-  // When video reaches reveal phase (around 2.5s), show the interactive Enter CTA
-  const handleTimeUpdate = () => {
-    if (videoRef.current) {
-      if (videoRef.current.currentTime >= 2.5 && !showEnterButton) {
-        setShowEnterButton(true);
-      }
-    }
-  };
-
-  const handleVideoEnded = () => {
-    setShowEnterButton(true);
-  };
-
-  // Autoplay video on mount
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = true;
-      videoRef.current.play().catch(() => {});
-    }
-  }, []);
-
-  // Listen for keyboard, scroll, and touch gestures to transition smoothly into the site
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Enter" || e.key === "Escape" || e.key === " ") {
-        e.preventDefault();
-        handleEnter();
-      }
-    };
-    const handleWheel = (e: WheelEvent) => {
-      if (Math.abs(e.deltaY) > 25) {
-        handleEnter();
-      }
-    };
-    let touchStartY = 0;
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartY = e.touches[0].clientY;
-    };
-    const handleTouchEnd = (e: TouchEvent) => {
-      const touchEndY = e.changedTouches[0].clientY;
-      if (touchStartY - touchEndY > 35) {
-        handleEnter();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("wheel", handleWheel, { passive: true });
-    window.addEventListener("touchstart", handleTouchStart, { passive: true });
-    window.addEventListener("touchend", handleTouchEnd, { passive: true });
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("wheel", handleWheel);
-      window.removeEventListener("touchstart", handleTouchStart);
-      window.removeEventListener("touchend", handleTouchEnd);
-    };
-  }, [handleEnter]);
-
-  const toggleSound = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
-    }
-  };
-
-  return (
-    <div
-      className={`cinematic-entrance-overlay ${isExiting ? "is-exiting" : ""} ${videoReady ? "is-ready" : ""}`}
-      onClick={handleEnter}
-      role="dialog"
-      aria-modal="true"
-      aria-label="She’Aura 3D Brand Experience"
-    >
-      <div className="cinematic-entrance-theater">
-        <video
-          ref={videoRef}
-          src={videoSrc}
-          playsInline
-          autoPlay
-          muted={isMuted}
-          onTimeUpdate={handleTimeUpdate}
-          onEnded={handleVideoEnded}
-          onCanPlay={() => setVideoReady(true)}
-          className="cinematic-entrance-video"
-        />
-
-        {/* Precision luxury gradient mask cleanly hiding the corner watermark */}
-        <div className="cinematic-corner-clean-mask" aria-hidden="true" />
-        <div className="cinematic-ambient-vignette" aria-hidden="true" />
-
-        {/* Ambient Top Bar */}
-        <div className="cinematic-top-bar" onClick={(e) => e.stopPropagation()}>
-          <button
-            type="button"
-            className="cinematic-sound-pill"
-            onClick={toggleSound}
-            aria-label={isMuted ? "Unmute brand experience" : "Mute audio"}
-          >
-            <Icon name={isMuted ? "volumeX" : "volume"} />
-            <span>{isMuted ? "Sound on" : "Sound off"}</span>
-          </button>
-
-          <button
-            type="button"
-            className="cinematic-skip-pill"
-            onClick={handleEnter}
-            aria-label="Skip to collection"
-          >
-            <span>Skip to Collection</span>
-            <Icon name="arrow" />
-          </button>
-        </div>
-
-        {/* Interactive Enter CTA aligned with the video's end reveal */}
-        <div className={`cinematic-enter-wrap ${showEnterButton ? "visible" : ""}`}>
-          <button
-            type="button"
-            className="cinematic-enter-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleEnter();
-            }}
-            aria-label="Enter She’Aura Ritual"
-          >
-            <span className="cinematic-enter-glow" />
-            <span className="cinematic-enter-text">ENTER RITUAL</span>
-            <Icon name="arrow" />
-          </button>
-          <p className="cinematic-scroll-hint">Click anywhere or scroll to explore</p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function ProductPage({
   product,
@@ -1159,7 +1009,7 @@ export default function App() {
   if (selectedProduct) {
     return (
       <>
-        {showOpeningIntro && <CinematicHeroEntrance onComplete={completeOpeningIntro} />}
+        {showOpeningIntro && <LuxurySacredEntrance onComplete={completeOpeningIntro} />}
         <ProductPage
           product={selectedProduct}
           onBack={() => {
@@ -1186,7 +1036,7 @@ export default function App() {
 
   return (
     <>
-      {showOpeningIntro && <CinematicHeroEntrance onComplete={completeOpeningIntro} />}
+      {showOpeningIntro && <LuxurySacredEntrance onComplete={completeOpeningIntro} />}
       <main>
       <section className="hero">
         <img className="hero-bg" src={photos.hero} alt="" />
