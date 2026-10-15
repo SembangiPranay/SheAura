@@ -1341,6 +1341,64 @@ function MotionVideoStudio({
     onVideosChange(next);
   };
 
+  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+
+  const copyToClipboard = async (text: string, label: string) => {
+    if (!text) return;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      setCopyFeedback(label);
+      setTimeout(() => setCopyFeedback(null), 2000);
+    } catch {
+      // fallback
+    }
+  };
+
+  const pasteIntoField = async (field: keyof ProductVideo, promptTitle: string) => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.readText) {
+        const text = await navigator.clipboard.readText();
+        if (text) {
+          let clean = text.trim();
+          if (
+            (field === "instagram_url" || field === "video_url" || field === "poster_url") &&
+            !clean.startsWith("http://") &&
+            !clean.startsWith("https://") &&
+            clean.includes(".")
+          ) {
+            clean = `https://${clean}`;
+          }
+          updateActiveField(field, clean);
+          return;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    const manual = window.prompt(promptTitle, (activeVideo[field] as string) || "");
+    if (manual !== null) {
+      let clean = manual.trim();
+      if (
+        (field === "instagram_url" || field === "video_url" || field === "poster_url") &&
+        !clean.startsWith("http://") &&
+        !clean.startsWith("https://") &&
+        clean.includes(".")
+      ) {
+        clean = `https://${clean}`;
+      }
+      updateActiveField(field, clean);
+    }
+  };
+
   const handleAddVideo = (presetTitle?: string) => {
     const nextCount = safeVideos.length + 1;
     const newId = `vid-${Date.now()}`;
@@ -1845,13 +1903,57 @@ function MotionVideoStudio({
             {uploadError && <div className="admin-error" style={{ padding: "8px" }}>{uploadError}</div>}
 
             {showUrlInput && (
-              <input
-                type="url"
-                placeholder="https://example.com/videos/lip-application.mp4"
-                value={activeVideo.video_url}
-                onChange={(e) => updateActiveField("video_url", e.target.value)}
-                style={{ width: "100%", marginTop: "4px" }}
-              />
+              <div className="admin-input-row-with-actions" style={{ marginTop: "6px" }}>
+                <input
+                  type="text"
+                  inputMode="url"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  placeholder="https://example.com/videos/lip-application.mp4"
+                  value={activeVideo.video_url || ""}
+                  onChange={(e) => updateActiveField("video_url", e.target.value)}
+                  onPaste={(e) => {
+                    const text = e.clipboardData.getData("text").trim();
+                    if (text) {
+                      e.preventDefault();
+                      let clean = text;
+                      if (!clean.startsWith("http://") && !clean.startsWith("https://") && clean.includes(".")) {
+                        clean = `https://${clean}`;
+                      }
+                      updateActiveField("video_url", clean);
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  className="admin-action-btn-small"
+                  onClick={() => pasteIntoField("video_url", "Paste direct video link (.mp4):")}
+                  title="Paste video link from clipboard"
+                >
+                  📋 Paste
+                </button>
+                {activeVideo.video_url && (
+                  <>
+                    <button
+                      type="button"
+                      className="admin-action-btn-small"
+                      onClick={() => copyToClipboard(activeVideo.video_url, "video_url")}
+                      title="Copy video link"
+                    >
+                      📋 Copy
+                    </button>
+                    <button
+                      type="button"
+                      className="admin-action-btn-small danger"
+                      onClick={() => updateActiveField("video_url", "")}
+                      title="Clear link"
+                    >
+                      ✕ Clear
+                    </button>
+                  </>
+                )}
+              </div>
             )}
           </div>
 
@@ -1859,24 +1961,76 @@ function MotionVideoStudio({
           <div className="admin-settings-block">
             <div className="admin-settings-block-head">
               <label>2. Instagram Reels Post / Video Link</label>
-              {isInstagramValid && (
-                <a
-                  href={activeVideo.instagram_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{ fontSize: "11px", color: "#bc1888", fontWeight: 600, textDecoration: "none" }}
-                >
-                  Test Reel Link ↗
-                </a>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                {copyFeedback === "instagram" && (
+                  <span style={{ fontSize: "10px", color: "#37593a", fontWeight: 600 }}>✓ Copied!</span>
+                )}
+                {isInstagramValid && (
+                  <a
+                    href={activeVideo.instagram_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ fontSize: "11px", color: "#bc1888", fontWeight: 600, textDecoration: "none" }}
+                  >
+                    Test Reel Link ↗
+                  </a>
+                )}
+              </div>
+            </div>
+
+            <div className="admin-input-row-with-actions">
+              <input
+                type="text"
+                inputMode="url"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
+                placeholder="https://www.instagram.com/reel/DeV_UkRpvGw/..."
+                value={activeVideo.instagram_url || ""}
+                onChange={(e) => updateActiveField("instagram_url", e.target.value)}
+                onPaste={(e) => {
+                  const text = e.clipboardData.getData("text").trim();
+                  if (text) {
+                    e.preventDefault();
+                    let clean = text;
+                    if (!clean.startsWith("http://") && !clean.startsWith("https://") && (clean.includes("instagram.com") || clean.includes("."))) {
+                      clean = `https://${clean}`;
+                    }
+                    updateActiveField("instagram_url", clean);
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className="admin-action-btn-small"
+                onClick={() => pasteIntoField("instagram_url", "Paste Instagram Reel or Post link here:")}
+                title="Paste Instagram link from clipboard"
+              >
+                📋 Paste
+              </button>
+              {activeVideo.instagram_url && (
+                <>
+                  <button
+                    type="button"
+                    className="admin-action-btn-small"
+                    onClick={() => copyToClipboard(activeVideo.instagram_url, "instagram")}
+                    title="Copy Instagram link"
+                  >
+                    📋 Copy
+                  </button>
+                  <button
+                    type="button"
+                    className="admin-action-btn-small danger"
+                    onClick={() => updateActiveField("instagram_url", "")}
+                    title="Clear link"
+                  >
+                    ✕ Clear
+                  </button>
+                </>
               )}
             </div>
-            <input
-              type="url"
-              placeholder="https://www.instagram.com/reel/DeV_UkRpvGw/..."
-              value={activeVideo.instagram_url}
-              onChange={(e) => updateActiveField("instagram_url", e.target.value)}
-            />
           </div>
+
 
           {/* 3. Motion Look Step / Headline */}
           <div className="admin-settings-block">
@@ -1976,12 +2130,47 @@ function MotionVideoStudio({
               <label>6. Custom Video Poster / Cover (Optional)</label>
               <small>Inherits product portrait if left empty</small>
             </div>
-            <input
-              type="url"
-              placeholder="https://example.com/cover.jpg"
-              value={activeVideo.poster_url || ""}
-              onChange={(e) => updateActiveField("poster_url", e.target.value)}
-            />
+            <div className="admin-input-row-with-actions">
+              <input
+                type="text"
+                inputMode="url"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
+                placeholder="https://example.com/cover.jpg"
+                value={activeVideo.poster_url || ""}
+                onChange={(e) => updateActiveField("poster_url", e.target.value)}
+                onPaste={(e) => {
+                  const text = e.clipboardData.getData("text").trim();
+                  if (text) {
+                    e.preventDefault();
+                    let clean = text;
+                    if (!clean.startsWith("http://") && !clean.startsWith("https://") && clean.includes(".")) {
+                      clean = `https://${clean}`;
+                    }
+                    updateActiveField("poster_url", clean);
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className="admin-action-btn-small"
+                onClick={() => pasteIntoField("poster_url", "Paste cover image URL:")}
+                title="Paste from clipboard"
+              >
+                📋 Paste
+              </button>
+              {activeVideo.poster_url && (
+                <button
+                  type="button"
+                  className="admin-action-btn-small danger"
+                  onClick={() => updateActiveField("poster_url", "")}
+                  title="Clear cover link"
+                >
+                  ✕ Clear
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -2004,7 +2193,10 @@ function Editor({
   const [activeTab, setActiveTab] = useState<"identity" | "media" | "editorial" | "formula" | "publish">("identity");
 
   const update = (key: keyof Product, value: unknown) =>
-    setEditing({ ...editing, [key]: value });
+    setEditing((prev) => (prev ? { ...prev, [key]: value } : null));
+
+  const updateMultiple = (patch: Partial<Product>) =>
+    setEditing((prev) => (prev ? { ...prev, ...patch } : null));
 
   return (
     <section className="admin-editor">
@@ -2159,14 +2351,15 @@ function Editor({
             <MotionVideoStudio
               videos={editing.videos || []}
               onVideosChange={(updatedVideos) => {
-                update("videos", updatedVideos);
-                if (updatedVideos[0]) {
-                  update("video_url", updatedVideos[0].video_url || "");
-                  update("instagram_url", updatedVideos[0].instagram_url || "");
-                  update("video_title", updatedVideos[0].title || "");
-                  update("video_quote", updatedVideos[0].quote || "");
-                  update("social_handle", updatedVideos[0].social_handle || "@sheauracosmeticsofficial");
-                }
+                const primary = updatedVideos[0];
+                updateMultiple({
+                  videos: updatedVideos,
+                  video_url: primary?.video_url || "",
+                  instagram_url: primary?.instagram_url || "",
+                  video_title: primary?.title || "",
+                  video_quote: primary?.quote || "",
+                  social_handle: primary?.social_handle || "@sheauracosmeticsofficial",
+                });
               }}
               posterUrl={editing.campaign_image_url || editing.image_url}
               productName={editing.name}
