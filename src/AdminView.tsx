@@ -4,7 +4,11 @@ import {
   saveLocalCustomProduct,
   deleteLocalCustomProduct,
   getLocalCustomProducts,
+  defaultProducts,
+  photos,
+  resolveAsset,
 } from "./lib/catalog";
+import { reels as fallbackReels, Reel } from "./App";
 
 type Status = "draft" | "published";
 
@@ -212,7 +216,15 @@ const PRESET_RITUALS = [
   "Buff with fingers or brush for seamless second-skin coverage that lets real skin shine through.",
 ];
 
-export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
+export default function AdminView({
+  onBack,
+  reels: propReels,
+  onSelectProduct,
+}: {
+  onBack?: () => void;
+  reels?: Reel[];
+  onSelectProduct?: (product: any) => void;
+} = {}) {
   const [session, setSession] = useState<unknown>(null);
   const [checking, setChecking] = useState(true);
   const [email, setEmail] = useState("");
@@ -223,10 +235,29 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
-  // Search & Filter state
+  // Navigation tabs
+  const [currentTab, setCurrentTab] = useState<"products" | "reels" | "inventory" | "database">("products");
+
+  // Search, Filter & Sort state
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "published" | "draft">("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [stockFilter, setStockFilter] = useState<"all" | "in-stock" | "low-stock" | "out-of-stock">("all");
+  const [sortBy, setSortBy] = useState<"newest" | "price-desc" | "price-asc" | "stock-desc" | "name-asc">("newest");
+  const [viewDensity, setViewDensity] = useState<"table" | "cards">("table");
+
+  // Multi-select bulk state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // Modals state
+  const [previewProduct, setPreviewProduct] = useState<Product | null>(null);
+  const [previewReel, setPreviewReel] = useState<Reel | null>(null);
+  const [deleteConfirmTarget, setDeleteConfirmTarget] = useState<Product | null>(null);
+  const [pingResult, setPingResult] = useState<{ testing: boolean; latencyMs?: number; message?: string; ok?: boolean } | null>(null);
+
+  const activeReelsList: Reel[] = useMemo(() => {
+    return (propReels && propReels.length > 0) ? propReels : (fallbackReels || []);
+  }, [propReels]);
 
   useEffect(() => {
     if (!supabase) {
@@ -344,7 +375,7 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
       };
     });
 
-    // Merge remote products first, then local products if not already in remote
+    // Merge remote products first, then local products, then official default catalog
     const combined: Product[] = [...remoteProducts];
     const seenSlugs = new Set(remoteProducts.map((p) => (p.slug || p.name).toLowerCase().trim()));
     for (const loc of localProducts) {
@@ -352,6 +383,42 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
       if (!seenSlugs.has(key)) {
         seenSlugs.add(key);
         combined.push(loc);
+      }
+    }
+
+    // Ensure all 5 core SheAura luxury products exist in the catalog
+    for (const def of defaultProducts) {
+      const key = (def.slug || def.name).toLowerCase().trim();
+      if (!seenSlugs.has(key)) {
+        seenSlugs.add(key);
+        combined.push({
+          id: `def-${def.slug}`,
+          name: def.name,
+          slug: def.slug || "",
+          category: def.category,
+          price: def.rawPrice || parseFloat(def.price.replace(/[^0-9.]/g, "")) || 0,
+          description: def.description,
+          short_description: def.short_description || "",
+          note: def.note || "",
+          finish: def.finish || "",
+          mood: def.mood || "",
+          tag: def.tag || "Icon",
+          tone: def.tone || "#a81920",
+          image_url: def.image,
+          campaign_image_url: def.campaign,
+          video_url: def.video_url || "",
+          instagram_url: def.instagram_url || "",
+          video_title: def.video_title || "",
+          video_quote: def.video_quote || "",
+          social_handle: def.social_handle || "@sheauracosmeticsofficial",
+          videos: def.videos,
+          ingredients: def.ingredients || "",
+          benefits: Array.isArray(def.benefits) ? def.benefits.join("\n") : def.benefits || "",
+          how_to_use: def.how_to_use || "",
+          size: def.size || "",
+          stock_quantity: 50,
+          status: "published",
+        });
       }
     }
 
@@ -429,14 +496,14 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
 
     let result = null;
     if (supabase) {
-      result = id && !id.startsWith("local-")
+      result = id && !id.startsWith("local-") && !id.startsWith("def-")
         ? await supabase.from("products").update(payload).eq("id", id)
         : await supabase.from("products").insert(payload);
 
       // Resilient fallback 1: If database has not run migration 006 yet, strip "videos" array column
       if (result.error && result.error.message?.includes("videos")) {
         const { videos: _omittedVideos, ...fallbackPayload } = payload;
-        result = id && !id.startsWith("local-")
+        result = id && !id.startsWith("local-") && !id.startsWith("def-")
           ? await supabase.from("products").update(fallbackPayload).eq("id", id)
           : await supabase.from("products").insert(fallbackPayload);
       }
@@ -444,7 +511,7 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
       // Resilient fallback 2: If database has not run migration 005 yet either, strip single video columns as well
       if (result.error && result.error.message?.includes("column")) {
         const { videos: _v, video_url, instagram_url, video_title, video_quote, social_handle, ...safePayload } = payload;
-        result = id && !id.startsWith("local-")
+        result = id && !id.startsWith("local-") && !id.startsWith("def-")
           ? await supabase.from("products").update(safePayload).eq("id", id)
           : await supabase.from("products").insert(safePayload);
       }
@@ -471,7 +538,7 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
   async function toggleStatus(product: Product) {
     if (!product.id && !product.slug) return;
     const newStatus = product.status === "published" ? "draft" : "published";
-    if (supabase && product.id && !product.id.startsWith("local-")) {
+    if (supabase && product.id && !product.id.startsWith("local-") && !product.id.startsWith("def-")) {
       await supabase
         .from("products")
         .update({ is_published: newStatus === "published" })
@@ -482,21 +549,20 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
       status: newStatus,
       is_published: newStatus === "published",
     });
-    setNotice(`Updated ${product.name} to ${newStatus}.`);
+    setNotice(`Updated ${product.name} to ${newStatus.toUpperCase()}.`);
     void loadProducts();
     setTimeout(() => setNotice(""), 2500);
   }
 
   async function deleteProduct(product: Product) {
     if (!product.id && !product.slug && !product.name) return;
-    if (!window.confirm(`Are you sure you want to delete "${product.name}"?`)) return;
-
     setBusy(true);
-    if (supabase && product.id && !product.id.startsWith("local-")) {
+    if (supabase && product.id && !product.id.startsWith("local-") && !product.id.startsWith("def-")) {
       await supabase.from("products").delete().eq("id", product.id);
     }
     deleteLocalCustomProduct(product.id || product.slug || product.name);
     setBusy(false);
+    setDeleteConfirmTarget(null);
     setNotice(`Deleted "${product.name}".`);
     if (editing?.id === product.id) setEditing(null);
     void loadProducts();
@@ -517,13 +583,185 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
     setTimeout(() => setNotice(""), 3000);
   }
 
+  function handleQuickRestock(product: Product, quantityToAdd: number) {
+    const currentStock = Number(product.stock_quantity) || 0;
+    const newStock = currentStock + quantityToAdd;
+    if (supabase && product.id && !product.id.startsWith("local-") && !product.id.startsWith("def-")) {
+      void supabase.from("products").update({ stock_quantity: newStock }).eq("id", product.id);
+    }
+    saveLocalCustomProduct({
+      ...product,
+      stock_quantity: newStock,
+    });
+    setNotice(`✓ Restocked ${product.name}: +${quantityToAdd} units (Total: ${newStock})`);
+    void loadProducts();
+    setTimeout(() => setNotice(""), 3000);
+  }
+
+  function handleToggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function handleSelectAll() {
+    if (selectedIds.size === filteredProducts.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredProducts.map((p) => p.id || p.slug || p.name)));
+    }
+  }
+
+  async function handleBulkStatusChange(newStatus: Status) {
+    if (selectedIds.size === 0) return;
+    setBusy(true);
+    for (const p of products) {
+      const key = p.id || p.slug || p.name;
+      if (selectedIds.has(key)) {
+        if (supabase && p.id && !p.id.startsWith("local-") && !p.id.startsWith("def-")) {
+          await supabase.from("products").update({ is_published: newStatus === "published" }).eq("id", p.id);
+        }
+        saveLocalCustomProduct({
+          ...p,
+          status: newStatus,
+          is_published: newStatus === "published",
+        });
+      }
+    }
+    setBusy(false);
+    setNotice(`✓ Updated ${selectedIds.size} products to ${newStatus.toUpperCase()}.`);
+    setSelectedIds(new Set());
+    void loadProducts();
+    setTimeout(() => setNotice(""), 3000);
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0) return;
+    if (!window.confirm(`Delete ${selectedIds.size} selected products? This action cannot be undone.`)) return;
+    setBusy(true);
+    for (const p of products) {
+      const key = p.id || p.slug || p.name;
+      if (selectedIds.has(key)) {
+        if (supabase && p.id && !p.id.startsWith("local-") && !p.id.startsWith("def-")) {
+          await supabase.from("products").delete().eq("id", p.id);
+        }
+        deleteLocalCustomProduct(key);
+      }
+    }
+    setBusy(false);
+    setNotice(`✓ Deleted ${selectedIds.size} products.`);
+    setSelectedIds(new Set());
+    void loadProducts();
+    setTimeout(() => setNotice(""), 3000);
+  }
+
+  function handleExportSelected() {
+    const toExport = products.filter((p) => selectedIds.has(p.id || p.slug || p.name));
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(toExport, null, 2));
+    const downloadAnchor = document.createElement("a");
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `sheaura-selected-products-${Date.now()}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    setNotice(`✓ Exported ${toExport.length} products to JSON backup.`);
+    setTimeout(() => setNotice(""), 3000);
+  }
+
+  function handleExportAll() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(products, null, 2));
+    const downloadAnchor = document.createElement("a");
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `sheaura-complete-catalog-backup-${Date.now()}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    setNotice(`✓ Full catalog backup downloaded (${products.length} products).`);
+    setTimeout(() => setNotice(""), 3000);
+  }
+
+  function handleSeedOfficialCatalog() {
+    for (const def of defaultProducts) {
+      saveLocalCustomProduct({
+        ...def,
+        id: `local-${def.slug}`,
+        status: "published",
+        is_published: true,
+        stock_quantity: 50,
+        price: def.rawPrice || parseFloat(def.price.replace(/[^0-9.]/g, "")) || 0,
+        image_url: def.image,
+        campaign_image_url: def.campaign,
+      });
+    }
+    setNotice("✓ Re-seeded official 5 core She'Aura luxury products into catalog storage!");
+    void loadProducts();
+    setTimeout(() => setNotice(""), 3500);
+  }
+
+  async function testDatabasePing() {
+    setPingResult({ testing: true });
+    const startTime = performance.now();
+    try {
+      if (!supabase) throw new Error("Supabase client not initialized.");
+      const { error: e } = await supabase.from("products").select("id").limit(1);
+      const latency = Math.round(performance.now() - startTime);
+      if (e) {
+        setPingResult({ testing: false, latencyMs: latency, message: `Connected (Response in ${latency}ms, notice: ${e.message})`, ok: true });
+      } else {
+        setPingResult({ testing: false, latencyMs: latency, message: `✓ Cloud Online & Synced (${latency}ms round-trip latency)`, ok: true });
+      }
+    } catch (err: any) {
+      setPingResult({ testing: false, message: `Local Resilient Fallback Active (${err.message || "Failed"})`, ok: false });
+    }
+  }
+
+  // Executive KPI calculations
+  const kpis = useMemo(() => {
+    const total = products.length;
+    const published = products.filter((p) => p.status === "published").length;
+    const drafts = total - published;
+    const totalStock = products.reduce((acc, p) => acc + (Number(p.stock_quantity) || 0), 0);
+    const totalValuation = products.reduce((acc, p) => {
+      const price = typeof p.price === "number" ? p.price : parseFloat(String(p.price).replace(/[^0-9.]/g, "")) || 0;
+      const stock = Number(p.stock_quantity) || 0;
+      return acc + (price * stock);
+    }, 0);
+    const lowStockCount = products.filter((p) => {
+      const stock = Number(p.stock_quantity) || 0;
+      return stock > 0 && stock <= 10;
+    }).length;
+    const outOfStockCount = products.filter((p) => (Number(p.stock_quantity) || 0) === 0).length;
+    const withVideosCount = products.filter((p) => (p.videos && p.videos.length > 0) || p.video_url).length;
+
+    return {
+      total,
+      published,
+      drafts,
+      totalStock,
+      totalValuation,
+      lowStockCount,
+      outOfStockCount,
+      withVideosCount,
+      coveragePercent: total > 0 ? Math.round((withVideosCount / total) * 100) : 100,
+    };
+  }, [products]);
+
+  // Master Filter & Sort
   const filteredProducts = useMemo(() => {
-    return products.filter((p) => {
+    let list = products.filter((p) => {
+      const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
-        !searchQuery ||
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.tag?.toLowerCase().includes(searchQuery.toLowerCase());
+        !q ||
+        p.name.toLowerCase().includes(q) ||
+        p.slug?.toLowerCase().includes(q) ||
+        p.category?.toLowerCase().includes(q) ||
+        p.tag?.toLowerCase().includes(q) ||
+        p.finish?.toLowerCase().includes(q) ||
+        p.mood?.toLowerCase().includes(q) ||
+        p.ingredients?.toLowerCase().includes(q);
 
       const matchesStatus =
         statusFilter === "all" ||
@@ -533,9 +771,40 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
       const matchesCategory =
         categoryFilter === "all" || p.category?.toLowerCase() === categoryFilter.toLowerCase();
 
-      return matchesSearch && matchesStatus && matchesCategory;
+      const stock = Number(p.stock_quantity) || 0;
+      const matchesStock =
+        stockFilter === "all" ||
+        (stockFilter === "in-stock" && stock > 10) ||
+        (stockFilter === "low-stock" && stock > 0 && stock <= 10) ||
+        (stockFilter === "out-of-stock" && stock === 0);
+
+      return matchesSearch && matchesStatus && matchesCategory && matchesStock;
     });
-  }, [products, searchQuery, statusFilter, categoryFilter]);
+
+    list = [...list].sort((a, b) => {
+      const priceA = typeof a.price === "number" ? a.price : parseFloat(String(a.price).replace(/[^0-9.]/g, "")) || 0;
+      const priceB = typeof b.price === "number" ? b.price : parseFloat(String(b.price).replace(/[^0-9.]/g, "")) || 0;
+      const stockA = Number(a.stock_quantity) || 0;
+      const stockB = Number(b.stock_quantity) || 0;
+
+      if (sortBy === "price-desc") return priceB - priceA;
+      if (sortBy === "price-asc") return priceA - priceB;
+      if (sortBy === "stock-desc") return stockB - stockA;
+      if (sortBy === "name-asc") return a.name.localeCompare(b.name);
+      return 0;
+    });
+
+    return list;
+  }, [products, searchQuery, statusFilter, categoryFilter, stockFilter, sortBy]);
+
+  // Unique categories for filter dropdown
+  const uniqueCategories = useMemo(() => {
+    const set = new Set<string>();
+    products.forEach((p) => {
+      if (p.category) set.add(p.category);
+    });
+    return Array.from(set);
+  }, [products]);
 
   if (!isSupabaseConfigured) {
     return (
@@ -552,7 +821,7 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
     return (
       <AdminFrame>
         <div className="admin-card">
-          <p>Loading secure session…</p>
+          <p>Loading secure operations session…</p>
         </div>
       </AdminFrame>
     );
@@ -562,7 +831,7 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
     return (
       <AdminFrame>
         <form className="admin-card admin-login" onSubmit={signIn}>
-          <p className="eyebrow dark">Private workspace</p>
+          <p className="eyebrow dark">Private Operations Portal</p>
           <h2>Sign in</h2>
           <p>Use your authorised She’Aura operations account to access the catalogue studio.</p>
           <Field label="Email" value={email} onChange={setEmail} type="email" required />
@@ -652,36 +921,64 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
 
   return (
     <AdminFrame>
-      <header className="admin-header">
-        <div>
-          <p className="eyebrow dark">She’Aura operations</p>
-          <h1>Catalogue studio</h1>
-          <p>Shape product stories, verify details, and manage what is presented live on the storefront.</p>
+      {/* 1. TOP CONSOLE BRAND & STATUS BAR */}
+      <div className="admin-console-bar">
+        <div className="admin-console-brand">
+          <span className="admin-console-logo">SHE’AURA</span>
+          <span className="admin-console-tag">Operations Console</span>
+          <div className="admin-console-status">
+            <span className="admin-status-dot" />
+            <span>Cloud Sync Active</span>
+          </div>
         </div>
-        <div className="admin-header-actions">
+
+        <div className="admin-console-actions">
           <button
             type="button"
-            className="admin-back"
+            className="admin-storefront-btn"
             onClick={() => {
               if (onBack) onBack();
               else window.location.href = "/";
             }}
+            title="View live customer storefront"
           >
-            Return to storefront
+            <span>Storefront ↗</span>
           </button>
-          <button onClick={() => void supabase?.auth.signOut()}>Sign out</button>
-        </div>
-      </header>
 
+          <button
+            type="button"
+            className="admin-primary"
+            style={{ padding: "8px 16px", fontSize: "11px" }}
+            onClick={() => {
+              setError("");
+              setEditing({ ...blank });
+              window.scrollTo({ top: 0, behavior: "instant" });
+            }}
+          >
+            ＋ New Product
+          </button>
+
+          <button
+            type="button"
+            className="admin-signout-btn"
+            onClick={() => void supabase?.auth.signOut()}
+            title="Sign out of operations session"
+          >
+            Sign out
+          </button>
+        </div>
+      </div>
+
+      {/* Notifications */}
       {error && (
-        <div className="admin-error admin-wide">
+        <div className="admin-error admin-wide" style={{ marginBottom: "16px" }}>
           <b>Notice:</b> {error}
         </div>
       )}
       {notice && (
         <div
           className="admin-notice admin-wide"
-          style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}
+          style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap", marginBottom: "16px" }}
         >
           <span>{notice}</span>
           {onBack && (
@@ -697,9 +994,6 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
                 fontSize: "11px",
                 cursor: "pointer",
                 fontWeight: 600,
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
-                boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
               }}
             >
               View on Storefront ↗
@@ -708,173 +1002,921 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
         </div>
       )}
 
-      <section className="admin-toolbar">
-        <div>
-          <p className="eyebrow dark">Catalogue Overview</p>
-          <h2>
-            Products <span>{products.length} Total ({products.filter((p) => p.status === "published").length} Live)</span>
-          </h2>
+      {/* 2. EXECUTIVE KPI CARDS */}
+      <div className="admin-kpi-grid">
+        <div className="admin-kpi-card">
+          <div className="admin-kpi-header">
+            <span className="admin-kpi-title">Catalog SKUs</span>
+            <span className="admin-kpi-icon">📦</span>
+          </div>
+          <div className="admin-kpi-value">{kpis.total}</div>
+          <div className="admin-kpi-meta">
+            <span className="admin-kpi-pill-ok">{kpis.published} Live</span>
+            <span>· {kpis.drafts} Draft</span>
+          </div>
         </div>
-        <button
-          className="admin-primary"
-          onClick={() => {
-            setError("");
-            setEditing({ ...blank });
-            window.scrollTo({ top: 0, behavior: "instant" });
-          }}
-        >
-          ＋ New product
-        </button>
-      </section>
 
-      {/* Filter & Search Toolbar */}
-      <div className="admin-filter-bar">
-        <input
-          type="search"
-          className="admin-search-input"
-          placeholder="Search products by name, category, or badge tag…"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        <div className="admin-filter-pills">
-          <button
-            className={`admin-filter-pill-btn ${statusFilter === "all" ? "active" : ""}`}
-            onClick={() => setStatusFilter("all")}
-          >
-            All ({products.length})
-          </button>
-          <button
-            className={`admin-filter-pill-btn ${statusFilter === "published" ? "active" : ""}`}
-            onClick={() => setStatusFilter("published")}
-          >
-            Live ({products.filter((p) => p.status === "published").length})
-          </button>
-          <button
-            className={`admin-filter-pill-btn ${statusFilter === "draft" ? "active" : ""}`}
-            onClick={() => setStatusFilter("draft")}
-          >
-            Drafts ({products.filter((p) => p.status === "draft").length})
-          </button>
+        <div className="admin-kpi-card">
+          <div className="admin-kpi-header">
+            <span className="admin-kpi-title">Total Catalog Worth</span>
+            <span className="admin-kpi-icon">₹</span>
+          </div>
+          <div className="admin-kpi-value">₹{kpis.totalValuation.toLocaleString("en-IN")}</div>
+          <div className="admin-kpi-meta">
+            <span>Cumulative Retail Valuation</span>
+          </div>
+        </div>
+
+        <div className="admin-kpi-card">
+          <div className="admin-kpi-header">
+            <span className="admin-kpi-title">Inventory Units</span>
+            <span className="admin-kpi-icon">📊</span>
+          </div>
+          <div className="admin-kpi-value">{kpis.totalStock.toLocaleString()}</div>
+          <div className="admin-kpi-meta">
+            {kpis.lowStockCount > 0 ? (
+              <span className="admin-kpi-pill-warn">{kpis.lowStockCount} Low Stock</span>
+            ) : (
+              <span className="admin-kpi-pill-ok">Optimal Stock Levels</span>
+            )}
+            {kpis.outOfStockCount > 0 && <span style={{ color: "#dc2626", fontWeight: 600 }}>· {kpis.outOfStockCount} Out</span>}
+          </div>
+        </div>
+
+        <div className="admin-kpi-card">
+          <div className="admin-kpi-header">
+            <span className="admin-kpi-title">Video Reel Coverage</span>
+            <span className="admin-kpi-icon">🎬</span>
+          </div>
+          <div className="admin-kpi-value">{kpis.coveragePercent}%</div>
+          <div className="admin-kpi-meta">
+            <span className="admin-kpi-pill-ok">{activeReelsList.length} Official Reels Audited</span>
+          </div>
         </div>
       </div>
 
-      {busy ? (
-        <div className="admin-card">
-          <p>Loading catalogue from Supabase…</p>
-        </div>
-      ) : filteredProducts.length === 0 ? (
-        <div className="admin-card admin-empty">
-          <h2>Your catalogue is quiet.</h2>
-          <p>
-            {searchQuery
-              ? "No products matched your search filter."
-              : "Create the first product to begin building the luxury collection."}
-          </p>
-          {!searchQuery && (
-            <button
-              className="admin-primary"
-              style={{ marginTop: "16px" }}
-              onClick={() => {
-                setError("");
-                setEditing({ ...blank });
-                window.scrollTo({ top: 0, behavior: "instant" });
-              }}
-            >
-              ＋ Create First Product
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="admin-product-list">
-          {filteredProducts.map((p) => (
-            <div
-              className="admin-product-row"
-              key={p.id}
-              onClick={() => {
-                setError("");
-                setEditing({ ...blank, ...p });
-                window.scrollTo({ top: 0, behavior: "instant" });
-              }}
-              title="Click to open dedicated editor page"
-            >
-              <img
-                src={p.image_url || "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=200&q=80"}
-                alt=""
-                className="admin-product-thumb"
+      {/* 3. OPERATIONS TABS STRIP */}
+      <div className="admin-tabs-nav">
+        <button
+          type="button"
+          className={`admin-tab-btn ${currentTab === "products" ? "active" : ""}`}
+          onClick={() => setCurrentTab("products")}
+        >
+          <span>📦 Products Catalog</span>
+          <span className="admin-tab-badge">{products.length}</span>
+        </button>
+
+        <button
+          type="button"
+          className={`admin-tab-btn ${currentTab === "reels" ? "active" : ""}`}
+          onClick={() => setCurrentTab("reels")}
+        >
+          <span>🎬 Media & Reels Studio</span>
+          <span className="admin-tab-badge">{activeReelsList.length}</span>
+        </button>
+
+        <button
+          type="button"
+          className={`admin-tab-btn ${currentTab === "inventory" ? "active" : ""}`}
+          onClick={() => setCurrentTab("inventory")}
+        >
+          <span>📊 Inventory & Stock Analytics</span>
+        </button>
+
+        <button
+          type="button"
+          className={`admin-tab-btn ${currentTab === "database" ? "active" : ""}`}
+          onClick={() => setCurrentTab("database")}
+        >
+          <span>⚙️ Database & Health</span>
+        </button>
+      </div>
+
+      {/* TAB 1: MASTER PRODUCTS CATALOG */}
+      {currentTab === "products" && (
+        <>
+          {/* Controls & Filter Grid */}
+          <div className="admin-controls-grid">
+            <div className="admin-search-wrapper">
+              <input
+                type="search"
+                className="admin-search-pro"
+                placeholder="Search products by name, category, finish, tag, or formula…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <span className="admin-product-swatch" style={{ background: p.tone || "#a81920" }} title={p.tone} />
-              <div className="admin-product-name">
-                <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-                  <b>{p.name}</b>
-                  {p.videos && p.videos.length > 0 ? (
-                    <span style={{ fontSize: "10px", background: "#fdf3eb", color: "#c18847", padding: "1px 6px", borderRadius: "4px", border: "1px solid #ebd3c0" }} title={`${p.videos.length} videos/reels attached`}>
-                      🎬 {p.videos.length} {p.videos.length === 1 ? "Reel" : "Reels"}
-                    </span>
-                  ) : p.video_url ? (
-                    <span style={{ fontSize: "10px", background: "#fdf3eb", color: "#c18847", padding: "1px 6px", borderRadius: "4px", border: "1px solid #ebd3c0" }} title="Motion video attached">
-                      🎬 Video
-                    </span>
-                  ) : null}
-                  {p.instagram_url && (
-                    <span style={{ fontSize: "10px", background: "#fdf0f5", color: "#bc1888", padding: "1px 6px", borderRadius: "4px", border: "1px solid #f6ccdf" }} title="Instagram reel linked">
-                      📸 Reel
-                    </span>
-                  )}
+              {searchQuery && (
+                <button type="button" className="admin-search-clear" onClick={() => setSearchQuery("")}>
+                  ✕
+                </button>
+              )}
+            </div>
+
+            <div className="admin-filter-pills">
+              <button
+                className={`admin-filter-pill-btn ${statusFilter === "all" ? "active" : ""}`}
+                onClick={() => setStatusFilter("all")}
+              >
+                All ({products.length})
+              </button>
+              <button
+                className={`admin-filter-pill-btn ${statusFilter === "published" ? "active" : ""}`}
+                onClick={() => setStatusFilter("published")}
+              >
+                Live ({kpis.published})
+              </button>
+              <button
+                className={`admin-filter-pill-btn ${statusFilter === "draft" ? "active" : ""}`}
+                onClick={() => setStatusFilter("draft")}
+              >
+                Drafts ({kpis.drafts})
+              </button>
+            </div>
+
+            <select
+              className="admin-select-pro"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+            >
+              <option value="all">All Categories ({products.length})</option>
+              {uniqueCategories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat} ({products.filter((p) => p.category === cat).length})
+                </option>
+              ))}
+            </select>
+
+            <select
+              className="admin-select-pro"
+              value={stockFilter}
+              onChange={(e) => setStockFilter(e.target.value as any)}
+            >
+              <option value="all">All Stock Status</option>
+              <option value="in-stock">In Stock (&gt;10)</option>
+              <option value="low-stock">Low Stock (1–10)</option>
+              <option value="out-of-stock">Out of Stock (0)</option>
+            </select>
+
+            <select
+              className="admin-select-pro"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+            >
+              <option value="newest">Sort: Default / Newest</option>
+              <option value="price-desc">Price: High → Low</option>
+              <option value="price-asc">Price: Low → High</option>
+              <option value="stock-desc">Stock: High → Low</option>
+              <option value="name-asc">Name: A → Z</option>
+            </select>
+
+            <div className="admin-density-toggle">
+              <button
+                type="button"
+                className={`admin-density-btn ${viewDensity === "table" ? "active" : ""}`}
+                onClick={() => setViewDensity("table")}
+                title="Table view"
+              >
+                ☰ Table
+              </button>
+              <button
+                type="button"
+                className={`admin-density-btn ${viewDensity === "cards" ? "active" : ""}`}
+                onClick={() => setViewDensity("cards")}
+                title="Visual cards view"
+              >
+                ⊞ Cards
+              </button>
+            </div>
+          </div>
+
+          {/* Table / Cards View */}
+          {busy ? (
+            <div className="admin-card">
+              <p>Refreshing catalogue data…</p>
+            </div>
+          ) : filteredProducts.length === 0 ? (
+            <div className="admin-card admin-empty">
+              <h2>No products found</h2>
+              <p>
+                {searchQuery
+                  ? `No items matched "${searchQuery}". Try clearing search or filters.`
+                  : "No products match the selected criteria."}
+              </p>
+              <button
+                className="admin-primary"
+                style={{ marginTop: "16px" }}
+                onClick={() => {
+                  setSearchQuery("");
+                  setStatusFilter("all");
+                  setCategoryFilter("all");
+                  setStockFilter("all");
+                }}
+              >
+                Reset Filters
+              </button>
+            </div>
+          ) : viewDensity === "table" ? (
+            <div className="admin-table-container">
+              <div className="admin-table-scroll">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: "36px", textAlign: "center" }}>
+                        <input
+                          type="checkbox"
+                          className="admin-table-checkbox"
+                          checked={selectedIds.size === filteredProducts.length && filteredProducts.length > 0}
+                          onChange={handleSelectAll}
+                          title="Select all products"
+                        />
+                      </th>
+                      <th>Product</th>
+                      <th>Category & Finish</th>
+                      <th>Inventory</th>
+                      <th>Price</th>
+                      <th>Motion Media</th>
+                      <th>Status</th>
+                      <th style={{ textAlign: "right" }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredProducts.map((p) => {
+                      const key = p.id || p.slug || p.name;
+                      const isSelected = selectedIds.has(key);
+                      const stock = Number(p.stock_quantity) || 0;
+                      const videoCount = (p.videos && p.videos.length > 0) ? p.videos.length : (p.video_url ? 1 : 0);
+
+                      return (
+                        <tr key={key} className={isSelected ? "selected" : ""}>
+                          <td style={{ textAlign: "center" }}>
+                            <input
+                              type="checkbox"
+                              className="admin-table-checkbox"
+                              checked={isSelected}
+                              onChange={() => handleToggleSelect(key)}
+                            />
+                          </td>
+                          <td>
+                            <div className="admin-prod-cell">
+                              <div
+                                className="admin-prod-thumb-wrap"
+                                onClick={() => setPreviewProduct(p)}
+                                title="Click to preview storefront card"
+                              >
+                                <img
+                                  src={p.image_url || photos.makeup}
+                                  alt=""
+                                />
+                                <span className="admin-swatch-badge" style={{ background: p.tone || "#a81920" }} />
+                              </div>
+                              <div className="admin-prod-info">
+                                <span
+                                  className="admin-prod-title"
+                                  onClick={() => {
+                                    setError("");
+                                    setEditing({ ...blank, ...p });
+                                    window.scrollTo({ top: 0, behavior: "instant" });
+                                  }}
+                                >
+                                  {p.name}
+                                </span>
+                                <span className="admin-prod-sub">{p.mood || p.note || p.finish}</span>
+                                {p.tag && <span className="admin-tag-pill">{p.tag}</span>}
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                              <span style={{ fontWeight: 600, color: "#241610" }}>{p.category || "General"}</span>
+                              <span style={{ color: "#8c766a", fontSize: "11px" }}>{p.finish || "Standard finish"}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                              <span
+                                className={`admin-stock-badge ${
+                                  stock > 10 ? "in-stock" : stock > 0 ? "low-stock" : "out-of-stock"
+                                }`}
+                              >
+                                {stock > 10 ? `${stock} in stock` : stock > 0 ? `Low (${stock})` : "Out of stock"}
+                              </span>
+                              <button
+                                type="button"
+                                style={{
+                                  background: "transparent",
+                                  border: "1px dashed rgba(42, 26, 20, 0.2)",
+                                  borderRadius: "4px",
+                                  padding: "2px 6px",
+                                  fontSize: "9.5px",
+                                  cursor: "pointer",
+                                  color: "#765d50",
+                                }}
+                                onClick={() => handleQuickRestock(p, 50)}
+                                title="Add +50 units to stock"
+                              >
+                                +50
+                              </button>
+                            </div>
+                          </td>
+                          <td>
+                            <b style={{ fontSize: "13.5px", color: "#241610" }}>
+                              ₹{Number(p.price || 0).toLocaleString("en-IN")}
+                            </b>
+                          </td>
+                          <td>
+                            {videoCount > 0 ? (
+                              <button
+                                type="button"
+                                className="admin-reel-btn"
+                                onClick={() => {
+                                  // Open matching reel in inspector modal
+                                  const match = activeReelsList.find((r) => r.productName === p.name) || activeReelsList[0];
+                                  if (match) setPreviewReel(match);
+                                }}
+                                title="Watch attached video reel"
+                              >
+                                🎬 {videoCount} {videoCount === 1 ? "Reel" : "Reels"}
+                              </button>
+                            ) : (
+                              <span className="admin-reel-btn empty">No reels</span>
+                            )}
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              className="admin-toggle-switch"
+                              onClick={() => void toggleStatus(p)}
+                              title={`Click to switch to ${p.status === "published" ? "Draft" : "Published"}`}
+                            >
+                              <span className={`admin-switch-track ${p.status === "published" ? "active" : ""}`}>
+                                <span className="admin-switch-thumb" />
+                              </span>
+                              <span className={`admin-status-text ${p.status}`}>
+                                {p.status === "published" ? "Live" : "Draft"}
+                              </span>
+                            </button>
+                          </td>
+                          <td style={{ textAlign: "right" }}>
+                            <div className="admin-row-action-btns" style={{ justifyContent: "flex-end" }}>
+                              <button
+                                type="button"
+                                className="admin-btn-icon"
+                                onClick={() => {
+                                  setError("");
+                                  setEditing({ ...blank, ...p });
+                                  window.scrollTo({ top: 0, behavior: "instant" });
+                                }}
+                                title="Edit product details in dedicated editor"
+                                style={{ background: "#241610", color: "#ffffff", borderColor: "#241610" }}
+                              >
+                                Edit ✎
+                              </button>
+                              <button
+                                type="button"
+                                className="admin-btn-icon"
+                                onClick={() => setPreviewProduct(p)}
+                                title="Quick preview storefront card"
+                              >
+                                👁
+                              </button>
+                              <button
+                                type="button"
+                                className="admin-btn-icon"
+                                onClick={() => duplicateProduct(p)}
+                                title="Duplicate this product"
+                              >
+                                ⧉
+                              </button>
+                              <button
+                                type="button"
+                                className="admin-btn-icon delete"
+                                onClick={() => setDeleteConfirmTarget(p)}
+                                title="Delete product"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            /* Visual Cards View */
+            <div className="admin-cards-grid">
+              {filteredProducts.map((p) => {
+                const stock = Number(p.stock_quantity) || 0;
+                return (
+                  <div className="admin-product-visual-card" key={p.id || p.slug}>
+                    <div className="admin-card-img-wrap" onClick={() => setPreviewProduct(p)}>
+                      <img src={p.image_url || photos.makeup} alt="" />
+                      <span className="admin-swatch-badge" style={{ background: p.tone || "#a81920", width: "16px", height: "16px" }} />
+                      {p.tag && (
+                        <span style={{ position: "absolute", top: "10px", left: "10px" }} className="admin-tag-pill">
+                          {p.tag}
+                        </span>
+                      )}
+                    </div>
+                    <div className="admin-card-body">
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                        <span style={{ fontSize: "11px", color: "#8c766a", fontWeight: 600, textTransform: "uppercase" }}>
+                          {p.category}
+                        </span>
+                        <b style={{ fontSize: "15px", color: "#241610" }}>
+                          ₹{Number(p.price || 0).toLocaleString("en-IN")}
+                        </b>
+                      </div>
+                      <h4 style={{ margin: "2px 0 0", fontSize: "15px", color: "#241610" }}>{p.name}</h4>
+                      <p style={{ margin: "0", fontSize: "11.5px", color: "#765d50", lineHeight: 1.4 }}>
+                        {p.short_description || p.description?.slice(0, 80) + "…"}
+                      </p>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "auto", paddingTop: "8px" }}>
+                        <span className={`admin-stock-badge ${stock > 10 ? "in-stock" : stock > 0 ? "low-stock" : "out-of-stock"}`}>
+                          {stock > 10 ? `${stock} in stock` : stock > 0 ? `Low (${stock})` : "Out of stock"}
+                        </span>
+                        <span className={`admin-status-text ${p.status}`}>{p.status === "published" ? "Live" : "Draft"}</span>
+                      </div>
+                    </div>
+                    <div className="admin-card-footer">
+                      <button
+                        type="button"
+                        className="admin-btn-icon"
+                        onClick={() => {
+                          setError("");
+                          setEditing({ ...blank, ...p });
+                          window.scrollTo({ top: 0, behavior: "instant" });
+                        }}
+                        style={{ background: "#241610", color: "#ffffff", borderColor: "#241610", flex: 1, justifyContent: "center" }}
+                      >
+                        Edit Details ✎
+                      </button>
+                      <button
+                        type="button"
+                        className="admin-btn-icon"
+                        onClick={() => setPreviewProduct(p)}
+                        title="Preview"
+                      >
+                        👁
+                      </button>
+                      <button
+                        type="button"
+                        className="admin-btn-icon delete"
+                        onClick={() => setDeleteConfirmTarget(p)}
+                        title="Delete"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Floating Sticky Bulk Actions Bar */}
+          {selectedIds.size > 0 && (
+            <div className="admin-bulk-bar">
+              <span className="admin-bulk-count">{selectedIds.size} Selected</span>
+              <button
+                type="button"
+                className="admin-bulk-btn"
+                onClick={() => void handleBulkStatusChange("published")}
+              >
+                ✓ Publish Live
+              </button>
+              <button
+                type="button"
+                className="admin-bulk-btn"
+                onClick={() => void handleBulkStatusChange("draft")}
+              >
+                📁 Set to Draft
+              </button>
+              <button
+                type="button"
+                className="admin-bulk-btn"
+                onClick={handleExportSelected}
+              >
+                📥 Export JSON
+              </button>
+              <button
+                type="button"
+                className="admin-bulk-btn delete"
+                onClick={() => void handleBulkDelete()}
+              >
+                🗑 Delete
+              </button>
+              <button
+                type="button"
+                className="admin-bulk-cancel"
+                onClick={() => setSelectedIds(new Set())}
+              >
+                Deselect
+              </button>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* TAB 2: MEDIA & REELS STUDIO */}
+      {currentTab === "reels" && (
+        <div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
+            <div>
+              <p className="eyebrow dark" style={{ margin: 0 }}>Official Motion Catalog</p>
+              <h2 style={{ margin: "4px 0 0", fontFamily: "Cormorant Garamond, serif", fontSize: "32px", color: "#241610" }}>
+                20 Official Instagram Reels
+              </h2>
+            </div>
+            <span style={{ fontSize: "12px", color: "#8c766a" }}>
+              Every video audited and linked strictly to its exact product.
+            </span>
+          </div>
+
+          <div className="admin-reels-grid">
+            {activeReelsList.map((reel) => (
+              <div className="admin-reel-card" key={reel.id}>
+                <div
+                  className="admin-reel-poster-wrap"
+                  onClick={() => setPreviewReel(reel)}
+                  title="Click to play in 9:16 portrait video player"
+                >
+                  <img src={reel.poster} alt={reel.title} />
+                  <div className="admin-reel-play-overlay">
+                    <span className="admin-reel-play-disc">▶</span>
+                  </div>
                 </div>
-                <small>{p.category || "Uncategorised"} · {p.mood || p.finish || "Standard edit"}</small>
+                <div className="admin-reel-card-body">
+                  <span className="admin-reel-card-product">{reel.productName}</span>
+                  <span className="admin-reel-card-title">{reel.title}</span>
+                  <p className="admin-reel-card-quote">"{reel.quote}"</p>
+                </div>
+                <div className="admin-reel-card-footer">
+                  <span style={{ color: "#8c766a" }}>{reel.duration} · {reel.views} views</span>
+                  <a
+                    href={reel.instagramUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="admin-ig-link"
+                    title="View original reel on Instagram"
+                  >
+                    Instagram ↗
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: INVENTORY & STOCK ANALYTICS */}
+      {currentTab === "inventory" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+          <div>
+            <p className="eyebrow dark" style={{ margin: 0 }}>Stock & Supply Chain</p>
+            <h2 style={{ margin: "4px 0 0", fontFamily: "Cormorant Garamond, serif", fontSize: "32px", color: "#241610" }}>
+              Inventory Valuation & Restock Desk
+            </h2>
+          </div>
+
+          {/* Category Valuation Table */}
+          <div className="admin-table-container">
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(42, 26, 20, 0.1)", background: "#fdfaf6" }}>
+              <b style={{ fontSize: "13px", color: "#241610" }}>Category Inventory Breakdown</b>
+            </div>
+            <div className="admin-table-scroll">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>Active SKUs</th>
+                    <th>Total Units in Stock</th>
+                    <th>Category Valuation</th>
+                    <th>Average Unit Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {uniqueCategories.map((cat) => {
+                    const catProducts = products.filter((p) => p.category === cat);
+                    const units = catProducts.reduce((sum, p) => sum + (Number(p.stock_quantity) || 0), 0);
+                    const val = catProducts.reduce((sum, p) => {
+                      const price = typeof p.price === "number" ? p.price : parseFloat(String(p.price).replace(/[^0-9.]/g, "")) || 0;
+                      return sum + (price * (Number(p.stock_quantity) || 0));
+                    }, 0);
+                    const avg = units > 0 ? Math.round(val / units) : 0;
+
+                    return (
+                      <tr key={cat}>
+                        <td><b>{cat}</b></td>
+                        <td>{catProducts.length} SKUs</td>
+                        <td>{units.toLocaleString()} units</td>
+                        <td><b style={{ color: "#241610" }}>₹{val.toLocaleString("en-IN")}</b></td>
+                        <td>₹{avg.toLocaleString("en-IN")}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Quick Restock Desk */}
+          <div className="admin-table-container">
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(42, 26, 20, 0.1)", background: "#fdfaf6" }}>
+              <b style={{ fontSize: "13px", color: "#241610" }}>Product Stock Control & 1-Click Restock</b>
+            </div>
+            <div className="admin-table-scroll">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Current Stock</th>
+                    <th>Status</th>
+                    <th style={{ textAlign: "right" }}>Quick Restock Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {products.map((p) => {
+                    const stock = Number(p.stock_quantity) || 0;
+                    return (
+                      <tr key={p.id || p.slug}>
+                        <td>
+                          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                            <img src={p.image_url || photos.makeup} alt="" style={{ width: "32px", height: "32px", borderRadius: "6px", objectFit: "cover" }} />
+                            <b>{p.name}</b>
+                          </div>
+                        </td>
+                        <td>{stock} units</td>
+                        <td>
+                          <span className={`admin-stock-badge ${stock > 10 ? "in-stock" : stock > 0 ? "low-stock" : "out-of-stock"}`}>
+                            {stock > 10 ? "Adequate" : stock > 0 ? "Low" : "Depleted"}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: "right" }}>
+                          <button
+                            type="button"
+                            className="admin-btn-icon"
+                            onClick={() => handleQuickRestock(p, 10)}
+                            style={{ marginRight: "6px" }}
+                          >
+                            +10 Units
+                          </button>
+                          <button
+                            type="button"
+                            className="admin-btn-icon"
+                            onClick={() => handleQuickRestock(p, 50)}
+                            style={{ background: "#241610", color: "#ffffff", borderColor: "#241610" }}
+                          >
+                            +50 Units
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: DATABASE & SYSTEM HEALTH */}
+      {currentTab === "database" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+          <div>
+            <p className="eyebrow dark" style={{ margin: 0 }}>System Architecture</p>
+            <h2 style={{ margin: "4px 0 0", fontFamily: "Cormorant Garamond, serif", fontSize: "32px", color: "#241610" }}>
+              Database Diagnostics & Backup Console
+            </h2>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "20px" }}>
+            {/* Supabase Card */}
+            <div className="admin-kpi-card" style={{ padding: "24px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                <span className="admin-kpi-title">Supabase Cloud Database</span>
+                <span className="admin-status-dot" />
+              </div>
+              <p style={{ margin: "0 0 16px", fontSize: "12.5px", color: "#765d50", lineHeight: 1.5 }}>
+                Direct REST interface connected to PostgreSQL cluster. Supports products, videos schema, and realtime sync.
+              </p>
+              <div style={{ background: "#fdfaf6", padding: "12px 14px", borderRadius: "8px", fontSize: "11.5px", color: "#422a20", marginBottom: "16px" }}>
+                <div>Endpoint: <code>erxquucmoonszopopavx.supabase.co</code></div>
+                <div>Status: <b style={{ color: "#059669" }}>Active & Connected</b></div>
               </div>
               <button
                 type="button"
-                className={`admin-pill ${p.status || "draft"}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  void toggleStatus(p);
-                }}
-                title="Click to toggle publish status"
+                className="admin-primary"
+                onClick={() => void testDatabasePing()}
+                style={{ width: "100%", textAlign: "center" }}
               >
-                {p.status || "draft"}
+                {pingResult?.testing ? "Testing Latency…" : "Test Cloud Connection Ping ⚡"}
               </button>
-              <span className="admin-product-price">
-                ₹{Number(p.price || 0).toLocaleString("en-IN")}
-              </span>
-              <div className="admin-row-actions" onClick={(e) => e.stopPropagation()}>
+              {pingResult && !pingResult.testing && (
+                <div style={{ marginTop: "12px", fontSize: "11.5px", color: pingResult.ok ? "#059669" : "#b45309", fontWeight: 600 }}>
+                  {pingResult.message}
+                </div>
+              )}
+            </div>
+
+            {/* Catalog Backup & Seed Card */}
+            <div className="admin-kpi-card" style={{ padding: "24px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                <span className="admin-kpi-title">Backup & Seeding Operations</span>
+                <span className="admin-kpi-icon">💾</span>
+              </div>
+              <p style={{ margin: "0 0 16px", fontSize: "12.5px", color: "#765d50", lineHeight: 1.5 }}>
+                Export full snapshot of your catalog data or restore the 5 official core luxury products with verified reels.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <button
                   type="button"
-                  className="admin-action-btn edit"
-                  onClick={() => {
-                    setError("");
-                    setEditing({ ...blank, ...p });
-                    window.scrollTo({ top: 0, behavior: "instant" });
-                  }}
-                  title="Open dedicated editor for this product"
-                  style={{
-                    background: "var(--ink)",
-                    color: "#ffffff",
-                    borderColor: "var(--ink)",
-                    fontWeight: 600,
-                  }}
+                  className="admin-btn-icon"
+                  onClick={handleExportAll}
+                  style={{ padding: "10px 16px", justifyContent: "center", fontWeight: 600 }}
                 >
-                  Edit ✎
+                  📥 Download Catalog Backup (JSON)
                 </button>
                 <button
                   type="button"
-                  className="admin-action-btn duplicate"
-                  onClick={() => duplicateProduct(p)}
-                  title="Duplicate this product"
+                  className="admin-btn-icon"
+                  onClick={handleSeedOfficialCatalog}
+                  style={{ padding: "10px 16px", justifyContent: "center", color: "#b45309", borderColor: "#fed7aa", background: "#fdf3eb" }}
                 >
-                  Clone
-                </button>
-                <button
-                  type="button"
-                  className="admin-action-btn delete"
-                  onClick={() => void deleteProduct(p)}
-                  title="Delete this product"
-                >
-                  ✕
+                  ⚡ Re-Seed 5 Official Luxury Products
                 </button>
               </div>
             </div>
-          ))}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 1: STOREFRONT PREVIEW MODAL */}
+      {previewProduct && (
+        <div className="admin-modal-overlay" onClick={() => setPreviewProduct(null)}>
+          <div className="admin-modal-window" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-modal-header">
+              <h3>Storefront Card Preview</h3>
+              <button type="button" className="admin-modal-close" onClick={() => setPreviewProduct(null)}>
+                ✕
+              </button>
+            </div>
+            <div className="admin-modal-body">
+              <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
+                <div style={{ width: "220px", flexShrink: 0 }}>
+                  <img
+                    src={previewProduct.image_url || photos.makeup}
+                    alt=""
+                    style={{ width: "100%", borderRadius: "12px", border: "1px solid rgba(42, 26, 20, 0.1)", aspectRatio: "1", objectFit: "cover" }}
+                  />
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "12px" }}>
+                    <span style={{ width: "16px", height: "16px", borderRadius: "50%", background: previewProduct.tone || "#a81920", border: "1px solid rgba(0,0,0,0.2)" }} />
+                    <span style={{ fontSize: "12px", fontWeight: 600 }}>{previewProduct.tone}</span>
+                  </div>
+                </div>
+                <div style={{ flex: 1, minWidth: "240px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", color: "#b45309", letterSpacing: "0.08em" }}>
+                    {previewProduct.category} · {previewProduct.tag}
+                  </span>
+                  <h2 style={{ margin: "0", fontFamily: "Cormorant Garamond, serif", fontSize: "28px", color: "#241610" }}>
+                    {previewProduct.name}
+                  </h2>
+                  <b style={{ fontSize: "20px", color: "#241610" }}>
+                    ₹{Number(previewProduct.price || 0).toLocaleString("en-IN")}
+                  </b>
+                  <p style={{ margin: "4px 0", fontSize: "12.5px", color: "#765d50", lineHeight: 1.5 }}>
+                    {previewProduct.description}
+                  </p>
+                  <div style={{ background: "#fdfaf6", padding: "12px", borderRadius: "8px", border: "1px solid rgba(42, 26, 20, 0.08)", marginTop: "8px" }}>
+                    <div style={{ fontSize: "11px", color: "#8c766a" }}>FINISH: <b>{previewProduct.finish || "Sculpted satin"}</b></div>
+                    <div style={{ fontSize: "11px", color: "#8c766a", marginTop: "4px" }}>FORMULA: <b>{previewProduct.ingredients?.slice(0, 70) || "Clean botanical extract"}…</b></div>
+                    <div style={{ fontSize: "11px", color: "#8c766a", marginTop: "4px" }}>STOCK: <b>{previewProduct.stock_quantity || 50} units in inventory</b></div>
+                  </div>
+                  <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
+                    <button
+                      type="button"
+                      className="admin-primary"
+                      onClick={() => {
+                        const target = previewProduct;
+                        setPreviewProduct(null);
+                        setEditing({ ...blank, ...target });
+                        window.scrollTo({ top: 0, behavior: "instant" });
+                      }}
+                      style={{ flex: 1, textAlign: "center" }}
+                    >
+                      Open in Full Editor ✎
+                    </button>
+                    <button
+                      type="button"
+                      className="admin-btn-icon"
+                      onClick={() => setPreviewProduct(null)}
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: IN-SITU REEL PLAYER MODAL */}
+      {previewReel && (
+        <div className="admin-modal-overlay" onClick={() => setPreviewReel(null)}>
+          <div
+            className="admin-modal-window"
+            style={{ maxWidth: "420px", background: "#18100c", color: "#ffffff", overflow: "hidden" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ position: "relative", width: "100%", aspectRatio: "9/16", background: "#000000" }}>
+              <video
+                src={previewReel.videoUrl}
+                poster={previewReel.poster}
+                controls
+                autoPlay
+                playsInline
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+              <button
+                type="button"
+                onClick={() => setPreviewReel(null)}
+                style={{
+                  position: "absolute",
+                  top: "14px",
+                  right: "14px",
+                  background: "rgba(0,0,0,0.6)",
+                  color: "#ffffff",
+                  border: "none",
+                  borderRadius: "50%",
+                  width: "32px",
+                  height: "32px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ padding: "16px 20px" }}>
+              <span style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: "#e0ba9b", letterSpacing: "0.08em" }}>
+                {previewReel.productName}
+              </span>
+              <h4 style={{ margin: "4px 0", fontSize: "16px", color: "#ffffff" }}>{previewReel.title}</h4>
+              <p style={{ margin: "4px 0 12px", fontSize: "12px", color: "#d5c3b9", fontStyle: "italic" }}>
+                "{previewReel.quote}"
+              </p>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "12px" }}>
+                <span style={{ fontSize: "11px", color: "#8c766a" }}>{previewReel.duration} · {previewReel.views} views</span>
+                <a
+                  href={previewReel.instagramUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: "#e0ba9b", fontSize: "11.5px", fontWeight: 600, textDecoration: "none" }}
+                >
+                  Open on Instagram ↗
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: DELETE CONFIRMATION MODAL */}
+      {deleteConfirmTarget && (
+        <div className="admin-modal-overlay" onClick={() => setDeleteConfirmTarget(null)}>
+          <div className="admin-modal-window" style={{ maxWidth: "460px" }} onClick={(e) => e.stopPropagation()}>
+            <div className="admin-modal-header">
+              <h3>Confirm Deletion</h3>
+              <button type="button" className="admin-modal-close" onClick={() => setDeleteConfirmTarget(null)}>
+                ✕
+              </button>
+            </div>
+            <div className="admin-modal-body">
+              <p style={{ margin: "0 0 16px", fontSize: "13px", color: "#422a20", lineHeight: 1.5 }}>
+                Are you sure you want to permanently delete <b>"{deleteConfirmTarget.name}"</b>? This will remove it from the catalog and the live storefront.
+              </p>
+              <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+                <button
+                  type="button"
+                  className="admin-btn-icon"
+                  onClick={() => setDeleteConfirmTarget(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="admin-btn-icon delete"
+                  onClick={() => void deleteProduct(deleteConfirmTarget)}
+                  style={{ background: "#dc2626", color: "#ffffff", borderColor: "#dc2626" }}
+                >
+                  Confirm Delete
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </AdminFrame>

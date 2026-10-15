@@ -69,7 +69,7 @@ export type Reel = {
   productTag?: string;
 };
 
-const reels: Reel[] = [
+export const reels: Reel[] = [
   {
     id: "reel-01",
     title: "The Perfect Everyday Blush",
@@ -1574,7 +1574,16 @@ export default function App() {
   }, []);
 
   if (currentView === "admin") {
-    return <AdminView onBack={() => navigateTo("storefront")} />;
+    return (
+      <AdminView
+        onBack={() => navigateTo("storefront")}
+        reels={reels}
+        onSelectProduct={(product) => {
+          setSelectedProduct(product);
+          navigateTo("storefront");
+        }}
+      />
+    );
   }
 
   if (currentView === "account") {
