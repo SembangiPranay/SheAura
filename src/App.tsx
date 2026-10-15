@@ -1616,6 +1616,7 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [catalog, setCatalog] = useState<Product[]>(defaultProducts);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [activeModalReel, setActiveModalReel] = useState<Reel | null>(null);
   const [introPhase, setIntroPhase] = useState<"active" | "dissolving" | "complete">("active");
   const handleStartDissolve = useCallback(() => setIntroPhase("dissolving"), []);
   const handleCompleteIntro = useCallback(() => setIntroPhase("complete"), []);
