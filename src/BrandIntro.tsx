@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 
 interface BrandIntroProps {
   onComplete: () => void;
+  onStartDissolve?: () => void;
 }
 
-export default function BrandIntro({ onComplete }: BrandIntroProps) {
+export default function BrandIntro({ onComplete, onStartDissolve }: BrandIntroProps) {
   const [isFadingOut, setIsFadingOut] = useState(false);
 
   useEffect(() => {
@@ -20,6 +21,7 @@ export default function BrandIntro({ onComplete }: BrandIntroProps) {
   const triggerDissolve = () => {
     if (isFadingOut) return;
     setIsFadingOut(true);
+    onStartDissolve?.();
     setTimeout(() => {
       onComplete();
     }, 1100);

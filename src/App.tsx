@@ -1479,26 +1479,30 @@ function ProductPage({
           </div>
           <div className="purchase-row">
             <div className="quantity">
-              <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))}>−</button>
+              <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} aria-label="Decrease quantity">−</button>
               <span>{quantity}</span>
-              <button type="button" onClick={() => setQuantity(quantity + 1)}>+</button>
+              <button type="button" onClick={() => setQuantity(quantity + 1)} aria-label="Increase quantity">+</button>
             </div>
-            <button
-              type="button"
-              className="add-bag"
-              onClick={() => onAdd(quantity, product.name.split(" ").slice(0, 2).join(" "), product.tone)}
-            >
-              Add to bag — {product.price}
-            </button>
-            <button
-              type="button"
-              className={`pdp-wishlist-toggle-btn ${isWishlisted ? "active" : ""}`}
-              onClick={onToggleWishlist}
-              title={isWishlisted ? "Remove from Wishlist" : "Save to Wishlist Sanctuary"}
-              aria-label="Wishlist"
-            >
-              <Icon name="heart" />
-            </button>
+            <div className="pdp-actions-cta">
+              <button
+                type="button"
+                className="add-bag"
+                onClick={() => onAdd(quantity, product.name.split(" ").slice(0, 2).join(" "), product.tone)}
+              >
+                <span>Add to bag</span>
+                <span className="add-bag-sep">·</span>
+                <span>{product.price}</span>
+              </button>
+              <button
+                type="button"
+                className={`pdp-wishlist-toggle-btn ${isWishlisted ? "active" : ""}`}
+                onClick={onToggleWishlist}
+                title={isWishlisted ? "Remove from Wishlist" : "Save to Wishlist Sanctuary"}
+                aria-label="Wishlist"
+              >
+                <Icon name="heart" />
+              </button>
+            </div>
           </div>
           <p className="delivery-note"><Icon name="sparkle" /> Complimentary delivery on orders above ₹1,499</p>
           <div className="pdp-accordions">
@@ -1612,9 +1616,9 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [catalog, setCatalog] = useState<Product[]>(defaultProducts);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [activeModalReel, setActiveModalReel] = useState<Reel | null>(null);
-  const [showIntro, setShowIntro] = useState(true);
-  const handleCompleteIntro = useCallback(() => setShowIntro(false), []);
+  const [introPhase, setIntroPhase] = useState<"active" | "dissolving" | "complete">("active");
+  const handleStartDissolve = useCallback(() => setIntroPhase("dissolving"), []);
+  const handleCompleteIntro = useCallback(() => setIntroPhase("complete"), []);
 
   // Cart & Wishlist State with LocalStorage Persistence
   const [cartItems, setCartItems] = useState<CartItem[]>(() => getInitialCart(defaultProducts));
@@ -1877,7 +1881,12 @@ export default function App() {
   if (selectedProduct) {
     return (
       <>
-        {showIntro && <BrandIntro onComplete={handleCompleteIntro} />}
+        {introPhase !== "complete" && (
+          <BrandIntro
+            onStartDissolve={handleStartDissolve}
+            onComplete={handleCompleteIntro}
+          />
+        )}
         <ProductPage
           product={selectedProduct}
           catalog={catalog}
@@ -1933,9 +1942,14 @@ export default function App() {
 
   return (
     <>
-      {showIntro && <BrandIntro onComplete={handleCompleteIntro} />}
-      <main>
-      <section className="hero">
+      {introPhase !== "complete" && (
+        <BrandIntro
+          onStartDissolve={handleStartDissolve}
+          onComplete={handleCompleteIntro}
+        />
+      )}
+      <main className={`storefront-main ${introPhase !== "complete" ? "is-intro-active" : ""} ${introPhase === "dissolving" ? "is-intro-dissolving" : ""}`}>
+      <section className={`hero ${introPhase !== "complete" ? "hero-intro-mode" : ""} ${introPhase === "dissolving" ? "hero-intro-dissolving" : ""}`}>
         {/* Living Video Backdrop: 2X Slow-Glide Master Runway Edit */}
         <video
           ref={heroVideoRef}
