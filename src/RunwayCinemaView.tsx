@@ -19,11 +19,35 @@ export default function RunwayCinemaView({
   onAddBag,
   cartCount,
 }: RunwayCinemaViewProps) {
-  // Modes: "dual-kinetic" (One column scrolls up, another scrolls down in a single video edit) OR "solo-theater"
-  const [viewMode, setViewMode] = useState<"dual-kinetic" | "solo-theater">("dual-kinetic");
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < 768 : false
+  );
 
-  // Kinetic Multi-Column state
-  const [columnCount, setColumnCount] = useState<2 | 4 | 5>(4); // Defaults to 4 columns as requested
+  // Modes: "dual-kinetic" OR "solo-theater"
+  // Default to solo-theater on mobile for buttery smooth 60fps single-video performance without stuttering!
+  const [viewMode, setViewMode] = useState<"dual-kinetic" | "solo-theater">(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) return "solo-theater";
+    return "dual-kinetic";
+  });
+
+  // Kinetic Multi-Column state (2 on mobile, 4 on desktop)
+  const [columnCount, setColumnCount] = useState<2 | 4 | 5>(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) return 2;
+    return 4;
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile && columnCount > 2) {
+        setColumnCount(2);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [columnCount]);
+
   const [editModeSource, setEditModeSource] = useState<"interactive-wall" | "rendered-video">("interactive-wall");
   const [isKineticPlaying, setIsKineticPlaying] = useState(true);
   const [kineticSpeed, setKineticSpeed] = useState<"1x" | "1.5x" | "2x">("1x");
@@ -236,7 +260,7 @@ export default function RunwayCinemaView({
         <div className="runway-header-left">
           <button className="runway-exit-btn" onClick={onBack} title="Return to Storefront">
             <Icon name="arrow" className="rotate-180" />
-            <span>Storefront</span>
+            <span>{isMobile ? "Store" : "Storefront"}</span>
           </button>
           <div className="runway-brand-badge">
             <span className="runway-pulse-dot" />
@@ -253,10 +277,10 @@ export default function RunwayCinemaView({
             <button
               className={`mode-tab-btn ${viewMode === "dual-kinetic" ? "active" : ""}`}
               onClick={() => setViewMode("dual-kinetic")}
-              title="Watch all 20 videos composed together in multi-column opposing scroll"
+              title="Watch composed multi-column opposing scroll"
             >
               <span className="mode-icon">☷</span>
-              <span>{columnCount}-Column Video Wall</span>
+              <span>{isMobile ? "Duo Wall" : `${columnCount}-Column Wall`}</span>
             </button>
             <button
               className={`mode-tab-btn ${viewMode === "solo-theater" ? "active" : ""}`}
@@ -264,7 +288,7 @@ export default function RunwayCinemaView({
               title="Watch individual reels full-screen with auto-advance"
             >
               <span className="mode-icon">▯</span>
-              <span>Solo Theater</span>
+              <span>Solo Cinema</span>
             </button>
           </div>
         </div>
@@ -317,19 +341,29 @@ export default function RunwayCinemaView({
                   <span>OPPOSING MOTION · {columnCount} COLUMNS · 20 REELS</span>
                 </div>
 
-                {/* Column Count Selector: 2, 4 (Mosaic), 5 (Wall) */}
+                {/* Column Count Selector: 2 on mobile (Duo Wall), 2/4/5 on desktop */}
                 <div className="kinetic-col-controls">
                   <span className="col-label">COLUMNS:</span>
-                  {([2, 4, 5] as const).map((cnt) => (
+                  {(isMobile ? ([2] as const) : ([2, 4, 5] as const)).map((cnt) => (
                     <button
                       key={cnt}
                       className={`col-pill ${columnCount === cnt ? "active" : ""}`}
                       onClick={() => setColumnCount(cnt)}
                       title={`Switch to ${cnt} moving columns`}
                     >
-                      {cnt === 4 ? "4 Cols (Mosaic)" : cnt === 5 ? "5 Cols (Wall)" : "2 Cols"}
+                      {cnt === 4 ? "4 Cols (Mosaic)" : cnt === 5 ? "5 Cols (Wall)" : "2 Cols (Duo)"}
                     </button>
                   ))}
+                  {isMobile && (
+                    <button
+                      className="col-pill solo-pill-mobile"
+                      onClick={() => setViewMode("solo-theater")}
+                      title="Switch to buttery smooth 60fps single reel view"
+                      style={{ background: "rgba(212,175,55,0.18)", color: "#e6c364", borderColor: "#d4af37" }}
+                    >
+                      Solo 60fps ▶
+                    </button>
+                  )}
                 </div>
 
                 {/* Video Mode Source: Interactive Wall vs Real Baked MP4 */}
@@ -417,15 +451,24 @@ export default function RunwayCinemaView({
                                   className={`kinetic-video-card ${isSelected ? "selected" : ""}`}
                                   onClick={() => setActiveReelId(reel.id)}
                                 >
-                                  <video
-                                    src={reel.videoUrl}
-                                    poster={reel.poster}
-                                    autoPlay
-                                    loop
-                                    muted={isMuted || !isSelected}
-                                    playsInline
-                                    className="kinetic-card-video"
-                                  />
+                                  {isMobile && !isSelected ? (
+                                    <img
+                                      src={reel.poster}
+                                      alt={reel.title}
+                                      className="kinetic-card-video object-cover"
+                                      loading="lazy"
+                                    />
+                                  ) : (
+                                    <video
+                                      src={reel.videoUrl}
+                                      poster={reel.poster}
+                                      autoPlay
+                                      loop
+                                      muted={isMuted || !isSelected}
+                                      playsInline
+                                      className="kinetic-card-video"
+                                    />
+                                  )}
                                   <div className="kinetic-card-overlay">
                                     <span className="card-look-pill">{reel.step}</span>
                                     <span className="card-reel-name">{reel.title}</span>

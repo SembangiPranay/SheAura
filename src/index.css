@@ -7203,13 +7203,37 @@ footer { background: #ecd7c1; }
     font-size: 7.5px;
   }
   .runway-top-header {
-    padding: 10px 14px;
+    padding: 8px 12px;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+  }
+  .runway-brand {
+    order: 1;
+  }
+  .runway-header-right {
+    order: 2;
+    margin-left: auto;
+  }
+  .runway-header-center {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    margin-top: 2px;
+  }
+  .runway-mode-tabs {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+  .mode-tab-btn {
+    flex: 1;
+    text-align: center;
+    justify-content: center;
+    padding: 7px 10px;
+    font-size: 8.5px;
   }
   .runway-tagline {
     display: none;
-  }
-  .runway-header-center {
-    gap: 8px;
   }
   .runway-autoscroll-toggle {
     padding: 5px 10px;
@@ -7425,7 +7449,24 @@ footer { background: #ecd7c1; }
 
 @media (max-width: 540px) {
   .admin-kpi-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .admin-kpi-card {
+    padding: 12px 14px;
+    gap: 4px;
+    border-radius: 10px;
+  }
+  .admin-kpi-title {
+    font-size: 8.5px;
+    letter-spacing: 0.06em;
+  }
+  .admin-kpi-value {
+    font-size: 18px;
+  }
+  .admin-kpi-meta {
+    font-size: 9px;
   }
 }
 
@@ -8212,4 +8253,320 @@ footer { background: #ecd7c1; }
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* ==============================================================================
+   LUXURY OPERATIONS AUTHENTICATION CARD & MOBILE REFINEMENTS
+   ============================================================================== */
+
+.admin-luxury-auth-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 75vh;
+  padding: 24px 16px;
+  width: 100%;
+}
+
+.admin-luxury-auth-card {
+  background: #ffffff;
+  border: 1px solid rgba(42, 26, 20, 0.12);
+  border-radius: 20px;
+  box-shadow: 0 16px 48px rgba(42, 26, 20, 0.09);
+  width: 100%;
+  max-width: 440px;
+  padding: 36px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-luxury-auth-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #c18847, #dfb895, #c18847);
+}
+
+.admin-auth-brand-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.admin-auth-monogram {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #241610;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(36, 22, 16, 0.2);
+}
+
+.admin-auth-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: #8c766a;
+  text-transform: uppercase;
+}
+
+.admin-auth-security-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 999px;
+  padding: 4px 11px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #065f46;
+  letter-spacing: 0.04em;
+}
+
+.admin-auth-headings {
+  text-align: center;
+}
+
+.admin-auth-title {
+  font: 500 28px/1.15 "Cormorant Garamond", Georgia, serif;
+  color: #241610;
+  margin: 0 0 8px;
+}
+
+.admin-auth-subtitle {
+  font-size: 12px;
+  color: #765d50;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.admin-auth-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.admin-auth-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #5d463b;
+  text-transform: uppercase;
+}
+
+.admin-auth-demo-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #d4af37;
+  background: rgba(212, 175, 55, 0.1);
+  color: #8c6820;
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.admin-auth-demo-pill:hover {
+  background: #d4af37;
+  color: #ffffff;
+}
+
+.admin-auth-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.admin-auth-input-icon {
+  position: absolute;
+  left: 14px;
+  color: #8c766a;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+
+.admin-auth-input {
+  width: 100%;
+  border: 1px solid rgba(42, 26, 20, 0.16);
+  background: #fdfaf7;
+  border-radius: 8px;
+  padding: 12px 14px 12px 42px;
+  font-size: 13px;
+  color: #241610;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.admin-auth-input:focus {
+  border-color: #241610;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(36, 22, 16, 0.08);
+}
+
+.admin-auth-input.has-toggle {
+  padding-right: 44px;
+}
+
+.admin-auth-pw-toggle {
+  position: absolute;
+  right: 10px;
+  background: transparent;
+  border: 0;
+  color: #8c766a;
+  padding: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.admin-auth-pw-toggle:hover {
+  color: #241610;
+}
+
+.admin-auth-primary-btn {
+  width: 100%;
+  border: 0;
+  background: #241610;
+  color: #ffffff;
+  padding: 14px 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.2s, transform 0.1s;
+  margin-top: 4px;
+}
+
+.admin-auth-primary-btn:hover {
+  background: #3d261c;
+}
+
+.admin-auth-primary-btn:active {
+  transform: scale(0.99);
+}
+
+.admin-auth-vip-btn {
+  width: 100%;
+  border: 1px solid rgba(193, 136, 71, 0.4);
+  background: rgba(193, 136, 71, 0.06);
+  color: #8c602a;
+  padding: 12px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.admin-auth-vip-btn:hover {
+  background: rgba(193, 136, 71, 0.14);
+  border-color: #c18847;
+  color: #5c3b12;
+}
+
+.admin-auth-return-btn {
+  background: transparent;
+  border: 0;
+  color: #765d50;
+  font-size: 11px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.admin-auth-return-btn:hover {
+  color: #241610;
+}
+
+/* Mobile Catalogue Polish (< 600px) */
+@media (max-width: 600px) {
+  .admin-luxury-auth-card {
+    padding: 26px 20px;
+    border-radius: 16px;
+  }
+  .admin-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .admin-product-visual-card {
+    border-radius: 12px;
+  }
+  .admin-card-img-wrap {
+    aspect-ratio: 16/10;
+    max-height: 220px;
+  }
+  .admin-card-body {
+    padding: 14px;
+    gap: 6px;
+  }
+  .admin-card-footer {
+    padding: 10px 14px;
+  }
+  .admin-controls-grid {
+    padding: 10px 12px;
+    gap: 8px;
+    border-radius: 10px;
+    margin-bottom: 14px;
+  }
+  .admin-search-wrapper {
+    min-width: 100%;
+    width: 100%;
+  }
+  .admin-select-pro {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 11.5px;
+  }
+  .admin-density-toggle {
+    width: 100%;
+    justify-content: stretch;
+  }
+  .admin-density-btn {
+    flex: 1;
+    text-align: center;
+    justify-content: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .admin-tab-btn {
+    padding: 8px 12px;
+    font-size: 11px;
+  }
 }

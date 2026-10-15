@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   Pencil,
   Eye,
+  EyeOff,
   Trash2,
   Copy,
   X,
@@ -34,6 +35,10 @@ import {
   Archive,
   ArrowLeft,
   ArrowRight,
+  Mail,
+  Lock,
+  ShieldCheck,
+  Filter,
 } from "lucide-react";
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
 import {
@@ -265,11 +270,22 @@ export default function AdminView({
   const [checking, setChecking] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [editing, setEditing] = useState<Product | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+
+  // Responsive mobile detector
+  const [isMobile, setIsMobile] = useState(() => (typeof window !== "undefined" ? window.innerWidth < 768 : false));
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+
+  useEffect(() => {
+    const checkResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", checkResize);
+    return () => window.removeEventListener("resize", checkResize);
+  }, []);
 
   // Navigation tabs
   const [currentTab, setCurrentTab] = useState<"products" | "reels" | "inventory" | "database">("products");
@@ -280,7 +296,9 @@ export default function AdminView({
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [stockFilter, setStockFilter] = useState<"all" | "in-stock" | "low-stock" | "out-of-stock">("all");
   const [sortBy, setSortBy] = useState<"newest" | "price-desc" | "price-asc" | "stock-desc" | "name-asc">("newest");
-  const [viewDensity, setViewDensity] = useState<"table" | "cards">("table");
+  const [viewDensity, setViewDensity] = useState<"table" | "cards">(() =>
+    typeof window !== "undefined" && window.innerWidth < 768 ? "cards" : "table"
+  );
 
   // Multi-select bulk state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -866,60 +884,126 @@ export default function AdminView({
   if (!session) {
     return (
       <AdminFrame>
-        <form className="admin-card admin-login" onSubmit={signIn}>
-          <p className="eyebrow dark">Private Operations Portal</p>
-          <h2>Sign in</h2>
-          <p>Use your authorised She’Aura operations account to access the catalogue studio.</p>
-          <Field label="Email" value={email} onChange={setEmail} type="email" required />
-          <Field label="Password" value={password} onChange={setPassword} type="password" required />
-          {error && <div className="admin-error">{error}</div>}
-          <button className="admin-primary" disabled={busy}>
-            {busy ? "Signing in…" : "Sign in securely"}
-          </button>
-          <div style={{ marginTop: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div className="admin-luxury-auth-wrapper">
+          <form className="admin-luxury-auth-card" onSubmit={signIn}>
+            {/* Top Brand Medallion */}
+            <div className="admin-auth-brand-badge">
+              <div className="admin-auth-monogram">
+                <Sparkles size={18} strokeWidth={1.8} style={{ color: "#dfb895" }} />
+              </div>
+              <span className="admin-auth-eyebrow">SHE’AURA HAUTE MAISON</span>
+              <div className="admin-auth-security-pill">
+                <ShieldCheck size={12} strokeWidth={2} style={{ color: "#10b981" }} />
+                <span>Secured Operations Console</span>
+              </div>
+            </div>
+
+            <div className="admin-auth-headings">
+              <h2 className="admin-auth-title">Catalogue Studio</h2>
+              <p className="admin-auth-subtitle">
+                Sign in with your administrative credentials to manage luxury SKUs, inventory, and official media reels.
+              </p>
+            </div>
+
+            {error && (
+              <div className="admin-error" style={{ marginBottom: "0", textAlign: "left" }}>
+                <b>Notice:</b> {error}
+              </div>
+            )}
+
+            {/* Email Field with Icon */}
+            <div className="admin-auth-field-group">
+              <label className="admin-auth-label">OPERATIONS EMAIL</label>
+              <div className="admin-auth-input-wrapper">
+                <span className="admin-auth-input-icon">
+                  <Mail size={16} strokeWidth={1.8} />
+                </span>
+                <input
+                  type="email"
+                  className="admin-auth-input"
+                  placeholder="admin@sheaura.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Password Field with Icon & Eye Toggle */}
+            <div className="admin-auth-field-group">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <label className="admin-auth-label">SECURITY KEY</label>
+                <button
+                  type="button"
+                  className="admin-auth-demo-pill"
+                  onClick={() => {
+                    setEmail("admin@sheaura.com");
+                    setPassword("sheaura2025!");
+                  }}
+                  title="Auto-fill verified demo operations account credentials"
+                >
+                  <Zap size={10} strokeWidth={2.2} />
+                  <span>Fill Demo</span>
+                </button>
+              </div>
+              <div className="admin-auth-input-wrapper">
+                <span className="admin-auth-input-icon">
+                  <Lock size={16} strokeWidth={1.8} />
+                </span>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  className="admin-auth-input has-toggle"
+                  placeholder="••••••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  className="admin-auth-pw-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                  title={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff size={15} strokeWidth={1.8} /> : <Eye size={15} strokeWidth={1.8} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Primary Sign In Button */}
+            <button className="admin-auth-primary-btn" disabled={busy}>
+              <Lock size={14} strokeWidth={2} />
+              <span>{busy ? "Authenticating Session…" : "Sign in Securely"}</span>
+            </button>
+
+            {/* VIP Fast Studio Pass Button */}
             <button
               type="button"
-              className="admin-back"
+              className="admin-auth-vip-btn"
               onClick={() => {
-                if (onBack) onBack();
-                else window.location.href = "/";
+                setSession({ user: { email: email || "admin@sheaura.com" } });
               }}
+              title="One-click bypass for preview & staging"
             >
-              ← Return to storefront
+              <Sparkles size={14} strokeWidth={2} style={{ color: "#c18847" }} />
+              <span>Enter Studio Workspace (Instant Access)</span>
             </button>
-            <button
-              type="button"
-              style={{ background: "transparent", border: "0", fontSize: "11px", color: "#a89182", cursor: "pointer", textDecoration: "underline" }}
-              onClick={() => {
-                setEmail("admin@sheaura.com");
-                setPassword("sheaura2025!");
-              }}
-            >
-              Fill demo credentials
-            </button>
-          </div>
-          <button
-            type="button"
-            style={{
-              background: "rgba(224, 186, 155, 0.2)",
-              border: "1px solid #c29d7d",
-              borderRadius: "4px",
-              padding: "8px 12px",
-              fontSize: "12px",
-              color: "#271710",
-              cursor: "pointer",
-              fontWeight: 600,
-              marginTop: "14px",
-              width: "100%",
-              textAlign: "center",
-            }}
-            onClick={() => {
-              setSession({ user: { email: email || "admin@sheaura.com" } });
-            }}
-          >
-            ⚡ Enter Studio Workspace (Quick Access)
-          </button>
-        </form>
+
+            {/* Return Link */}
+            <div style={{ textAlign: "center", paddingTop: "8px" }}>
+              <button
+                type="button"
+                className="admin-auth-return-btn"
+                onClick={() => {
+                  if (onBack) onBack();
+                  else window.location.href = "/";
+                }}
+              >
+                <ArrowLeft size={13} strokeWidth={2} />
+                <span>Return to Luxury Storefront</span>
+              </button>
+            </div>
+          </form>
+        </div>
       </AdminFrame>
     );
   }
@@ -1169,7 +1253,7 @@ export default function AdminView({
               )}
             </div>
 
-            <div className="admin-filter-pills">
+            <div className="admin-filter-pills" style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
               <button
                 className={`admin-filter-pill-btn ${statusFilter === "all" ? "active" : ""}`}
                 onClick={() => setStatusFilter("all")}
@@ -1188,64 +1272,80 @@ export default function AdminView({
               >
                 Drafts ({kpis.drafts})
               </button>
+
+              {isMobile && (
+                <button
+                  type="button"
+                  className={`admin-filter-pill-btn ${showMobileFilters ? "active" : ""}`}
+                  onClick={() => setShowMobileFilters(!showMobileFilters)}
+                  style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                >
+                  <Filter size={11} strokeWidth={2} />
+                  <span>{showMobileFilters ? "Less" : "Filters & Sort"}</span>
+                </button>
+              )}
             </div>
 
-            <select
-              className="admin-select-pro"
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-            >
-              <option value="all">All Categories ({products.length})</option>
-              {uniqueCategories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat} ({products.filter((p) => p.category === cat).length})
-                </option>
-              ))}
-            </select>
+            {(!isMobile || showMobileFilters) && (
+              <>
+                <select
+                  className="admin-select-pro"
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                >
+                  <option value="all">All Categories ({products.length})</option>
+                  {uniqueCategories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat} ({products.filter((p) => p.category === cat).length})
+                    </option>
+                  ))}
+                </select>
 
-            <select
-              className="admin-select-pro"
-              value={stockFilter}
-              onChange={(e) => setStockFilter(e.target.value as any)}
-            >
-              <option value="all">All Stock Status</option>
-              <option value="in-stock">In Stock (&gt;10)</option>
-              <option value="low-stock">Low Stock (1–10)</option>
-              <option value="out-of-stock">Out of Stock (0)</option>
-            </select>
+                <select
+                  className="admin-select-pro"
+                  value={stockFilter}
+                  onChange={(e) => setStockFilter(e.target.value as any)}
+                >
+                  <option value="all">All Stock Status</option>
+                  <option value="in-stock">In Stock (&gt;10)</option>
+                  <option value="low-stock">Low Stock (1–10)</option>
+                  <option value="out-of-stock">Out of Stock (0)</option>
+                </select>
 
-            <select
-              className="admin-select-pro"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-            >
-              <option value="newest">Sort: Default / Newest</option>
-              <option value="price-desc">Price: High → Low</option>
-              <option value="price-asc">Price: Low → High</option>
-              <option value="stock-desc">Stock: High → Low</option>
-              <option value="name-asc">Name: A → Z</option>
-            </select>
+                <select
+                  className="admin-select-pro"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                >
+                  <option value="newest">Sort: Default / Newest</option>
+                  <option value="price-desc">Price: High → Low</option>
+                  <option value="price-asc">Price: Low → High</option>
+                  <option value="stock-desc">Stock: High → Low</option>
+                  <option value="name-asc">Name: A → Z</option>
+                </select>
 
-            <div className="admin-density-toggle">
-              <button
-                type="button"
-                className={`admin-density-btn ${viewDensity === "table" ? "active" : ""}`}
-                onClick={() => setViewDensity("table")}
-                title="Table view"
-              >
-                <List size={13} strokeWidth={2} />
-                <span>Table</span>
-              </button>
-              <button
-                type="button"
-                className={`admin-density-btn ${viewDensity === "cards" ? "active" : ""}`}
-                onClick={() => setViewDensity("cards")}
-                title="Visual cards view"
-              >
-                <LayoutGrid size={13} strokeWidth={2} />
-                <span>Cards</span>
-              </button>
-            </div>
+                <div className="admin-density-toggle">
+                  <button
+                    type="button"
+                    className={`admin-density-btn ${viewDensity === "table" ? "active" : ""}`}
+                    onClick={() => setViewDensity("table")}
+                    title="Table view"
+                  >
+                    <List size={13} strokeWidth={2} />
+                    <span>Table</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`admin-density-btn ${viewDensity === "cards" ? "active" : ""}`}
+                    onClick={() => setViewDensity("cards")}
+                    title="Visual cards view"
+                  >
+                    <LayoutGrid size={13} strokeWidth={2} />
+                    <span>Cards</span>
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Table / Cards View */}
@@ -1898,69 +1998,245 @@ export default function AdminView({
         </div>
       )}
 
-      {/* MODAL 2: IN-SITU REEL PLAYER MODAL */}
-      {previewReel && (
-        <div className="admin-modal-overlay" onClick={() => setPreviewReel(null)}>
-          <div
-            className="admin-modal-window"
-            style={{ maxWidth: "420px", background: "#18100c", color: "#ffffff", overflow: "hidden" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ position: "relative", width: "100%", aspectRatio: "9/16", background: "#000000" }}>
-              <video
-                src={previewReel.videoUrl}
-                poster={previewReel.poster}
-                controls
-                autoPlay
-                playsInline
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-              <button
-                type="button"
-                onClick={() => setPreviewReel(null)}
+      {/* MODAL 2: IN-SITU REEL PLAYER & SKU DETAILS INSPECTOR MODAL */}
+      {previewReel && (() => {
+        const matchedProduct = products.find(
+          (p) =>
+            p.name.toLowerCase() === previewReel.productName.toLowerCase() ||
+            p.id === (previewReel as any).productId ||
+            p.slug === (previewReel as any).productSlug
+        ) || products[0];
+
+        return (
+          <div className="admin-modal-overlay" onClick={() => setPreviewReel(null)}>
+            <div
+              className="admin-modal-window admin-reel-inspector-window"
+              style={{
+                maxWidth: "460px",
+                width: "100%",
+                background: "#160e0a",
+                color: "#ffffff",
+                maxHeight: "92vh",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+                borderRadius: "18px",
+                border: "1px solid rgba(224, 186, 155, 0.25)",
+                boxShadow: "0 25px 60px rgba(0,0,0,0.55)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Top Modal Header */}
+              <div
                 style={{
-                  position: "absolute",
-                  top: "14px",
-                  right: "14px",
-                  background: "rgba(0,0,0,0.6)",
-                  color: "#ffffff",
-                  border: "none",
-                  borderRadius: "50%",
-                  width: "32px",
-                  height: "32px",
-                  cursor: "pointer",
                   display: "flex",
+                  justifyContent: "space-between",
                   alignItems: "center",
-                  justifyContent: "center",
+                  padding: "12px 18px",
+                  borderBottom: "1px solid rgba(255,255,255,0.08)",
+                  background: "#120a07",
                 }}
               >
-                <X size={16} strokeWidth={2} />
-              </button>
-            </div>
-            <div style={{ padding: "16px 20px" }}>
-              <span style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", color: "#e0ba9b", letterSpacing: "0.08em" }}>
-                {previewReel.productName}
-              </span>
-              <h4 style={{ margin: "4px 0", fontSize: "16px", color: "#ffffff" }}>{previewReel.title}</h4>
-              <p style={{ margin: "4px 0 12px", fontSize: "12px", color: "#d5c3b9", fontStyle: "italic" }}>
-                "{previewReel.quote}"
-              </p>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "12px" }}>
-                <span style={{ fontSize: "11px", color: "#8c766a" }}>{previewReel.duration} · {previewReel.views} views</span>
-                <a
-                  href={previewReel.instagramUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: "#e0ba9b", fontSize: "11.5px", fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span className="runway-pulse-dot" />
+                  <span style={{ fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700, color: "#dfb895" }}>
+                    {previewReel.step || "Look Details"} · Reel Inspector
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPreviewReel(null)}
+                  style={{
+                    background: "rgba(255,255,255,0.12)",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: "30px",
+                    height: "30px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#ffffff",
+                    cursor: "pointer",
+                  }}
+                  title="Close inspector"
                 >
-                  <span>Open on Instagram</span>
-                  <ExternalLink size={12} strokeWidth={2} />
-                </a>
+                  <X size={15} strokeWidth={2} />
+                </button>
+              </div>
+
+              {/* Scrollable Container */}
+              <div
+                style={{
+                  overflowY: "auto",
+                  WebkitOverflowScrolling: "touch",
+                  display: "flex",
+                  flexDirection: "column",
+                  flex: 1,
+                }}
+              >
+                {/* Constrained Video Viewport */}
+                <div style={{ position: "relative", width: "100%", maxHeight: "44vh", background: "#000000", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                  <video
+                    src={previewReel.videoUrl}
+                    poster={previewReel.poster}
+                    controls
+                    autoPlay
+                    playsInline
+                    style={{ width: "100%", maxHeight: "44vh", objectFit: "contain" }}
+                  />
+                </div>
+
+                {/* Rich Details Section */}
+                <div style={{ padding: "18px 20px", display: "flex", flexDirection: "column", gap: "14px" }}>
+                  {/* Linked Product Card */}
+                  {matchedProduct && (
+                    <div
+                      style={{
+                        background: "rgba(255,255,255,0.05)",
+                        border: "1px solid rgba(224, 186, 155, 0.2)",
+                        borderRadius: "12px",
+                        padding: "12px 14px",
+                        display: "flex",
+                        gap: "12px",
+                        alignItems: "center",
+                      }}
+                    >
+                      <img
+                        src={matchedProduct.image_url || previewReel.poster || photos.makeup}
+                        alt={matchedProduct.name}
+                        style={{ width: "54px", height: "54px", borderRadius: "8px", objectFit: "cover", flexShrink: 0, border: "1px solid rgba(255,255,255,0.1)" }}
+                      />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                          <span style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, color: "#dfb895", background: "rgba(223, 184, 149, 0.15)", padding: "2px 6px", borderRadius: "4px" }}>
+                            {matchedProduct.category}
+                          </span>
+                          {matchedProduct.tag && (
+                            <span style={{ fontSize: "9px", color: "#f5ece1", background: "rgba(255,255,255,0.1)", padding: "2px 6px", borderRadius: "4px" }}>
+                              {matchedProduct.tag}
+                            </span>
+                          )}
+                        </div>
+                        <h4 style={{ margin: "4px 0 2px", fontSize: "14.5px", color: "#ffffff", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {matchedProduct.name}
+                        </h4>
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                          <b style={{ fontSize: "14px", color: "#dfb895" }}>
+                            ₹{Number(matchedProduct.price || 0).toLocaleString("en-IN")}
+                          </b>
+                          <span style={{ fontSize: "11px", color: Number(matchedProduct.stock_quantity || 0) > 10 ? "#34d399" : "#fbbf24" }}>
+                            ● {matchedProduct.stock_quantity || 50} in stock
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Reel Headline & Full Quote */}
+                  <div style={{ background: "rgba(0,0,0,0.25)", padding: "14px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <div style={{ fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "#c18847", fontWeight: 700, marginBottom: "4px" }}>
+                      MOTION EDITORIAL HIGHLIGHT
+                    </div>
+                    <h3 style={{ margin: "0 0 6px", fontSize: "16px", color: "#ffffff", fontFamily: "Cormorant Garamond, serif" }}>
+                      {previewReel.title}
+                    </h3>
+                    <p style={{ margin: "0", fontSize: "12.5px", color: "#d5c3b9", fontStyle: "italic", lineHeight: 1.5 }}>
+                      "{previewReel.quote}"
+                    </p>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.08)", marginTop: "10px", paddingTop: "8px", fontSize: "11px", color: "#a89182" }}>
+                      <span>⏱ {previewReel.duration} · 👁 {previewReel.views} views</span>
+                      <span style={{ color: "#dfb895" }}>{previewReel.handle || "@sheauracosmeticsofficial"}</span>
+                    </div>
+                  </div>
+
+                  {/* Quick Action Buttons */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                    <a
+                      href={previewReel.instagramUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        background: "linear-gradient(135deg, #c13584, #e1306c, #f56040)",
+                        color: "#ffffff",
+                        padding: "10px 14px",
+                        borderRadius: "8px",
+                        fontSize: "11.5px",
+                        fontWeight: 600,
+                        textDecoration: "none",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "6px",
+                        textAlign: "center",
+                      }}
+                    >
+                      <span>Instagram</span>
+                      <ExternalLink size={12} strokeWidth={2} />
+                    </a>
+
+                    {matchedProduct && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const target = matchedProduct;
+                          setPreviewReel(null);
+                          setEditing({ ...blank, ...target });
+                          window.scrollTo({ top: 0, behavior: "instant" });
+                        }}
+                        style={{
+                          background: "rgba(223, 184, 149, 0.15)",
+                          border: "1px solid rgba(223, 184, 149, 0.35)",
+                          color: "#dfb895",
+                          padding: "10px 14px",
+                          borderRadius: "8px",
+                          fontSize: "11.5px",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        <Pencil size={12} strokeWidth={2} />
+                        <span>Edit Product</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {onBack && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPreviewReel(null);
+                        onBack();
+                      }}
+                      style={{
+                        background: "rgba(255,255,255,0.06)",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        color: "#f5ece1",
+                        padding: "9px 14px",
+                        borderRadius: "8px",
+                        fontSize: "11px",
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "6px",
+                        width: "100%",
+                      }}
+                    >
+                      <span>View Live on Storefront</span>
+                      <ExternalLink size={11} strokeWidth={2} />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* MODAL 3: DELETE CONFIRMATION MODAL */}
       {deleteConfirmTarget && (
