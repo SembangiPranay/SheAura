@@ -1666,6 +1666,20 @@ export default function App() {
     }
   }, [isHeroPlaying]);
 
+  useEffect(() => {
+    if (heroVideoRef.current) {
+      heroVideoRef.current.playbackRate = 1.0;
+      const playPromise = heroVideoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => setHeroVideoReady(true))
+          .catch(() => {
+            // Autoplay gracefully handled if browser policy restricts
+          });
+      }
+    }
+  }, []);
+
   const showToast = useCallback((msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(""), 3500);
@@ -1944,6 +1958,8 @@ export default function App() {
           poster={photos.hero}
           preload="auto"
           onCanPlay={() => setHeroVideoReady(true)}
+          onPlaying={() => setHeroVideoReady(true)}
+          onLoadedData={() => setHeroVideoReady(true)}
         >
           <source src="/reels/sheaura-master-runway-wall.mp4" type="video/mp4" />
         </video>

@@ -1,62 +1,42 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 
 interface BrandIntroProps {
   onComplete: () => void;
 }
 
 export default function BrandIntro({ onComplete }: BrandIntroProps) {
-  const [isExiting, setIsExiting] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isFadingOut, setIsFadingOut] = useState(false);
 
   useEffect(() => {
-    // Enforce smooth 1.0 playback rate on the 2X master edit
-    if (videoRef.current) {
-      videoRef.current.playbackRate = 1.0;
-    }
-
-    // Auto-proceed smoothly after 5 seconds if not clicked
+    // Elegant dwell timer: 2.3s for letter reveals and signature flourish,
+    // followed by a smooth, unbroken 1.1s cinematic dissolve into the storefront
     const timer = setTimeout(() => {
-      handleEnter();
-    }, 5000);
+      triggerDissolve();
+    }, 2400);
 
     return () => clearTimeout(timer);
   }, []);
 
-  const handleEnter = () => {
-    if (isExiting) return;
-    setIsExiting(true);
+  const triggerDissolve = () => {
+    if (isFadingOut) return;
+    setIsFadingOut(true);
     setTimeout(() => {
       onComplete();
-    }, 700);
+    }, 1100);
   };
 
   const letters = ["S", "H", "E", "’", "A", "U", "R", "A"];
 
   return (
     <div
-      className={`brand-intro-curtain ${isExiting ? "is-exiting" : ""}`}
-      role="dialog"
-      aria-modal="true"
-      aria-label="She'Aura Haute Maison Entrance"
+      className={`brand-intro-curtain ${isFadingOut ? "is-fading-out" : ""}`}
+      onClick={triggerDissolve}
+      role="presentation"
+      aria-hidden="true"
+      title="Click anywhere to proceed directly"
     >
-      {/* 2X Master Runway Video Backdrop */}
-      <video
-        ref={videoRef}
-        className="brand-intro-video-bg"
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="auto"
-      >
-        <source src="/reels/sheaura-master-runway-wall.mp4" type="video/mp4" />
-      </video>
-
-      {/* Cinematic Vignette Overlay */}
-      <div className="brand-intro-overlay" />
-
       {/* Centerpiece Monogram & Typography Animation */}
-      <div className="brand-intro-content">
+      <div className={`brand-intro-content ${isFadingOut ? "is-fading-out" : ""}`}>
         {/* Subtle Couture Badge */}
         <div className="brand-intro-eyebrow-pill">
           <span className="intro-pulse-dot" />
@@ -98,7 +78,7 @@ export default function BrandIntro({ onComplete }: BrandIntroProps) {
                 <span
                   className="char-glyph"
                   style={{
-                    animationDelay: `${0.18 + index * 0.05}s`,
+                    animationDelay: `${0.16 + index * 0.045}s`,
                   }}
                 >
                   {char}
@@ -115,20 +95,6 @@ export default function BrandIntro({ onComplete }: BrandIntroProps) {
         <p className="brand-intro-tagline">
           YOUR AURA · YOUR STORY
         </p>
-
-        {/* Enter Atelier Interactive Pill */}
-        <button
-          type="button"
-          className="brand-intro-enter-btn"
-          onClick={handleEnter}
-          aria-label="Enter She'Aura Storefront"
-        >
-          <span>Enter Atelier</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-            <polyline points="12 5 19 12 12 19"></polyline>
-          </svg>
-        </button>
       </div>
     </div>
   );
