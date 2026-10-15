@@ -35,7 +35,7 @@ const photos = {
 
 type IconName = "search" | "user" | "bag" | "arrow" | "leaf" | "drop" | "sparkle" | "instagram" | "play" | "pause" | "volume" | "volumeX" | "close" | "check" | "external";
 
-function Icon({ name }: { name: IconName }) {
+function Icon({ name, className }: { name: IconName; className?: string }) {
   const paths: Record<IconName, React.ReactNode> = {
     search: <><circle cx="11" cy="11" r="6" /><path d="m16 16 4 4" /></>,
     user: <><circle cx="12" cy="8" r="3" /><path d="M5.5 20c.6-4 2.7-6 6.5-6s5.9 2 6.5 6" /></>,
@@ -53,7 +53,7 @@ function Icon({ name }: { name: IconName }) {
     check: <polyline points="20 6 9 17 4 12" />,
     external: <><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></>,
   };
-  return <svg aria-hidden="true" className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4">{paths[name]}</svg>;
+  return <svg aria-hidden="true" className={`icon ${className || ""}`.trim()} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4">{paths[name]}</svg>;
 }
 
 function ArrowLink({ children, light = false }: { children: React.ReactNode; light?: boolean }) {
@@ -303,133 +303,7 @@ const reels: Reel[] = [
   },
 ];
 
-function ReelCard({
-  reel,
-  onOpenReel,
-  onSelectProduct,
-  onAddBag,
-}: {
-  reel: Reel;
-  onOpenReel: (reel: Reel) => void;
-  onSelectProduct: (product: Product) => void;
-  onAddBag: (product: Product) => void;
-}) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [isMuted, setIsMuted] = useState(true);
-  const [addedBadge, setAddedBadge] = useState(false);
-  const matchingProduct = products.find((p) => p.name === reel.productName) || products[0];
 
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = true;
-      videoRef.current.play().catch(() => {});
-    }
-  }, []);
-
-  const toggleSound = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
-    }
-  };
-
-  const handleQuickAdd = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onAddBag(matchingProduct);
-    setAddedBadge(true);
-    setTimeout(() => setAddedBadge(false), 1600);
-  };
-
-  const openInstagram = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    window.open(reel.instagramUrl, "_blank", "noopener,noreferrer");
-  };
-
-  return (
-    <div
-      className="reel-card"
-      onClick={() => onOpenReel(reel)}
-    >
-      <div className="reel-media">
-        <video
-          ref={videoRef}
-          src={reel.videoUrl}
-          poster={reel.poster}
-          muted={isMuted}
-          playsInline
-          autoPlay
-          loop
-          preload="metadata"
-          className="reel-video"
-          onCanPlay={(e) => (e.target as HTMLVideoElement).play().catch(() => {})}
-        />
-        <div className="reel-gradient-wash" />
-      </div>
-
-      <div className="reel-top-row">
-        <button
-          className="reel-creator-pill"
-          onClick={openInstagram}
-          title="Open original reel on Instagram"
-          aria-label="Open original reel on Instagram"
-        >
-          <Icon name="instagram" />
-          <span>{reel.handle}</span>
-          <Icon name="external" />
-        </button>
-        <div className="reel-top-actions">
-          <span className="reel-live-badge"><i /> LIVE</span>
-          <button
-            className="reel-icon-btn"
-            onClick={toggleSound}
-            aria-label={isMuted ? "Unmute video" : "Mute video"}
-            title={isMuted ? "Unmute sound" : "Mute sound"}
-          >
-            <Icon name={isMuted ? "volumeX" : "volume"} />
-          </button>
-        </div>
-      </div>
-
-      <div className="reel-center-play">
-        <div className="reel-play-circle" title="Watch in fullscreen">
-          <Icon name="play" />
-        </div>
-      </div>
-
-      <div className="reel-bottom-sheet">
-        <div className="reel-step-pill">{reel.step}</div>
-        <p className="reel-quote">"{reel.quote}"</p>
-        <div
-          className="reel-product-card"
-          onClick={(e) => {
-            e.stopPropagation();
-            onSelectProduct(matchingProduct);
-            window.scrollTo(0, 0);
-          }}
-        >
-          <img src={reel.productImage || matchingProduct.image} alt={matchingProduct.name} className="reel-prod-thumb" />
-          <div className="reel-prod-meta">
-            {reel.productTag && <span className="reel-prod-tag-pill">{reel.productTag}</span>}
-            <h4 className="reel-prod-title">{matchingProduct.name}</h4>
-            <div className="reel-prod-price-row">
-              <b>{reel.productPrice || matchingProduct.price}</b>
-              <span className="reel-prod-views">{reel.views} views</span>
-            </div>
-          </div>
-          <button
-            className="reel-quick-add"
-            onClick={handleQuickAdd}
-            title="Quick add to bag"
-            aria-label="Add to bag"
-          >
-            {addedBadge ? "✓" : "+"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function ReelViewerModal({
   reel,
@@ -720,18 +594,59 @@ function ReelsSection({
 }) {
   const [filter, setFilter] = useState<string>("all");
   const [activeId, setActiveId] = useState(reels[0].id);
+  const [isMuted, setIsMuted] = useState(true);
+  const [addedToast, setAddedToast] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const filteredReels = useMemo(() => {
     return filter === "all" ? reels : reels.filter((r) => r.category === filter);
   }, [filter]);
 
   useEffect(() => {
-    if (!filteredReels.some((reel) => reel.id === activeId)) setActiveId(filteredReels[0]?.id || reels[0].id);
+    if (!filteredReels.some((reel) => reel.id === activeId)) {
+      setActiveId(filteredReels[0]?.id || reels[0].id);
+    }
   }, [filter, filteredReels, activeId]);
 
   const activeIndex = Math.max(0, filteredReels.findIndex((reel) => reel.id === activeId));
   const activeReel = filteredReels[activeIndex] || filteredReels[0] || reels[0];
-  const move = (direction: number) => setActiveId(filteredReels[(activeIndex + direction + filteredReels.length) % filteredReels.length].id);
+  const matchingProduct = useMemo(() => {
+    return products.find((p) => p.name === activeReel.productName) || products[0];
+  }, [activeReel.productName]);
+
+  const move = (direction: number) => {
+    const nextIdx = (activeIndex + direction + filteredReels.length) % filteredReels.length;
+    setActiveId(filteredReels[nextIdx].id);
+  };
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.muted = isMuted;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [activeReel.id]);
+
+  const toggleSound = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (videoRef.current) {
+      const nextMuted = !isMuted;
+      videoRef.current.muted = nextMuted;
+      setIsMuted(nextMuted);
+    }
+  };
+
+  const openInstagram = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    window.open(activeReel.instagramUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onAddBag(matchingProduct);
+    setAddedToast(true);
+    setTimeout(() => setAddedToast(false), 2200);
+  };
 
   return (
     <section className="reels-section" id="rituals">
@@ -739,16 +654,20 @@ function ReelsSection({
         <div className="section-heading">
           <div>
             <div className="reels-eyebrow-row">
-              <p className="eyebrow dark">Official Instagram Reels · Watch & Shop</p>
+              <span className="reels-haute-pill">
+                <Icon name="sparkle" />
+                <span>Haute Couture Runway</span>
+              </span>
               <span className="reels-live-pulse"><i /> 10 RITUALS RUNNING LIVE</span>
             </div>
             <h2>Aura in Motion.</h2>
             <p>Real skin, botanical textures, unedited swatches. Watch our official Instagram reels flowing live—tap any piece to shop the exact shades worn in motion.</p>
           </div>
+
           <div className="reels-header-controls">
             <div className="reels-filters">
               {[
-                { id: "all", label: "All Reels (10)" },
+                { id: "all", label: "All Looks (10)" },
                 { id: "blush", label: "Blush" },
                 { id: "lips", label: "Lipsticks" },
                 { id: "glow", label: "Highlighter & Oil" },
@@ -763,26 +682,243 @@ function ReelsSection({
                 </button>
               ))}
             </div>
-            <div className="reels-motion-controls">
-              <div className="reels-arrow-btns">
-                <button onClick={() => move(-1)} aria-label="Previous reel" title="Previous reel">
-                  <Icon name="arrow" />
-                </button>
-                <button onClick={() => move(1)} aria-label="Next reel" title="Next reel">
-                  <Icon name="arrow" />
-                </button>
-              </div>
+
+            <div className="reels-stepper-counter" aria-label={`Look ${activeIndex + 1} of ${filteredReels.length}`}>
+              <span className="current">{String(activeIndex + 1).padStart(2, "0")}</span>
+              <span className="divider">/</span>
+              <span className="total">{String(filteredReels.length).padStart(2, "0")}</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="reels-featured-layout">
-        <button className="reels-featured-arrow prev" onClick={() => move(-1)} aria-label="Previous reel"><Icon name="arrow" /></button>
-        <div className="reels-featured-active"><ReelCard reel={activeReel} onOpenReel={onOpenReel} onSelectProduct={onSelectProduct} onAddBag={onAddBag} /></div>
-        <button className="reels-featured-arrow next" onClick={() => move(1)} aria-label="Next reel"><Icon name="arrow" /></button>
-        <div className="reels-thumbnails" aria-label="Choose a reel">
-          {filteredReels.map((reel) => <button key={reel.id} className={`reel-thumbnail ${reel.id === activeReel.id ? "active" : ""}`} onClick={() => setActiveId(reel.id)}><img src={reel.poster} alt="" /><span>{reel.title}</span></button>)}
+      <div className="shell">
+        <div className="reels-atelier-stage">
+          {/* LEFT: 9:16 Authentic Portrait Cinema Column */}
+          <div className="reels-cinema-column">
+            <div
+              className="reels-cinema-bezel"
+              onClick={() => onOpenReel(activeReel)}
+              title="Tap to watch fullscreen"
+            >
+              <video
+                ref={videoRef}
+                src={activeReel.videoUrl}
+                poster={activeReel.poster}
+                muted={isMuted}
+                playsInline
+                autoPlay
+                loop
+                preload="metadata"
+                className="reels-cinema-video"
+              />
+              <div className="reels-cinema-gradient" />
+
+              <div className="reels-cinema-top">
+                <button
+                  className="reels-cinema-creator-pill"
+                  onClick={openInstagram}
+                  title="Open original reel on Instagram"
+                  aria-label="Open original reel on Instagram"
+                >
+                  <Icon name="instagram" />
+                  <span>{activeReel.handle}</span>
+                  <Icon name="external" />
+                </button>
+
+                <div className="reels-cinema-actions">
+                  <button
+                    className="reels-sound-visualizer"
+                    onClick={toggleSound}
+                    aria-label={isMuted ? "Sound muted, click to unmute" : "Sound active, click to mute"}
+                    title={isMuted ? "Unmute audio" : "Mute audio"}
+                  >
+                    <div className={`sound-bars ${!isMuted ? "playing" : ""}`}>
+                      <span /><span /><span /><span />
+                    </div>
+                    <span>{isMuted ? "MUTED" : "LIVE"}</span>
+                  </button>
+
+                  <button
+                    className="reels-cinema-icon-btn"
+                    onClick={toggleSound}
+                    aria-label={isMuted ? "Unmute" : "Mute"}
+                  >
+                    <Icon name={isMuted ? "volumeX" : "volume"} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="reels-cinema-center-cue">
+                <div className="reels-cinema-play-disc">
+                  <Icon name="play" />
+                  <span>Tap to Expand</span>
+                </div>
+              </div>
+
+              <div className="reels-cinema-bottom">
+                <div className="reels-cinema-step-pill">
+                  <span
+                    className="dot"
+                    style={{ backgroundColor: matchingProduct.tone || "#a81920" }}
+                  />
+                  <span>{activeReel.step}</span>
+                </div>
+                <div className="reels-cinema-views-pill">
+                  <span>{activeReel.views} watches</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT: Haute Couture Editorial Companion */}
+          <div className="reels-editorial-column">
+            <div className="reels-editorial-header">
+              <div className="reels-editorial-step-badge">
+                <span className="reels-editorial-category">{activeReel.category.toUpperCase()}</span>
+                <span>{activeReel.step.toUpperCase()}</span>
+              </div>
+              <h3 className="reels-editorial-title">{activeReel.title}</h3>
+              <p className="reels-editorial-subtitle">{activeReel.subtitle}</p>
+            </div>
+
+            {/* Editorial Creator Quote */}
+            <div className="reels-editorial-quote-box">
+              <span className="quote-mark" aria-hidden="true">“</span>
+              <p className="reels-editorial-quote-text">“{activeReel.quote}”</p>
+              <div className="quote-author-row">
+                <img src={activeReel.avatar} alt={activeReel.handle} className="quote-avatar" />
+                <div>
+                  <b>{activeReel.handle}</b>
+                  <small>Verified SheAura Creator · {activeReel.views} watches</small>
+                </div>
+              </div>
+            </div>
+
+            {/* Product Card in Editorial */}
+            <div className="reels-editorial-product-card">
+              <div className="prod-card-top">
+                <div
+                  className="prod-card-thumb-wrap"
+                  onClick={() => {
+                    onSelectProduct(matchingProduct);
+                    window.scrollTo(0, 0);
+                  }}
+                  title="View product details"
+                >
+                  <img
+                    src={activeReel.productImage || matchingProduct.image}
+                    alt={matchingProduct.name}
+                    className="prod-card-thumb"
+                  />
+                </div>
+                <div className="prod-card-meta">
+                  <div className="prod-card-tag-row">
+                    {activeReel.productTag && <span className="prod-card-tag">{activeReel.productTag}</span>}
+                    <span className="prod-card-finish">{matchingProduct.finish} Finish</span>
+                  </div>
+                  <h4
+                    className="prod-card-name"
+                    onClick={() => {
+                      onSelectProduct(matchingProduct);
+                      window.scrollTo(0, 0);
+                    }}
+                  >
+                    {matchingProduct.name}
+                  </h4>
+                  <div className="prod-card-swatch-row">
+                    <span
+                      className="prod-swatch-circle"
+                      style={{ backgroundColor: matchingProduct.tone || "#c18847" }}
+                    />
+                    <span className="prod-swatch-name">{matchingProduct.name}</span>
+                    <span className="prod-card-price">{activeReel.productPrice || matchingProduct.price}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="prod-card-actions">
+                <button
+                  className={`prod-card-add-btn ${addedToast ? "added" : ""}`}
+                  onClick={handleAddToCart}
+                >
+                  {addedToast ? "Added to Bag ✓" : `Add to Bag — ${activeReel.productPrice || matchingProduct.price}`}
+                </button>
+                <button
+                  className="prod-card-details-btn"
+                  onClick={() => {
+                    onSelectProduct(matchingProduct);
+                    window.scrollTo(0, 0);
+                  }}
+                >
+                  <span>Explore Formula</span>
+                  <Icon name="arrow" />
+                </button>
+              </div>
+            </div>
+
+            {/* Stepper Navigation Pills */}
+            <div className="reels-editorial-nav-row">
+              <button
+                className="reels-nav-pill-btn prev"
+                onClick={() => move(-1)}
+                aria-label="Previous look"
+              >
+                <Icon name="arrow" />
+                <span>Previous Look</span>
+              </button>
+              <button
+                className="reels-nav-pill-btn next"
+                onClick={() => move(1)}
+                aria-label="Next look"
+              >
+                <span>Next Look</span>
+                <Icon name="arrow" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* BOTTOM: Runway Lookbook Ribbon (Filmstrip) */}
+        <div className="reels-runway-ribbon-wrap">
+          <div className="reels-ribbon-head">
+            <span className="reels-ribbon-label">RUNWAY LOOKBOOK FILMSTRIP</span>
+            <span className="reels-ribbon-hint">Scroll to explore all 10 looks</span>
+          </div>
+
+          <div className="reels-runway-ribbon" role="region" aria-label="Runway looks">
+            {filteredReels.map((reel, idx) => {
+              const prod = products.find((p) => p.name === reel.productName);
+              const isSelected = reel.id === activeReel.id;
+              return (
+                <button
+                  key={reel.id}
+                  className={`reels-ribbon-card ${isSelected ? "active" : ""}`}
+                  onClick={() => setActiveId(reel.id)}
+                  aria-pressed={isSelected}
+                  title={reel.title}
+                >
+                  <div className="ribbon-card-media">
+                    <img src={reel.poster} alt={reel.title} loading="lazy" />
+                    <span className="ribbon-card-num">{String(idx + 1).padStart(2, "0")}</span>
+                    <span
+                      className="ribbon-swatch-dot"
+                      style={{ backgroundColor: prod?.tone || "#a81920" }}
+                    />
+                    {isSelected && (
+                      <div className="ribbon-card-playing-indicator">
+                        <span />
+                      </div>
+                    )}
+                  </div>
+                  <div className="ribbon-card-info">
+                    <b>{reel.title}</b>
+                    <small>{reel.step}</small>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
