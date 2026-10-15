@@ -1269,7 +1269,7 @@ img { display: block; width: 100%; }
   overflow: hidden;
   background: #1a0804;
   color: white;
-  margin-bottom: 28px;
+  margin-bottom: 0;
 }
 .hero-video-bg {
   position: absolute;
@@ -1293,7 +1293,7 @@ img { display: block; width: 100%; }
   inset: 0;
   z-index: 1;
   background: linear-gradient(90deg, rgba(14, 5, 2, 0.44) 0%, rgba(14, 5, 2, 0.16) 30%, transparent 60%),
-              linear-gradient(0deg, rgba(14, 5, 2, 0.35) 0%, transparent 22%);
+              linear-gradient(0deg, #2c140e 0%, rgba(44, 20, 14, 0.75) 28px, rgba(44, 20, 14, 0.2) 65px, transparent 110px);
   pointer-events: none;
 }
 .hero-video-controls {
@@ -1444,7 +1444,7 @@ img { display: block; width: 100%; }
 .hero-botanical-left, .hero-botanical-right { display: none !important; }
 .scroll-note { display: none !important; }
 
-.categories { display: grid; grid-template-columns: repeat(4, 1fr); background: #2c140e; gap: 2px; padding: 2px 0; }
+.categories { display: grid; grid-template-columns: repeat(4, 1fr); background: #2c140e; gap: 2px; padding: 22px 0 2px; }
 .category { position: relative; height: 435px; overflow: hidden; border-radius: 150px 150px 0 0; }
 .category > img { transition: transform .7s; }
 .category-photo .category-foreground { height: 100%; object-fit: cover; filter: sepia(.15); }
@@ -1679,7 +1679,7 @@ footer { background: #ecd7c1; }
 
 @media (max-width: 900px) {
   .shell { width: min(100% - 36px, 680px); }
-  .hero { height: clamp(420px, calc(100vh - 110px), 540px); margin-bottom: 24px; }
+  .hero { height: clamp(420px, calc(100vh - 110px), 540px); margin-bottom: 0; }
   .nav { height: 74px; }
   .nav-links { position: absolute; top: 73px; left: -18px; right: -18px; display: none; flex-direction: column; gap: 0; margin: 0; padding: 18px; background: rgba(35,10,4,.96); }
   .nav-links.open { display: flex; }
@@ -1689,7 +1689,7 @@ footer { background: #ecd7c1; }
   .menu-button i { display: block; width: 22px; height: 1px; background: white; }
   .hero-content { padding-top: 80px; }
   .hero-content h1 { font-size: clamp(34px, 5.5vw, 46px); }
-  .categories { grid-template-columns: 1fr 1fr; }
+  .categories { grid-template-columns: 1fr 1fr; padding: 20px 8px 8px; gap: 8px; }
   .category { height: 340px; }
   .manifesto { grid-template-columns: 1fr; }
   .manifesto-image { height: 520px; }
@@ -1726,12 +1726,12 @@ footer { background: #ecd7c1; }
 @media (max-width: 600px) {
   body { font-size: 12px; }
   .brand { font-size: 25px; }
-  .hero { height: clamp(360px, calc(100vh - 90px), 460px); margin-bottom: 20px; }
+  .hero { height: clamp(360px, calc(100vh - 90px), 460px); margin-bottom: 0; }
   .hero-bg { object-position: 62% center; }
   .hero-content { padding-top: 65px; }
   .hero-content h1 { font-size: clamp(30px, 8vw, 38px); }
   .scroll-note { display: none; }
-  .categories { grid-template-columns: 1fr; padding: 0 12px 12px; gap: 12px; }
+  .categories { grid-template-columns: 1fr; padding: 18px 12px 12px; gap: 14px; }
   .category { height: 320px; border-radius: 150px 150px 0 0; }
   .manifesto-image { height: 430px; }
   .manifesto-copy h2, .ingredients-copy h2 { font-size: 48px; }
