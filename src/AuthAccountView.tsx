@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect, FormEvent, useMemo } from "react";
 import {
   SheAuraUser,
   initAuth,
@@ -10,39 +10,154 @@ import {
   onAuthStateChanged,
 } from "./lib/auth";
 import { Icon, products, Product } from "./App";
+import {
+  Sparkles,
+  Gift,
+  ShoppingBag,
+  Check,
+  CheckCircle2,
+  ArrowRight,
+  ShieldCheck,
+  Heart,
+  Eye,
+  Clock,
+  MapPin,
+  Lock,
+} from "lucide-react";
 
 interface AuthAccountViewProps {
   onBack: () => void;
   onOpenAdmin: () => void;
   onSelectProduct: (product: Product) => void;
+  onAddToCart?: (product: Product) => void;
+  onOpenCart?: () => void;
 }
 
-const UNDERTONE_OPTIONS = [
-  { id: "Warm Golden", label: "Warm Golden", desc: "Olive, bronze, warm peachy undertones" },
-  { id: "Neutral Rose", label: "Neutral Rose", desc: "Balanced beige with soft petal rose" },
-  { id: "Deep Olive", label: "Deep Olive", desc: "Rich golden green & warm amber tones" },
-  { id: "Cool Porcelain", label: "Cool Porcelain", desc: "Pink, blue, alabaster cool undertones" },
+export interface SwatchOption {
+  id: string;
+  name: string;
+  hex: string;
+  toneTitle: string;
+  desc: string;
+  flatteringNote: string;
+  matchedLipShades: string;
+  bestProductSlugs: string[];
+}
+
+export const UNDERTONE_SWATCHES: SwatchOption[] = [
+  {
+    id: "Fair Porcelain Rose",
+    name: "Alabaster Rose",
+    hex: "#F5DFD2",
+    toneTitle: "Cool Rose & Petal Alabaster",
+    desc: "Delicate porcelain with cool pink undertones",
+    flatteringNote: "Accentuates soft petal-pink, crushed berry stains, and cool rosewood.",
+    matchedLipShades: "Rosewood Velvet · Petal Bloom · Orchid Silk",
+    bestProductSlugs: ["lip-01", "face-01", "blush-01"],
+  },
+  {
+    id: "Warm Golden Honey",
+    name: "Golden Honey",
+    hex: "#E8C6A5",
+    toneTitle: "Warm Golden & Peachy Olive",
+    desc: "Sun-drenched light/medium with warm golden glow",
+    flatteringNote: "Pops dramatically with iconic scarlet red, warm terracotta, and molten amber.",
+    matchedLipShades: "The Red Statement · Terracotta Dusk · Molten Glaze",
+    bestProductSlugs: ["lip-01", "lip-02", "glow-01"],
+  },
+  {
+    id: "Radiant Neutral Sand",
+    name: "Neutral Sand",
+    hex: "#DEB887",
+    toneTitle: "Balanced Beige & Biscuit",
+    desc: "Evenly balanced undertones suited for both satin and dewy finishes",
+    flatteringNote: "Universally flattering — pairs effortlessly with rich nudes, spiced rose, and cashmere browns.",
+    matchedLipShades: "Spiced Cashmere · Velvet Beige · Rose Squalane",
+    bestProductSlugs: ["face-01", "lip-02", "blush-01"],
+  },
+  {
+    id: "Sun-Kissed Bronze",
+    name: "Warm Bronze",
+    hex: "#C68B59",
+    toneTitle: "Golden Ochre & Rich Caramel",
+    desc: "Luminous tan with deep amber and golden glow",
+    flatteringNote: "Complements molten bronze highlights, deep Bordeaux wine, and warm sunset apricot.",
+    matchedLipShades: "Sunset Apricot · Molten Bronze · Scarlet Rose",
+    bestProductSlugs: ["glow-01", "lip-01", "face-01"],
+  },
+  {
+    id: "Deep Espresso Velvet",
+    name: "Rich Cocoa",
+    hex: "#6B3B24",
+    toneTitle: "Deep Mahogany & Warm Cocoa",
+    desc: "Deep sculpted complexion with rich mahogany warmth",
+    flatteringNote: "Stunning with high-pigment bold scarlet, deep plum, and golden glazed glass.",
+    matchedLipShades: "Blackberry Velvet · Rich Ruby · Molten Gold",
+    bestProductSlugs: ["lip-01", "face-01", "glow-01"],
+  },
 ];
 
-const FINISH_OPTIONS = [
+export const VANITY_ARCHETYPES = [
+  {
+    id: "Old Money Radiance",
+    title: "Old Money Radiance",
+    tagline: "Polished · Cashmere · Timeless",
+    desc: "Luminous, velvet-matte base with sculpted rosewood lips and subtle champagne cheekbones.",
+    badge: "✦ Most Adored",
+    colors: ["#2b130c", "#dfb895", "#8c4436"],
+  },
+  {
+    id: "Sunlit Glass Skin",
+    title: "Sunlit Glass Skin",
+    tagline: "Dewy · Glazed · Botanical",
+    desc: "Ultra-hydrated, drenched radiance with translucent skin and light-reflecting botanical glow.",
+    badge: "✨ Viral Glow",
+    colors: ["#f4ede5", "#c18847", "#dfb895"],
+  },
+  {
+    id: "French Girl Effortless",
+    title: "French Girl Effortless",
+    tagline: "Blurred · Petal · Minimal",
+    desc: "Fluffy feathery brows, soft-bitten berry stained pout, and barely-there skin tint.",
+    badge: "🍒 Editorial",
+    colors: ["#7d2616", "#f9e5dc", "#a81920"],
+  },
+  {
+    id: "Haute Runway Drama",
+    title: "Haute Runway Drama",
+    tagline: "Sculpted · Bold · Iconic",
+    desc: "Saturated signature crimson lips, razor-sharp sculpting, and 24K velvet intensity.",
+    badge: "🥀 Runway Muse",
+    colors: ["#a81920", "#1a0b07", "#dfb895"],
+  },
+];
+
+export const SKIN_PRIORITIES = [
+  { id: "Glass-Skin Hydration", label: "Glass-Skin Hydration", note: "Plant Squalane & Rosewater" },
+  { id: "Poreless Velvet Blur", label: "Poreless Velvet Blur", note: "Soft-Focus Cashmere Micro-Powder" },
+  { id: "16H Transfer-Proof", label: "16H Transfer-Proof", note: "Runway-Grade All-Day Wear" },
+  { id: "Botanical Barrier Shield", label: "Botanical Barrier Shield", note: "Damask Rose & Centella Calm" },
+];
+
+export const FINISH_OPTIONS = [
   "Sculpted satin",
-  "Silk powder",
-  "Molten pearl",
   "Velvet matte",
+  "Molten pearl glaze",
+  "Soft silk powder",
   "Dewy liquid radiance",
 ];
 
-const SCENT_OPTIONS = [
-  "Damask Rose & Botanical Amber",
-  "Crushed Jasmine & Warm Vanilla",
-  "Orange Blossom & Sandalwood",
-  "Fragrance-Free Pure Botanical",
+export const BIRTHDAY_MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
 ];
 
 export default function AuthAccountView({
   onBack,
   onOpenAdmin,
   onSelectProduct,
+  onAddToCart,
+  onOpenCart,
 }: AuthAccountViewProps) {
   const [user, setUser] = useState<SheAuraUser | null>(null);
   const [loadingSession, setLoadingSession] = useState(true);
@@ -60,6 +175,39 @@ export default function AuthAccountView({
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [infoNotice, setInfoNotice] = useState("");
+  const [passportToast, setPassportToast] = useState("");
+
+  const showPassportToast = (msg: string) => {
+    setPassportToast(msg);
+    setTimeout(() => setPassportToast(""), 4500);
+  };
+
+  const handleUpdateProfile = (delta: Partial<SheAuraUser["beautyProfile"]>, feedbackMsg?: string) => {
+    const updated = updateBeautyProfile(delta);
+    if (updated) {
+      setUser(updated);
+      showPassportToast(feedbackMsg || "✦ Aura Beauty Passport Refined · Saved to Maison Profile");
+    }
+  };
+
+  const activeSwatch = useMemo(() => {
+    return (
+      UNDERTONE_SWATCHES.find((s) => s.id === user?.beautyProfile?.undertone) ||
+      UNDERTONE_SWATCHES[2]
+    );
+  }, [user?.beautyProfile?.undertone]);
+
+  const activeArchetype = useMemo(() => {
+    return (
+      VANITY_ARCHETYPES.find((a) => a.id === user?.beautyProfile?.vanityMood) ||
+      VANITY_ARCHETYPES[0]
+    );
+  }, [user?.beautyProfile?.vanityMood]);
+
+  const curatedProducts = useMemo(() => {
+    if (!products || products.length === 0) return [];
+    return products.slice(0, 3);
+  }, [products]);
 
   // Modals
   const [trackingOrder, setTrackingOrder] = useState<any | null>(null);
@@ -270,6 +418,7 @@ export default function AuthAccountView({
             <div className="account-hero-card">
               <div className="account-avatar-circle">
                 <span>{userDisplayName.slice(0, 2).toUpperCase()}</span>
+                <span className="account-avatar-halo" />
               </div>
               <div className="account-hero-info">
                 <div className="account-badge-row">
@@ -277,28 +426,52 @@ export default function AuthAccountView({
                     <Icon name="sparkle" />
                     <span>{user.tier.toUpperCase()}</span>
                   </span>
+                  <span className="account-badge mood-tag">
+                    <Sparkles size={11} strokeWidth={2.2} />
+                    <span>{user.beautyProfile?.vanityMood?.toUpperCase() || "OLD MONEY RADIANCE"}</span>
+                  </span>
+                  <span className="account-badge points">
+                    <span>✦ {user.loyaltyPoints} Radiance Points</span>
+                  </span>
+                  {user.beautyProfile?.birthdayMonth && (
+                    <span className="account-badge birthday-tag">
+                      <Gift size={11} strokeWidth={2.2} />
+                      <span>{user.beautyProfile.birthdayMonth.toUpperCase()} VIP GIFT</span>
+                    </span>
+                  )}
                   {isAdminUser && (
                     <span className="account-badge admin">
                       <Icon name="shield" />
-                      <span>ADMINISTRATIVE PRIVILEGES</span>
+                      <span>ADMIN STUDIO</span>
                     </span>
                   )}
-                  <span className="account-badge points" style={{ background: "rgba(193, 136, 71, 0.12)", color: "#7d4416" }}>
-                    <span>✦ {user.loyaltyPoints} Radiance Points</span>
-                  </span>
                 </div>
                 <h2>Welcome back, {userDisplayName}</h2>
                 <p className="account-email">{userEmail}</p>
-                <span className="account-meta-note">
-                  Member since {user.memberSince} · VIP Botanical Complimentary White-Glove Dispatch Enabled
-                </span>
+                <div className="account-aura-summary-bar">
+                  <span className="aura-live-dot" />
+                  <span>
+                    Aura Passport Active: <b>{activeSwatch.name}</b> ({activeSwatch.toneTitle}) · <b>{activeArchetype.title}</b> · Complimentary White-Glove Courier Active
+                  </span>
+                </div>
               </div>
 
               <div className="account-hero-actions">
                 {isAdminUser && (
                   <button className="account-admin-action-btn" onClick={onOpenAdmin}>
                     <Icon name="shield" />
-                    <span>Open Admin Studio</span>
+                    <span>Admin Studio</span>
+                  </button>
+                )}
+                {onOpenCart && (
+                  <button
+                    type="button"
+                    className="account-bag-action-btn"
+                    onClick={onOpenCart}
+                    title="View Haute Bag & Checkout"
+                  >
+                    <ShoppingBag size={13} strokeWidth={2} />
+                    <span>View Bag</span>
                   </button>
                 )}
                 <button className="account-signout-btn" onClick={handleSignOut}>
@@ -357,67 +530,300 @@ export default function AuthAccountView({
 
             {/* TAB 1: Profile & Rituals */}
             {profileTab === "overview" && (
-              <div className="account-grid-section">
-                <div className="account-info-card">
-                  <h4>Beauty Profile & Skin Undertone</h4>
-                  <div className="info-list">
-                    <div className="info-row">
-                      <span>Skin Undertone</span>
-                      <b>{user.beautyProfile?.undertone || "Neutral Rose"}</b>
+              <div className="account-passport-layout">
+                {/* 1. THE AURA BEAUTY PASSPORT (MAIN ATELIER CARD) */}
+                <div className="beauty-passport-card">
+                  {/* Passport Header */}
+                  <div className="passport-card-header">
+                    <div className="passport-header-title-group">
+                      <span className="passport-eyebrow">
+                        <Sparkles size={12} strokeWidth={2.2} style={{ color: "#c18847" }} />
+                        <span>MAISON DIAGNOSTIC IDENTITY</span>
+                      </span>
+                      <h3>Your Aura Beauty Passport</h3>
+                      <p>
+                        Calibrated for your skin undertone, signature vanity aesthetic, and customized formulation rituals.
+                      </p>
                     </div>
-                    <div className="info-row">
-                      <span>Preferred Finish</span>
-                      <b>{user.beautyProfile?.preferredFinish || "Sculpted satin"}</b>
-                    </div>
-                    <div className="info-row">
-                      <span>Signature Scent</span>
-                      <b>{user.beautyProfile?.signatureScent || "Damask Rose & Botanical Amber"}</b>
-                    </div>
-                    <div className="info-row">
-                      <span>Formula Standard</span>
-                      <b>100% Vegan, Cruelty-Free, Squalane-Infused</b>
-                    </div>
-                    <div className="info-row">
-                      <span>Delivery Privilege</span>
-                      <b>Free White-Glove Dispatch</b>
+
+                    <div className="passport-active-pill">
+                      <span className="passport-pulse-dot" />
+                      <span>Passport Active</span>
                     </div>
                   </div>
 
-                  {/* Interactive Ritual Customizer */}
-                  <div style={{ marginTop: "20px", paddingTop: "16px", borderTop: "1px solid rgba(223, 184, 149, 0.3)" }}>
-                    <span style={{ fontSize: "8.5px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#7d2616", display: "block", marginBottom: "8px" }}>
-                      Refine Your Undertone
-                    </span>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                      {UNDERTONE_OPTIONS.map((opt) => (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          onClick={() => {
-                            const updated = updateBeautyProfile({ undertone: opt.id });
-                            if (updated) setUser(updated);
-                          }}
-                          style={{
-                            padding: "6px 10px",
-                            borderRadius: "999px",
-                            border: user.beautyProfile?.undertone === opt.id ? "1.5px solid #32150f" : "1px solid rgba(43, 19, 12, 0.2)",
-                            background: user.beautyProfile?.undertone === opt.id ? "#32150f" : "#fdfbf9",
-                            color: user.beautyProfile?.undertone === opt.id ? "#ffffff" : "#4b3228",
-                            fontSize: "8.5px",
-                            fontWeight: 600,
-                            cursor: "pointer",
-                            transition: "all 0.2s",
-                          }}
-                        >
-                          {opt.label}
-                        </button>
+                  {/* Section A: Complexion & Skin Undertone Swatches */}
+                  <div className="passport-section">
+                    <div className="passport-section-head">
+                      <div>
+                        <h4>1. Complexion Tone & Undertone Match</h4>
+                        <p>Select your true complexion shade to match lipsticks, blushers, and radiant powders.</p>
+                      </div>
+                      <span className="passport-current-badge" style={{ backgroundColor: activeSwatch.hex, color: activeSwatch.hex === "#6B3B24" ? "#fff" : "#2b130c" }}>
+                        {activeSwatch.name}
+                      </span>
+                    </div>
+
+                    <div className="swatches-interactive-grid">
+                      {UNDERTONE_SWATCHES.map((swatch) => {
+                        const isSelected = (user.beautyProfile?.undertone || "Radiant Neutral Sand") === swatch.id;
+                        return (
+                          <button
+                            key={swatch.id}
+                            type="button"
+                            className={`swatch-card-btn ${isSelected ? "selected" : ""}`}
+                            onClick={() => {
+                              handleUpdateProfile(
+                                { undertone: swatch.id },
+                                `✓ Undertone calibrated to ${swatch.name} (${swatch.toneTitle})`
+                              );
+                            }}
+                          >
+                            <div className="swatch-card-top">
+                              <span
+                                className="swatch-color-circle"
+                                style={{ backgroundColor: swatch.hex }}
+                              >
+                                {isSelected && <Check size={14} strokeWidth={3} style={{ color: swatch.hex === "#F5DFD2" || swatch.hex === "#E8C6A5" ? "#2b130c" : "#ffffff" }} />}
+                              </span>
+                              <div className="swatch-meta">
+                                <b>{swatch.name}</b>
+                                <small>{swatch.toneTitle}</small>
+                              </div>
+                            </div>
+                            <p className="swatch-desc">{swatch.desc}</p>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Flattering Harmony Callout */}
+                    <div className="swatch-harmony-box">
+                      <div className="harmony-icon-wrap">
+                        <Sparkles size={16} strokeWidth={2} style={{ color: "#c18847" }} />
+                      </div>
+                      <div className="harmony-info">
+                        <b>FLATTERING HARMONY FOR {activeSwatch.name.toUpperCase()}:</b>
+                        <p>{activeSwatch.flatteringNote}</p>
+                        <span className="harmony-matched-shades">
+                          Recommended Lip & Cheek Palette: <b>{activeSwatch.matchedLipShades}</b>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section B: Signature Vanity Archetype */}
+                  <div className="passport-section">
+                    <div className="passport-section-head">
+                      <div>
+                        <h4>2. Signature Vanity Aesthetic & Aura Style</h4>
+                        <p>Choose the cosmetic mood that defines your signature day-to-night presence.</p>
+                      </div>
+                      <span className="passport-section-tag">
+                        {activeArchetype.title}
+                      </span>
+                    </div>
+
+                    <div className="archetypes-grid">
+                      {VANITY_ARCHETYPES.map((arch) => {
+                        const isSelected = (user.beautyProfile?.vanityMood || "Old Money Radiance") === arch.id;
+                        return (
+                          <div
+                            key={arch.id}
+                            className={`archetype-card ${isSelected ? "selected" : ""}`}
+                            onClick={() => {
+                              handleUpdateProfile(
+                                { vanityMood: arch.id },
+                                `✓ Vanity Aesthetic set to ${arch.title}`
+                              );
+                            }}
+                          >
+                            <div className="archetype-top">
+                              <span className="archetype-badge">{arch.badge}</span>
+                              <div className="archetype-palette">
+                                {arch.colors.map((c, idx) => (
+                                  <span key={idx} style={{ backgroundColor: c }} />
+                                ))}
+                              </div>
+                            </div>
+
+                            <h5 className="archetype-title">{arch.title}</h5>
+                            <span className="archetype-tagline">{arch.tagline}</span>
+                            <p className="archetype-desc">{arch.desc}</p>
+
+                            <div className="archetype-footer">
+                              <span className="archetype-select-status">
+                                {isSelected ? "✓ Selected Aesthetic" : "Select Aesthetic"}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Section C: Skin Finish & Priorities */}
+                  <div className="passport-section">
+                    <div className="passport-section-head">
+                      <div>
+                        <h4>3. Skin Priorities & Finish Preference</h4>
+                        <p>Choose your primary skin priority and preferred tactile finish.</p>
+                      </div>
+                    </div>
+
+                    <div className="priorities-pills-row">
+                      {SKIN_PRIORITIES.map((prio) => {
+                        const isSelected = (user.beautyProfile?.skinPriority || "Glass-Skin Hydration") === prio.id;
+                        return (
+                          <button
+                            key={prio.id}
+                            type="button"
+                            className={`priority-pill-btn ${isSelected ? "selected" : ""}`}
+                            onClick={() => {
+                              handleUpdateProfile(
+                                { skinPriority: prio.id },
+                                `✓ Skin priority updated to ${prio.label}`
+                              );
+                            }}
+                          >
+                            <span className="priority-pill-label">{prio.label}</span>
+                            <small className="priority-pill-note">{prio.note}</small>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div style={{ marginTop: "16px" }}>
+                      <span className="sub-section-eyebrow">PREFERRED FORMULA FINISH:</span>
+                      <div className="finish-pills-row">
+                        {FINISH_OPTIONS.map((fin) => {
+                          const isSelected = (user.beautyProfile?.preferredFinish || "Sculpted satin") === fin;
+                          return (
+                            <button
+                              key={fin}
+                              type="button"
+                              className={`finish-pill-btn ${isSelected ? "selected" : ""}`}
+                              onClick={() => {
+                                handleUpdateProfile(
+                                  { preferredFinish: fin },
+                                  `✓ Preferred finish updated to ${fin}`
+                                );
+                              }}
+                            >
+                              {fin}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section D: Birthday Month Indulgence Perk */}
+                  <div className="passport-section">
+                    <div className="passport-section-head">
+                      <div>
+                        <h4>4. Maison Birthday Celebration</h4>
+                        <p>Receive a complimentary full-size Atelier Satin Lipstick & handwritten Maison note during your birth month.</p>
+                      </div>
+                    </div>
+
+                    <div className="birthday-selector-row">
+                      <div className="birthday-months-scroll">
+                        {BIRTHDAY_MONTHS.map((month) => {
+                          const isSelected = (user.beautyProfile?.birthdayMonth || "October") === month;
+                          return (
+                            <button
+                              key={month}
+                              type="button"
+                              className={`birthday-month-pill ${isSelected ? "selected" : ""}`}
+                              onClick={() => {
+                                handleUpdateProfile(
+                                  { birthdayMonth: month },
+                                  `✓ Birthday Month recorded for ${month} — Deluxe Gift unlocked!`
+                                );
+                              }}
+                            >
+                              {month}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="birthday-perk-box">
+                      <Gift size={22} strokeWidth={1.8} style={{ color: "#c18847", flexShrink: 0 }} />
+                      <div className="birthday-perk-info">
+                        <b>EXCLUSIVE {user.beautyProfile?.birthdayMonth?.toUpperCase() || "OCTOBER"} BIRTHDAY INDULGENCE:</b>
+                        <p>
+                          Orders placed during your birthday month automatically include the <b>Maison Keepsake Silk Box</b>, a <b>Full-Size Rose Gold Atelier Lipstick</b>, and <b>Double Radiance Loyalty Points</b>.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section E: Curated Vanity Edit (Products Tailored for You) */}
+                  <div className="passport-section" style={{ borderBottom: "none", paddingBottom: "0" }}>
+                    <div className="passport-section-head">
+                      <div>
+                        <h4>✦ Curated Pieces For Your Aura</h4>
+                        <p>Selected to harmonize specifically with your {activeSwatch.name} undertone and {activeArchetype.title} aesthetic.</p>
+                      </div>
+                    </div>
+
+                    <div className="curated-products-grid">
+                      {curatedProducts.map((prod) => (
+                        <div key={prod.name} className="curated-prod-card">
+                          <div className="curated-prod-media" onClick={() => { onBack(); onSelectProduct(prod); }}>
+                            <img src={prod.image} alt={prod.name} />
+                            <span className="curated-match-tag">✦ 98% Tone Match</span>
+                          </div>
+                          <div className="curated-prod-info">
+                            <span className="curated-prod-cat">{prod.category}</span>
+                            <h5 onClick={() => { onBack(); onSelectProduct(prod); }}>{prod.name}</h5>
+                            <span className="curated-prod-mood">{prod.mood || prod.note || prod.finish}</span>
+                            <div className="curated-prod-price-row">
+                              <b>{prod.price}</b>
+                              {prod.tone && (
+                                <span className="curated-tone-dot" style={{ backgroundColor: prod.tone }} />
+                              )}
+                            </div>
+                            <div className="curated-prod-actions">
+                              {onAddToCart && (
+                                <button
+                                  type="button"
+                                  className="curated-add-btn"
+                                  onClick={() => {
+                                    onAddToCart(prod);
+                                    showPassportToast(`✓ Added ${prod.name} to your Haute Bag!`);
+                                  }}
+                                >
+                                  <ShoppingBag size={12} strokeWidth={2} />
+                                  <span>Add to Bag</span>
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                className="curated-view-btn"
+                                onClick={() => {
+                                  onBack();
+                                  onSelectProduct(prod);
+                                }}
+                                title="Explore Details"
+                              >
+                                <Eye size={13} strokeWidth={2} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </div>
                 </div>
 
-                <div className="account-info-card">
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", paddingBottom: "10px", borderBottom: "1px solid rgba(223, 184, 149, 0.3)" }}>
+                {/* 2. DELIVERY ADDRESS BOOK & WHITE-GLOVE DETAILS */}
+                <div className="account-sidebar-column">
+                  <div className="account-info-card">
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", paddingBottom: "10px", borderBottom: "1px solid rgba(223, 184, 149, 0.3)" }}>
                     <h4 style={{ margin: 0, padding: 0, border: "none" }}>Delivery Address Book</h4>
                     <button
                       type="button"
@@ -523,6 +929,30 @@ export default function AuthAccountView({
                       <span className="address-pill">Default White-Glove Shipping</span>
                     </div>
                   )}
+                  </div>
+
+                  {/* Maison Privileges Summary */}
+                  <div className="maison-privileges-card">
+                    <h5>Maison Muse Privileges</h5>
+                    <ul>
+                      <li>
+                        <Check size={12} strokeWidth={2.5} style={{ color: "#10b981" }} />
+                        <span>Complimentary White-Glove Courier</span>
+                      </li>
+                      <li>
+                        <Check size={12} strokeWidth={2.5} style={{ color: "#10b981" }} />
+                        <span>Deluxe Botanical Sample in Every Order</span>
+                      </li>
+                      <li>
+                        <Check size={12} strokeWidth={2.5} style={{ color: "#10b981" }} />
+                        <span>Hand-Tied Gold Foil Silk Presentation Box</span>
+                      </li>
+                      <li>
+                        <Check size={12} strokeWidth={2.5} style={{ color: "#10b981" }} />
+                        <span>Private Runway Cinema Front-Row Access</span>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             )}
@@ -971,6 +1401,13 @@ export default function AuthAccountView({
           </div>
         )}
       </div>
+
+      {passportToast && (
+        <div className="passport-toast-pill">
+          <Sparkles size={14} strokeWidth={2.2} style={{ color: "#c18847" }} />
+          <span>{passportToast}</span>
+        </div>
+      )}
     </div>
   );
 }

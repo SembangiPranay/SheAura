@@ -1820,6 +1820,8 @@ export default function App() {
           setSelectedProduct(product);
           navigateTo("storefront");
         }}
+        onAddToCart={(product) => addToCart(product, 1)}
+        onOpenCart={() => navigateTo("cart")}
       />
     );
   }
@@ -1860,21 +1862,44 @@ export default function App() {
 
   if (currentView === "wishlist") {
     return (
-      <WishlistView
-        wishlist={wishlist}
-        onRemoveFromWishlist={(id) =>
-          setWishlist((prev) => prev.filter((p) => (p.id || p.slug || p.name) !== id))
-        }
-        onAddToCart={(product) => addToCart(product, 1)}
-        onMoveAllToCart={moveAllWishlistToCart}
-        onBackToStore={() => navigateTo("storefront")}
-        onOpenCart={() => setIsCartDrawerOpen(true)}
-        onSelectProduct={(product) => {
-          setSelectedProduct(product);
-          navigateTo("storefront");
-        }}
-        cartCount={cartCount}
-      />
+      <>
+        <WishlistView
+          wishlist={wishlist}
+          onRemoveFromWishlist={(id) =>
+            setWishlist((prev) => prev.filter((p) => (p.id || p.slug || p.name) !== id))
+          }
+          onAddToCart={(product) => addToCart(product, 1)}
+          onMoveAllToCart={moveAllWishlistToCart}
+          onBackToStore={() => navigateTo("storefront")}
+          onOpenCart={() => navigateTo("cart")}
+          onOpenRunway={() => navigateTo("runway")}
+          onSelectProduct={(product) => {
+            setSelectedProduct(product);
+            navigateTo("storefront");
+          }}
+          cartCount={cartCount}
+        />
+        <CartDrawer
+          isOpen={isCartDrawerOpen}
+          onClose={() => setIsCartDrawerOpen(false)}
+          cartItems={cartItems}
+          onUpdateQuantity={updateCartQuantity}
+          onRemoveItem={removeFromCart}
+          onMoveToWishlist={moveCartItemToWishlist}
+          onOpenFullCart={() => {
+            setIsCartDrawerOpen(false);
+            navigateTo("cart");
+          }}
+          onOpenCheckout={() => {
+            setIsCartDrawerOpen(false);
+            navigateTo("cart");
+          }}
+          onSelectProduct={(product) => {
+            setSelectedProduct(product);
+            setIsCartDrawerOpen(false);
+          }}
+        />
+      </>
     );
   }
 

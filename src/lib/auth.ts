@@ -35,6 +35,10 @@ export interface BeautyProfile {
   preferredFinish: string;
   signatureScent: string;
   skinType: string;
+  vanityMood?: string;
+  skinPriority?: string;
+  birthdayMonth?: string;
+  monogramStyle?: string;
 }
 
 export interface SheAuraUser {
@@ -66,10 +70,14 @@ const DEMO_ADMIN: SheAuraUser = {
   phone: "+91 98200 11223",
   loyaltyPoints: 1250,
   beautyProfile: {
-    undertone: "Neutral Rose",
+    undertone: "Radiant Neutral Sand",
     preferredFinish: "Sculpted satin",
     signatureScent: "Damask Rose & Botanical Amber",
     skinType: "Normal to Dry",
+    vanityMood: "Old Money Radiance",
+    skinPriority: "Poreless Velvet Blur",
+    birthdayMonth: "October",
+    monogramStyle: "Rose Gold Monogram",
   },
   addressBook: [
     {
@@ -115,10 +123,14 @@ const DEMO_CLIENT: SheAuraUser = {
   phone: "+91 98765 43210",
   loyaltyPoints: 350,
   beautyProfile: {
-    undertone: "Warm Golden",
+    undertone: "Warm Golden Honey",
     preferredFinish: "Sculpted satin & Soft Silk Powder",
     signatureScent: "Damask Rose & Botanical Amber",
     skinType: "Combination / Radiance Seeking",
+    vanityMood: "Sunlit Glass Skin",
+    skinPriority: "Glass-Skin Hydration",
+    birthdayMonth: "September",
+    monogramStyle: "Rose Gold Monogram",
   },
   addressBook: [
     {
@@ -262,10 +274,14 @@ export function formatSupabaseUser(sbUser: any): SheAuraUser {
     }),
     loyaltyPoints: isAdmin ? 1000 : 250,
     beautyProfile: {
-      undertone: "Neutral Rose",
+      undertone: "Radiant Neutral Sand",
       preferredFinish: "Sculpted satin",
       signatureScent: "Damask Rose & Botanical Amber",
       skinType: "Radiant & Nourished",
+      vanityMood: "Old Money Radiance",
+      skinPriority: "Glass-Skin Hydration",
+      birthdayMonth: "October",
+      monogramStyle: "Rose Gold Monogram",
     },
     addressBook: [
       {
@@ -454,10 +470,14 @@ export async function signUp(
     memberSince: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }),
     loyaltyPoints: 250, // Welcome gift points
     beautyProfile: {
-      undertone: "Neutral Rose",
+      undertone: "Radiant Neutral Sand",
       preferredFinish: "Sculpted satin",
       signatureScent: "Damask Rose & Botanical Amber",
       skinType: "Radiant & Nourished",
+      vanityMood: "Old Money Radiance",
+      skinPriority: "Glass-Skin Hydration",
+      birthdayMonth: "October",
+      monogramStyle: "Rose Gold Monogram",
     },
     addressBook: [
       {

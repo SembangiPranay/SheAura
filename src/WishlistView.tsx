@@ -21,6 +21,7 @@ interface WishlistViewProps {
   onMoveAllToCart: () => void;
   onBackToStore: () => void;
   onOpenCart: () => void;
+  onOpenRunway?: () => void;
   onSelectProduct: (product: Product) => void;
   cartCount: number;
 }
@@ -32,6 +33,7 @@ export default function WishlistView({
   onMoveAllToCart,
   onBackToStore,
   onOpenCart,
+  onOpenRunway,
   onSelectProduct,
   cartCount,
 }: WishlistViewProps) {
@@ -39,7 +41,7 @@ export default function WishlistView({
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(""), 3500);
+    setTimeout(() => setToastMessage(""), 4500);
   };
 
   const handleShare = () => {
@@ -61,8 +63,18 @@ export default function WishlistView({
       {/* Toast Notification */}
       {toastMessage && (
         <div className="wishlist-toast">
-          <CheckCircle2 size={16} strokeWidth={2.2} style={{ color: "#10b981" }} />
-          <span>{toastMessage}</span>
+          <div className="wishlist-toast-content">
+            <CheckCircle2 size={16} strokeWidth={2.2} style={{ color: "#10b981", flexShrink: 0 }} />
+            <span>{toastMessage}</span>
+          </div>
+          <button
+            type="button"
+            className="wishlist-toast-action-btn"
+            onClick={onOpenCart}
+          >
+            <span>Go to Bag</span>
+            <ArrowRight size={13} strokeWidth={2.2} />
+          </button>
         </div>
       )}
 
@@ -88,9 +100,11 @@ export default function WishlistView({
               type="button"
               className="wishlist-bag-btn"
               onClick={onOpenCart}
-              title="View Shopping Bag"
+              title="Open Haute Cart & Checkout"
+              aria-label="View Shopping Bag"
             >
-              <ShoppingBag size={18} strokeWidth={1.8} />
+              <ShoppingBag size={17} strokeWidth={1.8} />
+              <span className="wishlist-bag-text">Haute Bag</span>
               <span className="wishlist-bag-badge">{cartCount}</span>
             </button>
           </div>
@@ -266,7 +280,11 @@ export default function WishlistView({
               type="button"
               className="editorial-runway-cta"
               onClick={() => {
-                window.location.href = "/runway";
+                if (onOpenRunway) {
+                  onOpenRunway();
+                } else {
+                  window.location.href = "/runway";
+                }
               }}
             >
               <span>Enter Runway Cinema (20 Looks)</span>
