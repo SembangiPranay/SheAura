@@ -452,6 +452,7 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
 
     setBusy(false);
     setEditing(null);
+    window.scrollTo({ top: 0, behavior: "instant" });
 
     if (result && result.error) {
       if (result.error.code === "42501" || result.error.message?.includes("security policy")) {
@@ -511,6 +512,7 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
       status: "draft",
     };
     setEditing(copy);
+    window.scrollTo({ top: 0, behavior: "instant" });
     setNotice(`Created editable copy of ${product.name}`);
     setTimeout(() => setNotice(""), 3000);
   }
@@ -617,6 +619,37 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
     );
   }
 
+  if (editing) {
+    return (
+      <AdminFrame>
+        {error && (
+          <div className="admin-error admin-wide">
+            <b>Notice:</b> {error}
+          </div>
+        )}
+        {notice && (
+          <div
+            className="admin-notice admin-wide"
+            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}
+          >
+            <span>{notice}</span>
+          </div>
+        )}
+        <Editor
+          editing={editing}
+          setEditing={setEditing}
+          save={save}
+          busy={busy}
+          onBackToList={() => {
+            setEditing(null);
+            window.scrollTo({ top: 0, behavior: "instant" });
+          }}
+          onViewOnStorefront={onBack}
+        />
+      </AdminFrame>
+    );
+  }
+
   return (
     <AdminFrame>
       <header className="admin-header">
@@ -687,6 +720,7 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
           onClick={() => {
             setError("");
             setEditing({ ...blank });
+            window.scrollTo({ top: 0, behavior: "instant" });
           }}
         >
           ＋ New product
@@ -724,7 +758,7 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
         </div>
       </div>
 
-      {busy && !editing ? (
+      {busy ? (
         <div className="admin-card">
           <p>Loading catalogue from Supabase…</p>
         </div>
@@ -743,6 +777,7 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
               onClick={() => {
                 setError("");
                 setEditing({ ...blank });
+                window.scrollTo({ top: 0, behavior: "instant" });
               }}
             >
               ＋ Create First Product
@@ -755,7 +790,12 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
             <div
               className="admin-product-row"
               key={p.id}
-              onClick={() => setEditing({ ...blank, ...p })}
+              onClick={() => {
+                setError("");
+                setEditing({ ...blank, ...p });
+                window.scrollTo({ top: 0, behavior: "instant" });
+              }}
+              title="Click to open dedicated editor page"
             >
               <img
                 src={p.image_url || "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=200&q=80"}
@@ -800,6 +840,24 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
               <div className="admin-row-actions" onClick={(e) => e.stopPropagation()}>
                 <button
                   type="button"
+                  className="admin-action-btn edit"
+                  onClick={() => {
+                    setError("");
+                    setEditing({ ...blank, ...p });
+                    window.scrollTo({ top: 0, behavior: "instant" });
+                  }}
+                  title="Open dedicated editor for this product"
+                  style={{
+                    background: "var(--ink)",
+                    color: "#ffffff",
+                    borderColor: "var(--ink)",
+                    fontWeight: 600,
+                  }}
+                >
+                  Edit ✎
+                </button>
+                <button
+                  type="button"
                   className="admin-action-btn duplicate"
                   onClick={() => duplicateProduct(p)}
                   title="Duplicate this product"
@@ -819,8 +877,6 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
           ))}
         </div>
       )}
-
-      {editing && <Editor editing={editing} setEditing={setEditing} save={save} busy={busy} />}
     </AdminFrame>
   );
 }
@@ -2264,17 +2320,21 @@ function MotionVideoStudio({
   );
 }
 
-// Complete Tabbed Product Studio Editor
+// Complete Tabbed Product Studio Editor (Dedicated Page)
 function Editor({
   editing,
   setEditing,
   save,
   busy,
+  onBackToList,
+  onViewOnStorefront,
 }: {
   editing: Product;
-  setEditing: (p: Product | null) => void;
+  setEditing: React.Dispatch<React.SetStateAction<Product | null>>;
   save: (e: FormEvent) => void;
   busy: boolean;
+  onBackToList: () => void;
+  onViewOnStorefront?: () => void;
 }) {
   const [activeTab, setActiveTab] = useState<"identity" | "media" | "editorial" | "formula" | "publish">("identity");
 
@@ -2284,58 +2344,155 @@ function Editor({
   const updateMultiple = (patch: Partial<Product>) =>
     setEditing((prev) => (prev ? { ...prev, ...patch } : null));
 
+  const isPublished = editing.status === "published";
+
   return (
-    <section className="admin-editor">
-      <div className="admin-editor-head">
-        <div>
-          <p className="eyebrow dark">{editing.id ? "Edit product" : "New product creation"}</p>
-          <h2>{editing.name || "Untitled luxury piece"}</h2>
+    <div className="admin-editor-page">
+      {/* Top Sticky Action & Breadcrumb Navigation Bar */}
+      <div className="admin-editor-sticky-header">
+        <div className="admin-editor-top-nav">
+          <button
+            type="button"
+            className="admin-editor-back-btn"
+            onClick={onBackToList}
+            title="Return to products catalogue overview"
+          >
+            ← Back to Products List
+          </button>
+
+          <div className="admin-editor-breadcrumbs">
+            <span className="crumb-root" onClick={onBackToList}>Catalogue Studio</span>
+            <span className="crumb-sep">/</span>
+            <span className="crumb-current">{editing.name || "New Product Creation"}</span>
+          </div>
+
+          <div className="admin-editor-top-actions">
+            {/* Live Status Toggle Pill */}
+            <button
+              type="button"
+              className={`admin-status-pill-toggle ${isPublished ? "published" : "draft"}`}
+              onClick={() => update("status", isPublished ? "draft" : "published")}
+              title="Click to toggle publish status"
+            >
+              <span className="status-dot" />
+              <span>{isPublished ? "Live on Storefront" : "Draft (Hidden)"}</span>
+            </button>
+
+            {editing.id && isPublished && onViewOnStorefront && (
+              <button
+                type="button"
+                className="admin-secondary-btn"
+                onClick={onViewOnStorefront}
+                title="Preview live storefront"
+              >
+                Storefront ↗
+              </button>
+            )}
+
+            <button
+              type="button"
+              className="admin-secondary-btn"
+              onClick={onBackToList}
+              title="Discard edits and return to list"
+            >
+              Discard
+            </button>
+
+            <button
+              type="button"
+              className="admin-primary"
+              disabled={busy}
+              onClick={() => {
+                const form = document.getElementById("admin-product-edit-form") as HTMLFormElement | null;
+                if (form) {
+                  if (form.reportValidity()) {
+                    form.requestSubmit();
+                  }
+                }
+              }}
+            >
+              {busy ? "Saving…" : editing.id ? "Update Product" : "Save & Publish"}
+            </button>
+          </div>
         </div>
-        <button type="button" onClick={() => setEditing(null)}>
-          Close
-        </button>
       </div>
 
-      {/* Studio Navigation Tabs */}
-      <div className="admin-tabs-nav">
-        <button
-          type="button"
-          className={`admin-tab-btn ${activeTab === "identity" ? "active" : ""}`}
-          onClick={() => setActiveTab("identity")}
-        >
-          1. Identity & Pricing
-        </button>
-        <button
-          type="button"
-          className={`admin-tab-btn ${activeTab === "media" ? "active" : ""}`}
-          onClick={() => setActiveTab("media")}
-        >
-          2. Device Photos & Videos
-        </button>
-        <button
-          type="button"
-          className={`admin-tab-btn ${activeTab === "editorial" ? "active" : ""}`}
-          onClick={() => setActiveTab("editorial")}
-        >
-          3. Sensory Profile
-        </button>
-        <button
-          type="button"
-          className={`admin-tab-btn ${activeTab === "formula" ? "active" : ""}`}
-          onClick={() => setActiveTab("formula")}
-        >
-          4. Botanical Formula
-        </button>
-        <button
-          type="button"
-          className={`admin-tab-btn ${activeTab === "publish" ? "active" : ""}`}
-          onClick={() => setActiveTab("publish")}
-        >
-          5. Status & Save
-        </button>
-      </div>
+      <div className="admin-editor-content">
+        {/* Editor Product Header Banner */}
+        <div className="admin-editor-hero-bar">
+          <div>
+            <p className="eyebrow dark" style={{ margin: "0 0 6px" }}>
+              {editing.id ? "Product Specification Studio" : "New Luxury Creation"}
+            </p>
+            <h2 className="admin-editor-hero-title">
+              {editing.name || "Untitled Luxury Creation"}
+            </h2>
+            <div className="admin-editor-meta-strip">
+              <span className="admin-meta-chip">
+                Category: <b>{editing.category || "Uncategorised"}</b>
+              </span>
+              <span className="admin-meta-chip">
+                Price: <b>₹{Number(editing.price || 0).toLocaleString("en-IN")}</b>
+              </span>
+              {editing.tag && (
+                <span className="admin-meta-chip gold">
+                  Badge: <b>{editing.tag}</b>
+                </span>
+              )}
+              {editing.finish && (
+                <span className="admin-meta-chip">
+                  Finish: <b>{editing.finish}</b>
+                </span>
+              )}
+              {editing.slug && (
+                <span className="admin-meta-chip">
+                  Slug: <code>/{editing.slug}</code>
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
 
-      <form onSubmit={save} className="admin-form">
+        {/* Studio Navigation Tabs */}
+        <div className="admin-tabs-nav">
+          <button
+            type="button"
+            className={`admin-tab-btn ${activeTab === "identity" ? "active" : ""}`}
+            onClick={() => setActiveTab("identity")}
+          >
+            1. Identity & Pricing
+          </button>
+          <button
+            type="button"
+            className={`admin-tab-btn ${activeTab === "media" ? "active" : ""}`}
+            onClick={() => setActiveTab("media")}
+          >
+            2. Device Photos & Videos
+          </button>
+          <button
+            type="button"
+            className={`admin-tab-btn ${activeTab === "editorial" ? "active" : ""}`}
+            onClick={() => setActiveTab("editorial")}
+          >
+            3. Sensory Profile
+          </button>
+          <button
+            type="button"
+            className={`admin-tab-btn ${activeTab === "formula" ? "active" : ""}`}
+            onClick={() => setActiveTab("formula")}
+          >
+            4. Botanical Formula
+          </button>
+          <button
+            type="button"
+            className={`admin-tab-btn ${activeTab === "publish" ? "active" : ""}`}
+            onClick={() => setActiveTab("publish")}
+          >
+            5. Status & Save
+          </button>
+        </div>
+
+        <form id="admin-product-edit-form" onSubmit={save} className="admin-form">
         {/* Tab 1: Identity & Pricing */}
         {activeTab === "identity" && (
           <div style={{ display: "grid", gap: "18px" }}>
@@ -2417,7 +2574,7 @@ function Editor({
                   Upload authentic packshots and editorial stills from your computer or phone. Photos will automatically be optimized and hosted in Supabase Storage.
                 </p>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px" }}>
+              <div className="admin-media-photos-grid">
                 <ImageUploadField
                   label="Main Product Packshot (Still Photo)"
                   value={editing.image_url}
@@ -2572,20 +2729,55 @@ function Editor({
           </div>
         )}
 
-        {/* Action Controls */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--line)", paddingTop: "18px", marginTop: "10px" }}>
-          <button type="button" onClick={() => setEditing(null)} style={{ border: "1px solid var(--line)", background: "transparent", padding: "10px 18px", borderRadius: "4px", cursor: "pointer", color: "#765d50" }}>
-            Cancel
+        {/* Action Controls Footer */}
+        <div className="admin-form-actions-footer">
+          <button
+            type="button"
+            className="admin-secondary-btn"
+            onClick={onBackToList}
+          >
+            ← Back to Products List
           </button>
-          <div style={{ display: "flex", gap: "10px" }}>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+            {activeTab !== "identity" && (
+              <button
+                type="button"
+                className="admin-secondary-btn"
+                onClick={() => {
+                  const tabs: ("identity" | "media" | "editorial" | "formula" | "publish")[] = [
+                    "identity",
+                    "media",
+                    "editorial",
+                    "formula",
+                    "publish",
+                  ];
+                  const prevIndex = tabs.indexOf(activeTab) - 1;
+                  if (prevIndex >= 0) {
+                    setActiveTab(tabs[prevIndex]);
+                    window.scrollTo({ top: 120, behavior: "smooth" });
+                  }
+                }}
+              >
+                ← Previous Section
+              </button>
+            )}
             {activeTab !== "publish" && (
               <button
                 type="button"
                 className="admin-action-btn"
                 onClick={() => {
-                  const tabs: ("identity" | "media" | "editorial" | "formula" | "publish")[] = ["identity", "media", "editorial", "formula", "publish"];
+                  const tabs: ("identity" | "media" | "editorial" | "formula" | "publish")[] = [
+                    "identity",
+                    "media",
+                    "editorial",
+                    "formula",
+                    "publish",
+                  ];
                   const nextIndex = tabs.indexOf(activeTab) + 1;
-                  if (nextIndex < tabs.length) setActiveTab(tabs[nextIndex]);
+                  if (nextIndex < tabs.length) {
+                    setActiveTab(tabs[nextIndex]);
+                    window.scrollTo({ top: 120, behavior: "smooth" });
+                  }
                 }}
               >
                 Next Section →
@@ -2597,7 +2789,8 @@ function Editor({
           </div>
         </div>
       </form>
-    </section>
+    </div>
+  </div>
   );
 }
 
