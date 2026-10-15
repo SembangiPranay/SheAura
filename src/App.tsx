@@ -1953,8 +1953,6 @@ export default function App() {
           <source src="/reels/sheaura-master-runway-wall.mp4" type="video/mp4" />
         </video>
         <div className="hero-wash" />
-        <div className="hero-botanical hero-botanical-left" style={{ backgroundImage: `url(${photos.scarletBotanical})` }} />
-        <div className="hero-botanical hero-botanical-right" style={{ backgroundImage: `url(${photos.highlighterBotanical})` }} />
 
         <header className="nav shell">
            <a className="brand brand-light brand-animated" href="#" aria-label="She Aura">
@@ -2052,7 +2050,6 @@ export default function App() {
             <ArrowLink light>Explore the collection</ArrowLink>
           </div>
         </div>
-        <div className="scroll-note">Scroll to discover <span /></div>
       </section>
 
       <section className="categories" id="collections">

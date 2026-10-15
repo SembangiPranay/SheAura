@@ -1262,7 +1262,15 @@ img { display: block; width: 100%; }
 }
 
 
-.hero { position: relative; height: 850px; overflow: hidden; background: #1a0804; color: white; }
+.hero {
+  position: relative;
+  width: 100%;
+  height: clamp(480px, calc(100vh - 125px), 640px);
+  overflow: hidden;
+  background: #1a0804;
+  color: white;
+  margin-bottom: 28px;
+}
 .hero-video-bg {
   position: absolute;
   inset: 0;
@@ -1284,8 +1292,8 @@ img { display: block; width: 100%; }
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: linear-gradient(90deg, rgba(16, 5, 2, 0.72) 0%, rgba(16, 5, 2, 0.35) 45%, rgba(16, 5, 2, 0.08) 75%, transparent 100%),
-              linear-gradient(0deg, rgba(16, 5, 2, 0.5) 0%, transparent 35%);
+  background: linear-gradient(90deg, rgba(14, 5, 2, 0.44) 0%, rgba(14, 5, 2, 0.16) 30%, transparent 60%),
+              linear-gradient(0deg, rgba(14, 5, 2, 0.35) 0%, transparent 22%);
   pointer-events: none;
 }
 .hero-video-controls {
@@ -1391,9 +1399,26 @@ img { display: block; width: 100%; }
 .account-nav-initials { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(135deg, #dfb895, #c18847); color: #2b130c; font-size: 8px; font-weight: 700; letter-spacing: 0.04em; box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.4); }
 .nav-actions .bag span { position: absolute; top: -9px; right: -7px; min-width: 14px; height: 14px; border-radius: 50%; background: var(--cream); color: var(--ink); font-size: 8px; line-height: 14px; }
 .menu-button { display: none; }
-.hero-content { position: relative; z-index: 2; padding-top: 142px; animation: heroCopyReveal 1.15s 2.05s cubic-bezier(.2,.82,.22,1) both; }
-.hero-content h1 { margin: 0 0 28px; max-width: 530px; font: 500 84px/.82 "Cormorant Garamond", serif; letter-spacing: -.045em; }
-.hero-copy { margin-bottom: 34px; font-size: 12px; line-height: 1.7; }
+.hero-content {
+  position: relative;
+  z-index: 2;
+  padding-top: clamp(80px, 11vh, 115px);
+  animation: heroCopyReveal 1.15s 2.05s cubic-bezier(.2,.82,.22,1) both;
+}
+.hero-content h1 {
+  margin: 0 0 20px;
+  max-width: 480px;
+  font: 500 clamp(42px, 4.4vw, 68px)/0.88 "Cormorant Garamond", serif;
+  letter-spacing: -.035em;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.45);
+}
+.hero-copy {
+  margin-bottom: 26px;
+  font-size: 12px;
+  line-height: 1.65;
+  max-width: 380px;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
+}
 .arrow-link { display: inline-flex; align-items: center; gap: 28px; width: max-content; padding: 14px 0 10px; border-bottom: 1px solid var(--ink); font-size: 9px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; transition: gap .25s; }
 .arrow-link:hover { gap: 36px; }
 .arrow-link.light { border-color: rgba(255,255,255,.7); }
@@ -1415,11 +1440,9 @@ img { display: block; width: 100%; }
   from { opacity: 0; transform: translateY(24px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.hero-botanical { position: absolute; z-index: 1; bottom: -11%; width: 31%; height: 55%; opacity: .48; background-size: cover; filter: saturate(.85) sepia(.12); pointer-events: none; }
-.hero-botanical-left { left: -8%; background-position: left 72%; background-size: 270%; -webkit-mask-image: linear-gradient(90deg, #000 20%, transparent 95%); mask-image: linear-gradient(90deg, #000 20%, transparent 95%); }
-.hero-botanical-right { right: -8%; background-position: right 66%; background-size: 260%; -webkit-mask-image: linear-gradient(270deg, #000 20%, transparent 95%); mask-image: linear-gradient(270deg, #000 20%, transparent 95%); }
-.scroll-note { position: absolute; z-index: 2; right: 40px; bottom: 32px; display: flex; align-items: center; gap: 12px; font-size: 8px; letter-spacing: .2em; text-transform: uppercase; transform: rotate(90deg); transform-origin: right; }
-.scroll-note span { width: 46px; height: 1px; background: white; }
+.hero-botanical { display: none !important; }
+.hero-botanical-left, .hero-botanical-right { display: none !important; }
+.scroll-note { display: none !important; }
 
 .categories { display: grid; grid-template-columns: repeat(4, 1fr); background: #2c140e; gap: 2px; padding: 2px 0; }
 .category { position: relative; height: 435px; overflow: hidden; border-radius: 150px 150px 0 0; }
@@ -1656,7 +1679,7 @@ footer { background: #ecd7c1; }
 
 @media (max-width: 900px) {
   .shell { width: min(100% - 36px, 680px); }
-  .hero { height: 760px; }
+  .hero { height: clamp(420px, calc(100vh - 110px), 540px); margin-bottom: 24px; }
   .nav { height: 74px; }
   .nav-links { position: absolute; top: 73px; left: -18px; right: -18px; display: none; flex-direction: column; gap: 0; margin: 0; padding: 18px; background: rgba(35,10,4,.96); }
   .nav-links.open { display: flex; }
@@ -1664,8 +1687,8 @@ footer { background: #ecd7c1; }
   .nav-actions > button:not(.bag):not(.menu-button) { display: none; }
   .menu-button { display: flex !important; flex-direction: column; gap: 5px; margin-left: 6px; }
   .menu-button i { display: block; width: 22px; height: 1px; background: white; }
-  .hero-content { padding-top: 105px; }
-  .hero-content h1 { font-size: 62px; }
+  .hero-content { padding-top: 80px; }
+  .hero-content h1 { font-size: clamp(34px, 5.5vw, 46px); }
   .categories { grid-template-columns: 1fr 1fr; }
   .category { height: 340px; }
   .manifesto { grid-template-columns: 1fr; }
@@ -1703,9 +1726,10 @@ footer { background: #ecd7c1; }
 @media (max-width: 600px) {
   body { font-size: 12px; }
   .brand { font-size: 25px; }
-  .hero { height: 690px; }
+  .hero { height: clamp(360px, calc(100vh - 90px), 460px); margin-bottom: 20px; }
   .hero-bg { object-position: 62% center; }
-  .hero-content h1 { font-size: 54px; }
+  .hero-content { padding-top: 65px; }
+  .hero-content h1 { font-size: clamp(30px, 8vw, 38px); }
   .scroll-note { display: none; }
   .categories { grid-template-columns: 1fr; padding: 0 12px 12px; gap: 12px; }
   .category { height: 320px; border-radius: 150px 150px 0 0; }
