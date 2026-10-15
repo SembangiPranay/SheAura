@@ -1109,6 +1109,7 @@ function MotionVideoStudio({
   tone?: string;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [progress, setProgress] = useState(0);
@@ -1118,6 +1119,22 @@ function MotionVideoStudio({
   const [uploadError, setUploadError] = useState("");
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [isLooping, setIsLooping] = useState(true);
+
+  // Active video source: prefers local preview buffer while active, falls back to saved videoUrl
+  const activeVideoSrc = localPreviewUrl || videoUrl;
+
+  // Cleanup object URL on unmount or replace
+  useEffect(() => {
+    return () => {
+      if (localPreviewUrl) {
+        try {
+          URL.revokeObjectURL(localPreviewUrl);
+        } catch {
+          // ignore
+        }
+      }
+    };
+  }, [localPreviewUrl]);
 
   const formatTime = (seconds: number) => {
     if (!seconds || isNaN(seconds)) return "0:00";
@@ -1138,7 +1155,21 @@ function MotionVideoStudio({
   const handleLoadedMetadata = () => {
     if (videoRef.current) {
       setDurationStr(formatTime(videoRef.current.duration));
-      videoRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+      videoRef.current.muted = isMuted;
+      videoRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(() => {
+          // Fallback if browser blocked sound: force muted autoplay
+          if (videoRef.current) {
+            videoRef.current.muted = true;
+            setIsMuted(true);
+            videoRef.current
+              .play()
+              .then(() => setIsPlaying(true))
+              .catch(() => setIsPlaying(false));
+          }
+        });
     }
   };
 
@@ -1148,12 +1179,16 @@ function MotionVideoStudio({
         videoRef.current.pause();
         setIsPlaying(false);
       } else {
-        videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+        videoRef.current
+          .play()
+          .then(() => setIsPlaying(true))
+          .catch(() => {});
       }
     }
   };
 
-  const toggleSound = () => {
+  const toggleSound = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     if (videoRef.current) {
       videoRef.current.muted = !isMuted;
       setIsMuted(!isMuted);
@@ -1169,11 +1204,10 @@ function MotionVideoStudio({
     setProgress(pct * 100);
   };
 
-  const handleFullscreen = () => {
-    if (videoRef.current) {
-      if (videoRef.current.requestFullscreen) {
-        videoRef.current.requestFullscreen().catch(() => {});
-      }
+  const handleFullscreen = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (videoRef.current?.requestFullscreen) {
+      videoRef.current.requestFullscreen().catch(() => {});
     }
   };
 
@@ -1184,9 +1218,9 @@ function MotionVideoStudio({
     setUploading(true);
     setUploadError("");
 
-    // Immediate playback preview using object URL so video plays without lag
+    // Create immediate local buffer URL for uninterrupted zero-latency playback
     const localUrl = URL.createObjectURL(file);
-    onVideoUrlChange(localUrl);
+    setLocalPreviewUrl(localUrl);
 
     try {
       if (supabase) {
@@ -1204,15 +1238,45 @@ function MotionVideoStudio({
             .getPublicUrl(filePath);
 
           if (urlData?.publicUrl) {
+            // Save public URL in product state for database persistence without interrupting local player
             onVideoUrlChange(urlData.publicUrl);
           }
         }
       }
-    } catch {
-      // Retain localUrl so the studio never crashes or blocks
+    } catch (err: any) {
+      console.warn("Supabase video upload note:", err);
+      // Retain localUrl so the studio never crashes or blocks preview
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleRemoveVideo = () => {
+    if (localPreviewUrl) {
+      try {
+        URL.revokeObjectURL(localPreviewUrl);
+      } catch {
+        // ignore
+      }
+    }
+    setLocalPreviewUrl(null);
+    onVideoUrlChange("");
+    setIsPlaying(false);
+    setProgress(0);
+    setCurrentTimeStr("0:00");
+    setDurationStr("0:00");
+  };
+
+  const handleDirectUrlChange = (url: string) => {
+    if (localPreviewUrl) {
+      try {
+        URL.revokeObjectURL(localPreviewUrl);
+      } catch {
+        // ignore
+      }
+      setLocalPreviewUrl(null);
+    }
+    onVideoUrlChange(url);
   };
 
   const isInstagramValid = Boolean(instagramUrl && instagramUrl.includes("instagram.com"));
@@ -1234,7 +1298,7 @@ function MotionVideoStudio({
             Assign high-definition application videos and connect Instagram Reels to this product. Videos play automatically upon upload for clean instant review.
           </p>
         </div>
-        {videoUrl && (
+        {activeVideoSrc && (
           <div className="admin-video-live-pill">
             <span className="admin-video-live-dot" />
             <span>{isPlaying ? "Live In-Studio Playback" : "Paused"}</span>
@@ -1243,21 +1307,18 @@ function MotionVideoStudio({
       </div>
 
       <div className="admin-video-split-layout">
-        {/* Left: Device Video Upload & Clean Luxury Player */}
-        <div className="admin-video-player-card">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <span style={{ fontWeight: 600, fontSize: "12.5px", color: "var(--ink)" }}>
-              1. Product Motion Video (.mp4, .webm, .mov)
-            </span>
-            <small style={{ color: "#8c766a" }}>Plays in PDP "Aura in Motion" theater</small>
-          </div>
+        {/* Left: Smartphone Cinema Stage */}
+        <div className="admin-cinema-stage">
+          <span className="admin-cinema-stage-label">
+            Live Customer Perspective · 9:16 Cinema
+          </span>
 
-          <div className="admin-video-screen">
-            {videoUrl ? (
+          <div className="admin-cinema-bezel">
+            {activeVideoSrc ? (
               <>
                 <video
                   ref={videoRef}
-                  src={videoUrl}
+                  src={activeVideoSrc}
                   poster={posterUrl}
                   playsInline
                   loop={isLooping}
@@ -1266,174 +1327,228 @@ function MotionVideoStudio({
                   onTimeUpdate={handleTimeUpdate}
                   onLoadedMetadata={handleLoadedMetadata}
                   onClick={togglePlay}
-                  style={{ cursor: "pointer" }}
+                  className="admin-cinema-video"
                 />
+
+                <div className="admin-cinema-gradient" />
+
+                {/* Top overlay: Creator Tag + Sound Toggle */}
+                <div className="admin-cinema-top">
+                  <div className="admin-cinema-creator-tag">
+                    <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#e1306c" }} />
+                    <span>{socialHandle || "@sheauracosmeticsofficial"}</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="admin-cinema-sound-pill"
+                    onClick={toggleSound}
+                    title={isMuted ? "Unmute" : "Mute"}
+                  >
+                    <span>{isMuted ? "🔇 Muted" : "🔊 Live Audio"}</span>
+                  </button>
+                </div>
+
+                {/* Big Center Play Disc when paused */}
                 {!isPlaying && (
-                  <div className="admin-video-overlay-play" onClick={togglePlay} title="Click to play">
-                    <div className="admin-video-overlay-circle">▶</div>
+                  <div
+                    className="admin-cinema-play-overlay"
+                    onClick={togglePlay}
+                    title="Click to play"
+                  >
+                    ▶
                   </div>
                 )}
+
+                {/* Bottom Overlay: Step Badge + Product Info + Sensory Quote */}
+                <div className="admin-cinema-overlay-bottom">
+                  <div className="admin-cinema-step-pill" style={{ borderColor: tone || "rgba(223, 184, 149, 0.4)" }}>
+                    <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: tone || "#dfb895" }} />
+                    <span>{videoTitle || "Look 01 · Sensorial Glide"}</span>
+                  </div>
+                  <h4 className="admin-cinema-overlay-title">
+                    {productName || "Product Name"} · {typeof productPrice === "number" ? `₹${productPrice}` : productPrice || "₹1,099"}
+                  </h4>
+                  <p className="admin-cinema-overlay-quote">
+                    "{videoQuote || "Finding a formula that glides smoothly and hydrates all day."}"
+                  </p>
+                </div>
+
+                {/* Integrated Scrub & Control Bar */}
+                <div className="admin-cinema-controls-bar">
+                  <button
+                    type="button"
+                    className="admin-cinema-btn"
+                    onClick={togglePlay}
+                    title={isPlaying ? "Pause" : "Play"}
+                  >
+                    {isPlaying ? "⏸" : "▶"}
+                  </button>
+
+                  <div className="admin-cinema-progress-wrap">
+                    <div
+                      className="admin-cinema-progress-track"
+                      onClick={handleScrub}
+                      title="Click to scrub"
+                    >
+                      <div
+                        className="admin-cinema-progress-fill"
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
+                    <span className="admin-cinema-timer">
+                      {currentTimeStr} / {durationStr}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="admin-cinema-btn"
+                    onClick={() => setIsLooping(!isLooping)}
+                    style={{ opacity: isLooping ? 1 : 0.4 }}
+                    title={isLooping ? "Looping enabled" : "Looping disabled"}
+                  >
+                    🔁
+                  </button>
+
+                  <button
+                    type="button"
+                    className="admin-cinema-btn"
+                    onClick={handleFullscreen}
+                    title="Fullscreen"
+                  >
+                    ⛶
+                  </button>
+                </div>
               </>
+            ) : posterUrl ? (
+              <div style={{ position: "relative", width: "100%", height: "100%" }}>
+                <img
+                  src={posterUrl}
+                  alt={productName || "Poster preview"}
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+                <div className="admin-cinema-gradient" />
+                <div className="admin-cinema-empty">
+                  <span className="icon-badge">🎬</span>
+                  <b>No Motion Clip Attached</b>
+                  <p>Choose an .mp4 or .webm clip below to preview playback inside this frame.</p>
+                </div>
+              </div>
             ) : (
-              <div className="admin-video-screen-empty">
-                <span className="admin-video-screen-empty-icon">🎬</span>
-                <b style={{ color: "#dfb895", fontSize: "14px" }}>No video assigned yet</b>
-                <p style={{ fontSize: "11.5px", maxWidth: "280px", margin: 0 }}>
-                  Upload an authentic application clip from your computer or phone to see it play immediately.
-                </p>
+              <div className="admin-cinema-empty">
+                <span className="icon-badge">🎬</span>
+                <b>No Video Assigned</b>
+                <p>Upload a video clip from your device or paste a video URL below.</p>
               </div>
             )}
           </div>
 
-          {videoUrl && (
-            <div className="admin-video-controls-bar">
-              <button
-                type="button"
-                className="admin-video-control-btn"
-                onClick={togglePlay}
-                title={isPlaying ? "Pause" : "Play"}
-              >
-                {isPlaying ? "⏸" : "▶"}
-              </button>
-
-              <button
-                type="button"
-                className="admin-video-control-btn"
-                onClick={toggleSound}
-                title={isMuted ? "Unmute" : "Mute"}
-              >
-                {isMuted ? "🔇" : "🔊"}
-              </button>
-
-              <div className="admin-video-progress-wrap">
-                <div className="admin-video-progress-bar" onClick={handleScrub} title="Click to seek">
-                  <div className="admin-video-progress-fill" style={{ width: `${progress}%` }} />
-                </div>
-                <span className="admin-video-time">
-                  {currentTimeStr} / {durationStr}
-                </span>
-              </div>
-
-              <button
-                type="button"
-                className="admin-video-control-btn"
-                onClick={() => setIsLooping(!isLooping)}
-                style={{ color: isLooping ? "#dfb895" : "#765d50" }}
-                title={isLooping ? "Loop enabled" : "Loop disabled"}
-              >
-                🔁
-              </button>
-
-              <button
-                type="button"
-                className="admin-video-control-btn"
-                onClick={handleFullscreen}
-                title="Fullscreen"
-              >
-                ⛶
-              </button>
-            </div>
-          )}
-
-          {/* Meta & Actions */}
-          <div className="admin-video-meta-row">
+          {/* Under-Bezel Status & Action */}
+          <div className="admin-cinema-foot-status">
             <span>
-              {videoUrl ? (
-                videoUrl.startsWith("blob:") ? "Device clip loaded (Live memory buffer)" :
-                videoUrl.startsWith("data:") ? "Device clip embedded" :
-                videoUrl.includes("supabase.co") ? "Hosted on Supabase Storage" : "External Video Stream"
-              ) : "Awaiting video file"}
+              {activeVideoSrc
+                ? localPreviewUrl
+                  ? "✓ Playing from local device buffer"
+                  : videoUrl.includes("supabase.co")
+                  ? "✓ Streamed from Supabase Storage"
+                  : "✓ Direct video stream"
+                : "Awaiting video file"}
             </span>
 
-            {videoUrl && (
+            {activeVideoSrc && (
               <button
                 type="button"
-                className="admin-upload-remove-btn"
-                onClick={() => onVideoUrlChange("")}
+                className="admin-remove-video-btn"
+                onClick={handleRemoveVideo}
               >
                 ✕ Remove video
               </button>
             )}
           </div>
-
-          {/* Upload buttons */}
-          <div className="admin-video-upload-row">
-            <label className="admin-upload-device-btn">
-              <span>🎥 Choose video from device</span>
-              <input
-                type="file"
-                accept="video/mp4,video/webm,video/quicktime,video/*"
-                disabled={uploading}
-                onChange={handleVideoFileChange}
-              />
-            </label>
-
-            <button
-              type="button"
-              className="admin-upload-url-toggle"
-              onClick={() => setShowUrlInput(!showUrlInput)}
-            >
-              {showUrlInput ? "Hide link input" : "Or paste direct video link (.mp4)"}
-            </button>
-          </div>
-
-          {uploading && <div className="admin-upload-loading">Processing & uploading video from device…</div>}
-          {uploadError && <div className="admin-error" style={{ padding: "8px" }}>{uploadError}</div>}
-
-          {showUrlInput && (
-            <input
-              type="url"
-              placeholder="https://example.com/videos/lip-application.mp4"
-              value={videoUrl}
-              onChange={(e) => onVideoUrlChange(e.target.value)}
-              style={{ width: "100%", marginTop: "4px" }}
-            />
-          )}
         </div>
 
-        {/* Right: Instagram Reels & Social Commerce Alignment */}
-        <div className="admin-ig-config-card">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <span style={{ fontWeight: 600, fontSize: "12.5px", color: "var(--ink)", display: "flex", alignItems: "center", gap: "6px" }}>
-              <span>📸</span> 2. Instagram Reels Alignment
-            </span>
-            {isInstagramValid && (
-              <a
-                href={instagramUrl}
-                target="_blank"
-                rel="noreferrer"
-                style={{ fontSize: "11px", color: "#bc1888", fontWeight: 600, textDecoration: "none" }}
+        {/* Right: Settings & Alignment Panel */}
+        <div className="admin-video-settings-panel">
+          {/* 1. Device Video Upload & Direct Link */}
+          <div className="admin-settings-block">
+            <div className="admin-settings-block-head">
+              <label>1. Motion Video Asset (.mp4, .webm, .mov)</label>
+              <small>Plays automatically upon upload</small>
+            </div>
+
+            <div className="admin-video-upload-row">
+              <label className="admin-upload-device-btn">
+                <span>🎥 Choose video from device</span>
+                <input
+                  type="file"
+                  accept="video/mp4,video/webm,video/quicktime,video/*"
+                  disabled={uploading}
+                  onChange={handleVideoFileChange}
+                />
+              </label>
+
+              <button
+                type="button"
+                className="admin-upload-url-toggle"
+                onClick={() => setShowUrlInput(!showUrlInput)}
               >
-                Test Link ↗
-              </a>
+                {showUrlInput ? "Hide link input" : "Or paste direct video link (.mp4)"}
+              </button>
+            </div>
+
+            {uploading && (
+              <div className="admin-upload-loading">
+                <span>Uploading video to Supabase Storage in background…</span>
+              </div>
+            )}
+            {uploadError && <div className="admin-error" style={{ padding: "8px" }}>{uploadError}</div>}
+
+            {showUrlInput && (
+              <input
+                type="url"
+                placeholder="https://example.com/videos/lip-application.mp4"
+                value={videoUrl}
+                onChange={(e) => handleDirectUrlChange(e.target.value)}
+                style={{ width: "100%", marginTop: "4px" }}
+              />
             )}
           </div>
 
-          {/* Instagram URL Input */}
-          <div>
-            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "var(--ink)", marginBottom: "4px" }}>
-              Instagram Reel / Video Post URL
-            </label>
+          {/* 2. Instagram Reels Post Alignment */}
+          <div className="admin-settings-block">
+            <div className="admin-settings-block-head">
+              <label>2. Instagram Reels Post Alignment</label>
+              {isInstagramValid && (
+                <a
+                  href={instagramUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ fontSize: "11px", color: "#bc1888", fontWeight: 600, textDecoration: "none" }}
+                >
+                  Test Reel Link ↗
+                </a>
+              )}
+            </div>
             <input
               type="url"
               placeholder="https://www.instagram.com/reel/DeV_UkRpvGw/..."
               value={instagramUrl}
               onChange={(e) => onInstagramUrlChange(e.target.value)}
-              style={{ width: "100%" }}
             />
           </div>
 
-          {/* Reel Step Title Preset Selector */}
-          <div>
-            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "var(--ink)", marginBottom: "4px" }}>
-              Motion Look Step / Headline
-            </label>
+          {/* 3. Motion Look Step / Headline */}
+          <div className="admin-settings-block">
+            <div className="admin-settings-block-head">
+              <label>3. Motion Look Step / Reel Headline</label>
+              <small>Overlays on top of video</small>
+            </div>
             <input
               type="text"
               placeholder="e.g. Look 01 · Sensorial Glide"
               value={videoTitle}
               onChange={(e) => onVideoTitleChange(e.target.value)}
-              style={{ width: "100%", marginBottom: "6px" }}
             />
             <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
               {PRESET_VIDEO_STEPS.slice(0, 4).map((step) => (
@@ -1450,11 +1565,12 @@ function MotionVideoStudio({
             </div>
           </div>
 
-          {/* Social Handle */}
-          <div>
-            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "var(--ink)", marginBottom: "4px" }}>
-              Official Social Handle / Creator Tag
-            </label>
+          {/* 4. Official Social Handle / Creator Tag */}
+          <div className="admin-settings-block">
+            <div className="admin-settings-block-head">
+              <label>4. Creator Tag / Social Handle</label>
+              <small>Appears in video header</small>
+            </div>
             <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
               <input
                 type="text"
@@ -1479,17 +1595,17 @@ function MotionVideoStudio({
             </div>
           </div>
 
-          {/* Sensory Quote / Caption */}
-          <div>
-            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "var(--ink)", marginBottom: "4px" }}>
-              Sensory Reel Quote / Hook
-            </label>
+          {/* 5. Sensory Reel Hook / Quote */}
+          <div className="admin-settings-block">
+            <div className="admin-settings-block-head">
+              <label>5. Sensory Reel Hook / Customer Quote</label>
+              <small>Captures formula texture</small>
+            </div>
             <textarea
               rows={2}
               placeholder="Finding a formula that glides smoothly and hydrates all day..."
               value={videoQuote}
               onChange={(e) => onVideoQuoteChange(e.target.value)}
-              style={{ width: "100%", marginBottom: "6px" }}
             />
             <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
               {PRESET_VIDEO_QUOTES.slice(0, 2).map((quote) => (
@@ -1503,67 +1619,6 @@ function MotionVideoStudio({
                   "{quote.slice(0, 32)}..."
                 </button>
               ))}
-            </div>
-          </div>
-
-          {/* Live Mobile Reel Phone Mockup Preview */}
-          <div style={{ marginTop: "10px" }}>
-            <span style={{ display: "block", fontSize: "11px", color: "#8c766a", marginBottom: "8px", textAlign: "center" }}>
-              📱 Live Shoppable Customer Perspective
-            </span>
-            <div className="admin-ig-mockup-wrap">
-              <div className="admin-ig-phone-notch" />
-              <div className="admin-ig-phone-screen">
-                {videoUrl ? (
-                  <video
-                    src={videoUrl}
-                    poster={posterUrl}
-                    playsInline
-                    loop
-                    muted
-                    autoPlay
-                    className="admin-ig-phone-video"
-                  />
-                ) : posterUrl ? (
-                  <img src={posterUrl} alt="Poster" className="admin-ig-phone-video" />
-                ) : (
-                  <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#665", fontSize: "11px", textAlign: "center", padding: "16px" }}>
-                    No media attached
-                  </div>
-                )}
-
-                <div className="admin-ig-phone-top">
-                  <div className="admin-ig-phone-user">
-                    <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#e1306c" }} />
-                    <span>{socialHandle || "@sheauracosmeticsofficial"}</span>
-                  </div>
-                  <span style={{ fontSize: "9px", background: "rgba(0,0,0,0.5)", color: "#fff", padding: "2px 6px", borderRadius: "999px" }}>
-                    LIVE
-                  </span>
-                </div>
-
-                <div className="admin-ig-phone-bottom">
-                  <span style={{ fontSize: "9px", color: tone || "#dfb895", fontWeight: 700, textTransform: "uppercase" }}>
-                    {videoTitle || "Look 01 · Sensorial Glide"}
-                  </span>
-                  <p className="admin-ig-phone-title">
-                    {productName || "Product Name"} — {typeof productPrice === "number" ? `₹${productPrice}` : productPrice || "₹1,099"}
-                  </p>
-                  <p className="admin-ig-phone-quote">
-                    "{videoQuote || "Finding a formula that glides smoothly and hydrates all day."}"
-                  </p>
-                  {instagramUrl && (
-                    <a
-                      href={instagramUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="admin-ig-phone-cta"
-                    >
-                      <span>View on Instagram</span> ↗
-                    </a>
-                  )}
-                </div>
-              </div>
             </div>
           </div>
         </div>
