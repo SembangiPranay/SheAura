@@ -86,7 +86,7 @@ export default function RunwayCinemaView({
     return {
       id: "prod-default",
       name: activeReel.productName,
-      category: activeReel.category === "blush" ? "Blush" : activeReel.category === "lips" ? "Lip colour" : "Highlighter",
+      category: activeReel.category === "blush" ? "Blush" : activeReel.category === "lips" ? "Lip colour" : activeReel.category === "complexion" ? "Complexion" : activeReel.category === "collection" ? "Collection" : "Highlighter",
       price: activeReel.productPrice || "₹1,099.00",
       image: activeReel.productImage || photos.lipstick,
       still: photos.blushStill,
@@ -880,10 +880,11 @@ export default function RunwayCinemaView({
           <div className="filmstrip-filter-tabs">
             {[
               { id: "all", label: "All Looks (20)" },
-              { id: "blush", label: "Blush" },
               { id: "lips", label: "Lipsticks" },
+              { id: "blush", label: "Blush" },
               { id: "glow", label: "Highlighter & Oil" },
-              { id: "routine", label: "GRWM & Routines" },
+              { id: "complexion", label: "Foundation" },
+              { id: "collection", label: "Wardrobe Edit" },
             ].map((tab) => (
               <button
                 key={tab.id}

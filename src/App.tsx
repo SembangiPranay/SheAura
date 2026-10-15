@@ -52,7 +52,7 @@ export type Reel = {
   title: string;
   subtitle: string;
   productName: string;
-  category: "all" | "blush" | "lips" | "glow" | "routine";
+  category: "all" | "blush" | "lips" | "glow" | "routine" | "complexion" | "collection";
   videoUrl: string;
   poster: string;
   instagramUrl: string;
@@ -77,7 +77,7 @@ const reels: Reel[] = [
     productName: "Pink Blossom Blush",
     category: "blush",
     videoUrl: resolveAsset("/reels/reel-01-perfect-blush.mp4"),
-    poster: photos.blushPortrait,
+    poster: resolveAsset("/reels/posters/reel-01-perfect-blush.jpg"),
     instagramUrl: "https://www.instagram.com/reel/DeV_UkRpvGw/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
     avatar: photos.blushPortrait,
@@ -98,7 +98,7 @@ const reels: Reel[] = [
     productName: "Scarlet Rose Lipstick",
     category: "lips",
     videoUrl: resolveAsset("/reels/reel-02-nothing-better-lipstick.mp4"),
-    poster: photos.scarletPortrait,
+    poster: resolveAsset("/reels/posters/reel-02-nothing-better-lipstick.jpg"),
     instagramUrl: "https://www.instagram.com/reel/DeO8B16hEAz/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
     avatar: photos.scarletPortrait,
@@ -119,7 +119,7 @@ const reels: Reel[] = [
     productName: "Scarlet Rose Lipstick",
     category: "lips",
     videoUrl: resolveAsset("/reels/reel-03-everyday-glam.mp4"),
-    poster: photos.scarletBotanical,
+    poster: resolveAsset("/reels/posters/reel-03-everyday-glam.jpg"),
     instagramUrl: "https://www.instagram.com/reel/DeLrsOLMSyo/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
     avatar: photos.scarletPortrait,
@@ -140,7 +140,7 @@ const reels: Reel[] = [
     productName: "Scarlet Rose Lipstick",
     category: "lips",
     videoUrl: resolveAsset("/reels/reel-04-grwm-lipsticks.mp4"),
-    poster: photos.lipstick,
+    poster: resolveAsset("/reels/posters/reel-04-grwm-lipsticks.jpg"),
     instagramUrl: "https://www.instagram.com/reel/DeJ0vGmMjxv/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
     avatar: photos.model,
@@ -161,7 +161,7 @@ const reels: Reel[] = [
     productName: "Molten Glow Highlighter",
     category: "glow",
     videoUrl: resolveAsset("/reels/reel-05-body-highlighter-oil.mp4"),
-    poster: photos.highlighterBotanical,
+    poster: resolveAsset("/reels/posters/reel-05-body-highlighter-oil.jpg"),
     instagramUrl: "https://www.instagram.com/reel/DeG5GujBNVT/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
     avatar: photos.highlighterPortrait,
@@ -179,10 +179,10 @@ const reels: Reel[] = [
     id: "reel-06",
     title: "Not A Filter, Pure Skin Foundation",
     subtitle: "Second-Skin Complexion Blend",
-    productName: "Pink Blossom Blush",
-    category: "glow",
+    productName: "Radiant Fluid Foundation",
+    category: "complexion",
     videoUrl: resolveAsset("/reels/reel-06-not-a-filter-foundation.mp4"),
-    poster: photos.foundation,
+    poster: resolveAsset("/reels/posters/reel-06-not-a-filter-foundation.jpg"),
     instagramUrl: "https://www.instagram.com/reel/DeEq7-Azk_P/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
     avatar: photos.model,
@@ -192,8 +192,8 @@ const reels: Reel[] = [
     quote: "This is not a filter, it’s my foundation. Featherweight coverage that lets real skin shine through.",
     step: "Look 06 · Second-Skin Base",
     tone: "#dfb895",
-    productPrice: "₹899.00",
-    productImage: photos.blushStill,
+    productPrice: "₹1,299.00",
+    productImage: photos.foundation,
     productTag: "Base Edit",
   },
   {
@@ -201,9 +201,9 @@ const reels: Reel[] = [
     title: "Traditional Festive Radiance",
     subtitle: "Natural Glow with Heritage Elegance",
     productName: "Pink Blossom Blush",
-    category: "routine",
+    category: "blush",
     videoUrl: resolveAsset("/reels/reel-07-traditional-glow.mp4"),
-    poster: photos.blushPortrait,
+    poster: resolveAsset("/reels/posters/reel-07-traditional-glow.jpg"),
     instagramUrl: "https://www.instagram.com/reel/Dd_2YLhR6P4/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
     avatar: photos.blushPortrait,
@@ -224,7 +224,7 @@ const reels: Reel[] = [
     productName: "Pink Blossom Blush",
     category: "blush",
     videoUrl: resolveAsset("/reels/reel-08-orchid-peach-grwm.mp4"),
-    poster: photos.blushStill,
+    poster: resolveAsset("/reels/posters/reel-08-orchid-peach-grwm.jpg"),
     instagramUrl: "https://www.instagram.com/reel/Dd-wD1Oz39K/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
     avatar: photos.blushStill,
@@ -245,7 +245,7 @@ const reels: Reel[] = [
     productName: "Molten Glow Highlighter",
     category: "glow",
     videoUrl: resolveAsset("/reels/reel-09-moonflower-highlighter.mp4"),
-    poster: photos.highlighterPortrait,
+    poster: resolveAsset("/reels/posters/reel-09-moonflower-highlighter.jpg"),
     instagramUrl: "https://www.instagram.com/reel/Dd6SWx_tJjp/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
     avatar: photos.highlighterPortrait,
@@ -262,11 +262,11 @@ const reels: Reel[] = [
   {
     id: "reel-10",
     title: "PR Review & Unboxing",
-    subtitle: "First Impressions & Formula Swatches",
-    productName: "Scarlet Rose Lipstick",
-    category: "routine",
+    subtitle: "Complete Luxury Beauty Wardrobe",
+    productName: "She’Aura Discovery Wardrobe",
+    category: "collection",
     videoUrl: resolveAsset("/reels/reel-10-pr-review-unboxing.mp4"),
-    poster: photos.model,
+    poster: resolveAsset("/reels/posters/reel-10-pr-review-unboxing.jpg"),
     instagramUrl: "https://www.instagram.com/reel/Dd62wF7SbMG/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
     avatar: photos.model,
@@ -276,8 +276,8 @@ const reels: Reel[] = [
     quote: "Unboxing the luxury SHE’AURA collection. Sculpted packaging, sensory formulas, and radiant payoff.",
     step: "Look 10 · The Complete Edit",
     tone: "#dfb895",
-    productPrice: "₹1,099.00",
-    productImage: photos.scarletBotanical,
+    productPrice: "₹3,299.00",
+    productImage: photos.makeup,
     productTag: "PR Unboxing",
   },
   {
@@ -287,7 +287,7 @@ const reels: Reel[] = [
     productName: "Pink Blossom Blush",
     category: "blush",
     videoUrl: resolveAsset("/reels/reel-11-shade-blush-rose.mp4"),
-    poster: photos.blushPortrait,
+    poster: resolveAsset("/reels/posters/reel-11-shade-blush-rose.jpg"),
     instagramUrl: "https://www.instagram.com/reel/Dd1LXAoSxAk/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
     avatar: photos.blushPortrait,
@@ -308,7 +308,7 @@ const reels: Reel[] = [
     productName: "Scarlet Rose Lipstick",
     category: "lips",
     videoUrl: resolveAsset("/reels/reel-12-bullet-lipstick-luxury.mp4"),
-    poster: photos.scarletBotanical,
+    poster: resolveAsset("/reels/posters/reel-12-bullet-lipstick-luxury.jpg"),
     instagramUrl: "https://www.instagram.com/reel/DdyuxBAPQMs/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
     avatar: photos.scarletPortrait,
@@ -329,7 +329,7 @@ const reels: Reel[] = [
     productName: "Scarlet Rose Lipstick",
     category: "lips",
     videoUrl: resolveAsset("/reels/reel-13-scarlet-rose-confidence.mp4"),
-    poster: photos.scarletPortrait,
+    poster: resolveAsset("/reels/posters/reel-13-scarlet-rose-confidence.jpg"),
     instagramUrl: "https://www.instagram.com/reel/DdyjIg-tdpw/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
     avatar: photos.model,
@@ -348,17 +348,17 @@ const reels: Reel[] = [
     title: "Viral Runway GRWM Routine",
     subtitle: "Trending Layering & Effortless Glow",
     productName: "Pink Blossom Blush",
-    category: "routine",
+    category: "blush",
     videoUrl: resolveAsset("/reels/reel-14-grwm-viral-trend.mp4"),
-    poster: photos.model,
+    poster: resolveAsset("/reels/posters/reel-14-grwm-viral-trend.jpg"),
     instagramUrl: "https://www.instagram.com/reel/Debtm5PypqV/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
-    avatar: photos.model,
+    avatar: photos.blushStill,
     duration: "0:26",
     views: "890K",
     likes: "134K",
-    quote: "Viral GRWM with the SheAura beauty wardrobe. Layering textures for effortless evening luminescence.",
-    step: "Look 14 · Viral Routine",
+    quote: "Get ready with me for office featuring the SheAura keepsake gold compact blush.",
+    step: "Look 14 · Keepsake Compact",
     tone: "#dfb895",
     productPrice: "₹899.00",
     productImage: photos.blushStill,
@@ -371,7 +371,7 @@ const reels: Reel[] = [
     productName: "Scarlet Rose Lipstick",
     category: "lips",
     videoUrl: resolveAsset("/reels/reel-15-colour-confidence-lip.mp4"),
-    poster: photos.lipstick,
+    poster: resolveAsset("/reels/posters/reel-15-colour-confidence-lip.jpg"),
     instagramUrl: "https://www.instagram.com/reel/DebGeA6vwb7/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
     avatar: photos.scarletPortrait,
@@ -392,7 +392,7 @@ const reels: Reel[] = [
     productName: "Molten Glow Highlighter",
     category: "glow",
     videoUrl: resolveAsset("/reels/reel-16-sheaura-body-oil-highlighter.mp4"),
-    poster: photos.highlighterBotanical,
+    poster: resolveAsset("/reels/posters/reel-16-sheaura-body-oil-highlighter.jpg"),
     instagramUrl: "https://www.instagram.com/reel/DeZ2Y7OvRQs/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
     avatar: photos.highlighterPortrait,
@@ -413,7 +413,7 @@ const reels: Reel[] = [
     productName: "Scarlet Rose Lipstick",
     category: "lips",
     videoUrl: resolveAsset("/reels/reel-17-vegan-luxe-lipstick-steal.mp4"),
-    poster: photos.scarletPortrait,
+    poster: resolveAsset("/reels/posters/reel-17-vegan-luxe-lipstick-steal.jpg"),
     instagramUrl: "https://www.instagram.com/reel/Ddi1IzLo90u/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
     avatar: photos.model,
@@ -431,21 +431,21 @@ const reels: Reel[] = [
     id: "reel-18",
     title: "3 Reasons to Fall in Love Trio",
     subtitle: "Because One Is Never Enough",
-    productName: "Pink Blossom Blush",
-    category: "routine",
+    productName: "Scarlet Rose Lipstick",
+    category: "lips",
     videoUrl: resolveAsset("/reels/reel-18-three-reasons-love-bundle.mp4"),
-    poster: photos.blushStill,
+    poster: resolveAsset("/reels/posters/reel-18-three-reasons-love-bundle.jpg"),
     instagramUrl: "https://www.instagram.com/reel/DdllwnOBVms/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
-    avatar: photos.blushStill,
+    avatar: photos.scarletPortrait,
     duration: "0:16",
     views: "380K",
     likes: "53.8K",
     quote: "Because one is never enough... so we’re giving you 3 reasons to fall in love with She’Aura beauty.",
     step: "Look 18 · The Trio Edit",
-    tone: "#dda196",
-    productPrice: "₹899.00",
-    productImage: photos.blushStill,
+    tone: "#a81920",
+    productPrice: "₹1,099.00",
+    productImage: photos.scarletBotanical,
     productTag: "Trio Edit",
   },
   {
@@ -455,7 +455,7 @@ const reels: Reel[] = [
     productName: "Pink Blossom Blush",
     category: "blush",
     videoUrl: resolveAsset("/reels/reel-19-perfect-blush-and-lipstick.mp4"),
-    poster: photos.blushStill,
+    poster: resolveAsset("/reels/posters/reel-19-perfect-blush-and-lipstick.jpg"),
     instagramUrl: "https://www.instagram.com/reel/DdjIZCsovzC/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
     avatar: photos.blushStill,
@@ -476,7 +476,7 @@ const reels: Reel[] = [
     productName: "Pink Blossom Blush",
     category: "blush",
     videoUrl: resolveAsset("/reels/reel-20-complete-makeup-blush.mp4"),
-    poster: photos.blushPortrait,
+    poster: resolveAsset("/reels/posters/reel-20-complete-makeup-blush.jpg"),
     instagramUrl: "https://www.instagram.com/reel/DdvUvMJS-Ui/?utm_source=ig_web_copy_link",
     handle: "@sheauracosmeticsofficial",
     avatar: photos.blushPortrait,
@@ -805,7 +805,17 @@ function ReelsSection({
               title: v.title || `${prod.name} · Motion Look`,
               subtitle: prod.finish || "Sensorial Glide",
               productName: prod.name,
-              category: prod.category.toLowerCase().includes("lip") ? "lips" : prod.category.toLowerCase().includes("blush") ? "blush" : prod.category.toLowerCase().includes("glow") || prod.category.toLowerCase().includes("high") ? "glow" : "all",
+              category: prod.category.toLowerCase().includes("lip")
+                ? "lips"
+                : prod.category.toLowerCase().includes("blush")
+                ? "blush"
+                : prod.category.toLowerCase().includes("glow") || prod.category.toLowerCase().includes("high")
+                ? "glow"
+                : prod.category.toLowerCase().includes("foundation") || prod.category.toLowerCase().includes("complexion")
+                ? "complexion"
+                : prod.category.toLowerCase().includes("wardrobe") || prod.category.toLowerCase().includes("collection")
+                ? "collection"
+                : "all",
               videoUrl: v.video_url || resolveAsset("/reels/reel-01-perfect-blush.mp4"),
               poster: v.poster_url || prod.campaign || prod.image,
               instagramUrl: v.instagram_url || "https://www.instagram.com/sheauracosmeticsofficial/",
@@ -905,10 +915,11 @@ function ReelsSection({
             <div className="reels-filters">
               {[
                 { id: "all", label: `All Looks (${filteredReels.length})` },
-                { id: "blush", label: "Blush" },
                 { id: "lips", label: "Lipsticks" },
+                { id: "blush", label: "Blush" },
                 { id: "glow", label: "Highlighter & Oil" },
-                { id: "routine", label: "GRWM & Routines" },
+                { id: "complexion", label: "Foundation" },
+                { id: "collection", label: "Wardrobe Edit" },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -1204,8 +1215,18 @@ function PdpReelHighlight({
         title: v.title || `Look 0${idx + 1} · Sensorial Glide`,
         subtitle: product.finish || "Sensorial Glide",
         productName: product.name,
-        category: (product.category === "Lip colour" ? "lips" : product.category === "Blush" ? "blush" : product.category === "Highlighter" ? "glow" : "all") as any,
-        videoUrl: v.video_url || resolveAsset("/reels/reel-01-perfect-blush.mp4"),
+        category: (product.category?.toLowerCase().includes("lip")
+          ? "lips"
+          : product.category?.toLowerCase().includes("blush")
+          ? "blush"
+          : product.category?.toLowerCase().includes("highlighter") || product.category?.toLowerCase().includes("glow")
+          ? "glow"
+          : product.category?.toLowerCase().includes("foundation") || product.category?.toLowerCase().includes("complexion")
+          ? "complexion"
+          : product.category?.toLowerCase().includes("wardrobe") || product.category?.toLowerCase().includes("collection")
+          ? "collection"
+          : "all") as any,
+        videoUrl: v.video_url || "",
         poster: v.poster_url || (product as unknown as Record<string, string>)?.campaign_image_url || product.campaign || product.image,
         instagramUrl: v.instagram_url || "https://www.instagram.com/sheauracosmeticsofficial/",
         handle: v.social_handle || "@sheauracosmeticsofficial",
@@ -1232,8 +1253,18 @@ function PdpReelHighlight({
         title: (product as unknown as Record<string, string>)?.video_title || `See ${product.name} in Motion`,
         subtitle: product.finish || "Sensorial Glide",
         productName: product.name,
-        category: (product.category === "Lip colour" ? "lips" : product.category === "Blush" ? "blush" : product.category === "Highlighter" ? "glow" : "all") as any,
-        videoUrl: assignedVideo || resolveAsset("/reels/reel-01-perfect-blush.mp4"),
+        category: (product.category?.toLowerCase().includes("lip")
+          ? "lips"
+          : product.category?.toLowerCase().includes("blush")
+          ? "blush"
+          : product.category?.toLowerCase().includes("highlighter") || product.category?.toLowerCase().includes("glow")
+          ? "glow"
+          : product.category?.toLowerCase().includes("foundation") || product.category?.toLowerCase().includes("complexion")
+          ? "complexion"
+          : product.category?.toLowerCase().includes("wardrobe") || product.category?.toLowerCase().includes("collection")
+          ? "collection"
+          : "all") as any,
+        videoUrl: assignedVideo || "",
         poster: (product as unknown as Record<string, string>)?.campaign_image_url || product.campaign || product.image,
         instagramUrl: assignedInstagram || "https://www.instagram.com/sheauracosmeticsofficial/",
         handle: (product as unknown as Record<string, string>)?.social_handle || "@sheauracosmeticsofficial",
@@ -1251,9 +1282,20 @@ function PdpReelHighlight({
     }
   }
 
-  // Find matching default reels if customReels is empty
-  const matchingReels = reels.filter((r) => r.productName === product.name || (product.category === "Lip colour" && r.category === "lips") || (product.category === "Blush" && r.category === "blush") || (product.category === "Highlighter" && r.category === "glow"));
-  const availableReels = customReels.length > 0 ? customReels : (matchingReels.length > 0 ? matchingReels : [reels[0]]);
+  // Find matching default reels strictly if customReels is empty
+  const matchingReels = reels.filter(
+    (r) =>
+      r.productName.toLowerCase() === product.name.toLowerCase() ||
+      (product.category?.toLowerCase().includes("lip") && r.category === "lips") ||
+      (product.category?.toLowerCase().includes("blush") && r.category === "blush") ||
+      (product.category?.toLowerCase().includes("highlighter") && r.category === "glow") ||
+      ((product.category?.toLowerCase().includes("foundation") || product.category?.toLowerCase().includes("complexion")) && r.category === "complexion") ||
+      ((product.category?.toLowerCase().includes("wardrobe") || product.category?.toLowerCase().includes("collection")) && r.category === "collection")
+  );
+  const availableReels = customReels.length > 0 ? customReels : matchingReels;
+  if (availableReels.length === 0) {
+    return null;
+  }
   const activeReel = availableReels[activeReelIndex] || availableReels[0];
 
   return (
