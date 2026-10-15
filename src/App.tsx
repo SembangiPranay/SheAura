@@ -1640,6 +1640,32 @@ export default function App() {
     return () => unsub();
   }, []);
 
+  // Living Hero Video Backdrop States (Option 1: 2X Slow Glide Master Edit)
+  const heroVideoRef = useRef<HTMLVideoElement>(null);
+  const [isHeroMuted, setIsHeroMuted] = useState(true);
+  const [isHeroPlaying, setIsHeroPlaying] = useState(true);
+  const [heroVideoReady, setHeroVideoReady] = useState(false);
+
+  const toggleHeroAudio = useCallback(() => {
+    if (heroVideoRef.current) {
+      const nextMuted = !isHeroMuted;
+      heroVideoRef.current.muted = nextMuted;
+      setIsHeroMuted(nextMuted);
+    }
+  }, [isHeroMuted]);
+
+  const toggleHeroPlay = useCallback(() => {
+    if (heroVideoRef.current) {
+      if (isHeroPlaying) {
+        heroVideoRef.current.pause();
+        setIsHeroPlaying(false);
+      } else {
+        heroVideoRef.current.play().catch(() => {});
+        setIsHeroPlaying(true);
+      }
+    }
+  }, [isHeroPlaying]);
+
   const showToast = useCallback((msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(""), 3500);
@@ -1907,10 +1933,45 @@ export default function App() {
       {showIntro && <BrandIntro onComplete={handleCompleteIntro} />}
       <main>
       <section className="hero">
-        <img className="hero-bg" src={photos.hero} alt="" />
+        {/* Living Video Backdrop: 2X Slow-Glide Master Runway Edit */}
+        <video
+          ref={heroVideoRef}
+          className={`hero-video-bg ${heroVideoReady ? "is-ready" : ""}`}
+          autoPlay
+          muted={isHeroMuted}
+          loop
+          playsInline
+          poster={photos.hero}
+          preload="auto"
+          onCanPlay={() => setHeroVideoReady(true)}
+        >
+          <source src="/reels/sheaura-master-runway-wall.mp4" type="video/mp4" />
+        </video>
+        <img className={`hero-bg ${heroVideoReady ? "is-video-active" : ""}`} src={photos.hero} alt="She'Aura Haute Maison" />
         <div className="hero-wash" />
         <div className="hero-botanical hero-botanical-left" style={{ backgroundImage: `url(${photos.scarletBotanical})` }} />
         <div className="hero-botanical hero-botanical-right" style={{ backgroundImage: `url(${photos.highlighterBotanical})` }} />
+
+        {/* Ambient Video Sound & Playback Controller */}
+        <div className="hero-video-controls">
+          <button
+            type="button"
+            className="hero-video-pill"
+            onClick={toggleHeroAudio}
+            title={isHeroMuted ? "Unmute Runway Music" : "Mute Runway Music"}
+          >
+            <Icon name={isHeroMuted ? "volumeX" : "volume"} />
+            <span>{isHeroMuted ? "RUNWAY AUDIO" : "AUDIO ON"}</span>
+          </button>
+          <button
+            type="button"
+            className="hero-video-pill play-toggle"
+            onClick={toggleHeroPlay}
+            title={isHeroPlaying ? "Pause Video Backdrop" : "Play Video Backdrop"}
+          >
+            <Icon name={isHeroPlaying ? "pause" : "play"} />
+          </button>
+        </div>
         <header className="nav shell">
            <a className="brand brand-light brand-animated" href="#" aria-label="She Aura">
              <span className="brand-name" aria-hidden="true">SHE’AURA</span>
