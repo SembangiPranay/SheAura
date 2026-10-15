@@ -948,42 +948,80 @@ function PdpReelHighlight({
   product: Product;
   onOpenReel: (reel: Reel) => void;
 }) {
-  // Check if product has an assigned video or custom reel from Admin Studio
-  const assignedVideo = (product as unknown as Record<string, string>)?.video_url || (product as unknown as Record<string, string>)?.videoUrl;
-  const assignedInstagram = (product as unknown as Record<string, string>)?.instagram_url || (product as unknown as Record<string, string>)?.instagramUrl;
-  const customReel: Reel | null = assignedVideo ? {
-    id: `custom-reel-${product.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
-    title: (product as unknown as Record<string, string>)?.video_title || `See ${product.name} in Motion`,
-    subtitle: product.finish || "Sensorial Glide",
-    productName: product.name,
-    category: (product.category === "Lip colour" ? "lips" : product.category === "Blush" ? "blush" : product.category === "Highlighter" ? "glow" : "all"),
-    videoUrl: assignedVideo,
-    poster: (product as unknown as Record<string, string>)?.campaign_image_url || product.campaign || product.image,
-    instagramUrl: assignedInstagram || "https://www.instagram.com/sheauracosmeticsofficial/",
-    handle: (product as unknown as Record<string, string>)?.social_handle || "@sheauracosmeticsofficial",
-    avatar: product.image,
-    duration: "0:20",
-    views: "520K",
-    likes: "74K",
-    quote: (product as unknown as Record<string, string>)?.video_quote || `Sensorial application of ${product.name}. Layerable, skin-first texture.`,
-    step: (product as unknown as Record<string, string>)?.video_title || "Featured Look",
-    tone: product.tone,
-    productPrice: product.price,
-    productImage: product.image,
-    productTag: product.tag,
-  } : null;
+  const [activeReelIndex, setActiveReelIndex] = useState(0);
 
-  // Find matching reels for this product category
+  // Extract multiple videos if assigned from Admin Studio, or legacy single video
+  const rawVideos = (product as unknown as Record<string, any>)?.videos;
+  let customReels: Reel[] = [];
+
+  if (Array.isArray(rawVideos) && rawVideos.length > 0) {
+    customReels = rawVideos
+      .filter((v) => v && (v.video_url || v.instagram_url))
+      .map((v, idx) => ({
+        id: v.id || `custom-reel-${product.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${idx}`,
+        title: v.title || `Look 0${idx + 1} · Sensorial Glide`,
+        subtitle: product.finish || "Sensorial Glide",
+        productName: product.name,
+        category: (product.category === "Lip colour" ? "lips" : product.category === "Blush" ? "blush" : product.category === "Highlighter" ? "glow" : "all") as any,
+        videoUrl: v.video_url || resolveAsset("/reels/reel-01-perfect-blush.mp4"),
+        poster: v.poster_url || (product as unknown as Record<string, string>)?.campaign_image_url || product.campaign || product.image,
+        instagramUrl: v.instagram_url || "https://www.instagram.com/sheauracosmeticsofficial/",
+        handle: v.social_handle || "@sheauracosmeticsofficial",
+        avatar: product.image,
+        duration: "0:24",
+        views: "480K",
+        likes: "68K",
+        quote: v.quote || `Sensorial application of ${product.name}. Layerable, skin-first texture.`,
+        step: v.title || `Look 0${idx + 1}`,
+        tone: product.tone,
+        productPrice: product.price,
+        productImage: product.image,
+        productTag: product.tag,
+      }));
+  }
+
+  // Fallback if no array was provided, but legacy single video columns exist
+  if (customReels.length === 0) {
+    const assignedVideo = (product as unknown as Record<string, string>)?.video_url || (product as unknown as Record<string, string>)?.videoUrl;
+    const assignedInstagram = (product as unknown as Record<string, string>)?.instagram_url || (product as unknown as Record<string, string>)?.instagramUrl;
+    if (assignedVideo || assignedInstagram) {
+      customReels = [{
+        id: `custom-reel-${product.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+        title: (product as unknown as Record<string, string>)?.video_title || `See ${product.name} in Motion`,
+        subtitle: product.finish || "Sensorial Glide",
+        productName: product.name,
+        category: (product.category === "Lip colour" ? "lips" : product.category === "Blush" ? "blush" : product.category === "Highlighter" ? "glow" : "all") as any,
+        videoUrl: assignedVideo || resolveAsset("/reels/reel-01-perfect-blush.mp4"),
+        poster: (product as unknown as Record<string, string>)?.campaign_image_url || product.campaign || product.image,
+        instagramUrl: assignedInstagram || "https://www.instagram.com/sheauracosmeticsofficial/",
+        handle: (product as unknown as Record<string, string>)?.social_handle || "@sheauracosmeticsofficial",
+        avatar: product.image,
+        duration: "0:20",
+        views: "520K",
+        likes: "74K",
+        quote: (product as unknown as Record<string, string>)?.video_quote || `Sensorial application of ${product.name}. Layerable, skin-first texture.`,
+        step: (product as unknown as Record<string, string>)?.video_title || "Featured Look",
+        tone: product.tone,
+        productPrice: product.price,
+        productImage: product.image,
+        productTag: product.tag,
+      }];
+    }
+  }
+
+  // Find matching default reels if customReels is empty
   const matchingReels = reels.filter((r) => r.productName === product.name || (product.category === "Lip colour" && r.category === "lips") || (product.category === "Blush" && r.category === "blush") || (product.category === "Highlighter" && r.category === "glow"));
-  const primaryReel = customReel || matchingReels[0] || reels[0];
+  const availableReels = customReels.length > 0 ? customReels : (matchingReels.length > 0 ? matchingReels : [reels[0]]);
+  const activeReel = availableReels[activeReelIndex] || availableReels[0];
 
   return (
     <section className="pdp-motion shell">
       <div className="pdp-motion-card">
-        <div className="pdp-motion-video-wrap" onClick={() => onOpenReel(primaryReel)}>
+        <div className="pdp-motion-video-wrap" onClick={() => onOpenReel(activeReel)}>
           <video
-            src={primaryReel.videoUrl}
-            poster={primaryReel.poster}
+            key={activeReel.videoUrl}
+            src={activeReel.videoUrl}
+            poster={activeReel.poster}
             playsInline
             muted
             loop
@@ -1002,11 +1040,28 @@ function PdpReelHighlight({
             <span>Official Reel · Real Application & Swatch</span>
           </div>
           <h2>See {product.name} on Real Skin.</h2>
-          <p className="pdp-motion-desc">"{primaryReel.quote}"</p>
+
+          {availableReels.length > 1 && (
+            <div className="pdp-motion-tabs">
+              {availableReels.map((r, idx) => (
+                <button
+                  key={r.id || idx}
+                  type="button"
+                  className={`pdp-motion-tab ${activeReelIndex === idx ? "active" : ""}`}
+                  onClick={() => setActiveReelIndex(idx)}
+                >
+                  <span className="pdp-motion-tab-dot" />
+                  <span>{r.step || `Look 0${idx + 1}`}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          <p className="pdp-motion-desc">"{activeReel.quote}"</p>
           <div className="pdp-motion-meta">
             <div>
               <span>Official Channel</span>
-              <b>{primaryReel.handle}</b>
+              <b>{activeReel.handle}</b>
             </div>
             <div>
               <span>Application Finish</span>
@@ -1014,15 +1069,15 @@ function PdpReelHighlight({
             </div>
             <div>
               <span>Featured Look</span>
-              <b>{primaryReel.step}</b>
+              <b>{activeReel.step}</b>
             </div>
           </div>
           <div className="pdp-motion-actions">
-            <button className="pdp-motion-btn" onClick={() => onOpenReel(primaryReel)}>
+            <button className="pdp-motion-btn" onClick={() => onOpenReel(activeReel)}>
               <Icon name="play" /> Watch Reel in Fullscreen
             </button>
             <a
-              href={primaryReel.instagramUrl}
+              href={activeReel.instagramUrl}
               target="_blank"
               rel="noreferrer"
               className="pdp-motion-ig-btn"
