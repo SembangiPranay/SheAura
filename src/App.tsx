@@ -3,6 +3,15 @@ import BrandIntro from "./BrandIntro";
 import AdminView from "./AdminView";
 import AuthAccountView from "./AuthAccountView";
 import RunwayCinemaView from "./RunwayCinemaView";
+import CartDrawer from "./CartDrawer";
+import CartView from "./CartView";
+import WishlistView from "./WishlistView";
+import {
+  CartItem,
+  getInitialCart,
+  getInitialWishlist,
+  parseProductPrice,
+} from "./lib/cartWishlistContext";
 import {
   photos,
   resolveAsset,
@@ -1395,14 +1404,26 @@ function ProductPage({
   onSelect,
   onOpenReel,
   onOpenAccount,
+  onOpenCart,
+  onOpenWishlist,
+  isWishlisted,
+  onToggleWishlist,
+  cartCount,
+  wishlistCount,
 }: {
   product: Product;
   catalog?: Product[];
   onBack: () => void;
-  onAdd: () => void;
+  onAdd: (qty: number, shade?: string, tone?: string) => void;
   onSelect: (product: Product) => void;
   onOpenReel: (reel: Reel) => void;
   onOpenAccount?: () => void;
+  onOpenCart: () => void;
+  onOpenWishlist: () => void;
+  isWishlisted: boolean;
+  onToggleWishlist: () => void;
+  cartCount: number;
+  wishlistCount: number;
 }) {
   const [quantity, setQuantity] = useState(1);
   const [detailsOpen, setDetailsOpen] = useState("formula");
@@ -1415,12 +1436,31 @@ function ProductPage({
         <button className="brand product-brand" onClick={onBack}>SHE’AURA<span>YOUR AURA · YOUR STORY</span></button>
         <div className="product-nav-actions">
           <button aria-label="Search"><Icon name="search" /></button>
+          <button
+            type="button"
+            aria-label="Wishlist Sanctuary"
+            onClick={onOpenWishlist}
+            className="wishlist-nav-btn"
+            title={`Wishlist Sanctuary (${wishlistCount})`}
+          >
+            <Icon name="heart" />
+            {wishlistCount > 0 && <span className="wishlist-badge">{wishlistCount}</span>}
+          </button>
           {onOpenAccount && (
             <button aria-label="Account" onClick={onOpenAccount} title="Member Account">
               <Icon name="user" />
             </button>
           )}
-          <button aria-label="Shopping bag" onClick={onAdd} className="bag"><Icon name="bag" /></button>
+          <button
+            type="button"
+            aria-label="Shopping bag"
+            onClick={onOpenCart}
+            className="bag"
+            title={`Shopping Bag (${cartCount})`}
+          >
+            <Icon name="bag" />
+            <span>{cartCount}</span>
+          </button>
         </div>
       </header>
 
@@ -1448,8 +1488,27 @@ function ProductPage({
             <button className="shade shade-three" aria-label="Alternative shade" />
           </div>
           <div className="purchase-row">
-            <div className="quantity"><button onClick={() => setQuantity(Math.max(1, quantity - 1))}>−</button><span>{quantity}</span><button onClick={() => setQuantity(quantity + 1)}>+</button></div>
-            <button className="add-bag" onClick={onAdd}>Add to bag — {product.price}</button>
+            <div className="quantity">
+              <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))}>−</button>
+              <span>{quantity}</span>
+              <button type="button" onClick={() => setQuantity(quantity + 1)}>+</button>
+            </div>
+            <button
+              type="button"
+              className="add-bag"
+              onClick={() => onAdd(quantity, product.name.split(" ").slice(0, 2).join(" "), product.tone)}
+            >
+              Add to bag — {product.price}
+            </button>
+            <button
+              type="button"
+              className={`pdp-wishlist-toggle-btn ${isWishlisted ? "active" : ""}`}
+              onClick={onToggleWishlist}
+              title={isWishlisted ? "Remove from Wishlist" : "Save to Wishlist Sanctuary"}
+              aria-label="Wishlist"
+            >
+              <Icon name="heart" />
+            </button>
           </div>
           <p className="delivery-note"><Icon name="sparkle" /> Complimentary delivery on orders above ₹1,499</p>
           <div className="pdp-accordions">
@@ -1518,18 +1577,31 @@ function ProductPage({
 }
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<"storefront" | "account" | "admin" | "runway">(() => {
+  const [currentView, setCurrentView] = useState<"storefront" | "account" | "admin" | "runway" | "cart" | "wishlist">(() => {
     if (typeof window !== "undefined") {
       if (window.location.pathname === "/admin") return "admin";
       if (window.location.pathname === "/login" || window.location.pathname === "/account") return "account";
       if (window.location.pathname === "/runway" || window.location.pathname === "/cinema") return "runway";
+      if (window.location.pathname === "/cart" || window.location.pathname === "/bag") return "cart";
+      if (window.location.pathname === "/wishlist") return "wishlist";
     }
     return "storefront";
   });
 
-  const navigateTo = (view: "storefront" | "account" | "admin" | "runway") => {
+  const navigateTo = (view: "storefront" | "account" | "admin" | "runway" | "cart" | "wishlist") => {
     setCurrentView(view);
-    const path = view === "admin" ? "/admin" : view === "account" ? "/account" : view === "runway" ? "/runway" : "/";
+    const path =
+      view === "admin"
+        ? "/admin"
+        : view === "account"
+        ? "/account"
+        : view === "runway"
+        ? "/runway"
+        : view === "cart"
+        ? "/cart"
+        : view === "wishlist"
+        ? "/wishlist"
+        : "/";
     window.history.pushState({}, "", path);
     window.scrollTo(0, 0);
   };
@@ -1539,6 +1611,8 @@ export default function App() {
       if (window.location.pathname === "/admin") setCurrentView("admin");
       else if (window.location.pathname === "/login" || window.location.pathname === "/account") setCurrentView("account");
       else if (window.location.pathname === "/runway" || window.location.pathname === "/cinema") setCurrentView("runway");
+      else if (window.location.pathname === "/cart" || window.location.pathname === "/bag") setCurrentView("cart");
+      else if (window.location.pathname === "/wishlist") setCurrentView("wishlist");
       else setCurrentView("storefront");
     };
     window.addEventListener("popstate", handlePopState);
@@ -1546,12 +1620,122 @@ export default function App() {
   }, []);
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const [cartCount, setCartCount] = useState(1);
   const [catalog, setCatalog] = useState<Product[]>(defaultProducts);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [activeModalReel, setActiveModalReel] = useState<Reel | null>(null);
   const [showIntro, setShowIntro] = useState(true);
   const handleCompleteIntro = useCallback(() => setShowIntro(false), []);
+
+  // Cart & Wishlist State with LocalStorage Persistence
+  const [cartItems, setCartItems] = useState<CartItem[]>(() => getInitialCart(defaultProducts));
+  const [wishlist, setWishlist] = useState<Product[]>(() => getInitialWishlist(defaultProducts));
+  const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string>("");
+
+  const showToast = useCallback((msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(""), 3500);
+  }, []);
+
+  // Sync cart items to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem("sheaura_cart_v2", JSON.stringify(cartItems));
+    } catch {}
+  }, [cartItems]);
+
+  // Sync wishlist to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem("sheaura_wishlist_v2", JSON.stringify(wishlist));
+    } catch {}
+  }, [wishlist]);
+
+  const cartCount = useMemo(() => {
+    return cartItems.reduce((acc, item) => acc + item.quantity, 0);
+  }, [cartItems]);
+
+  const addToCart = useCallback((product: Product, quantity = 1, shade?: string, tone?: string) => {
+    const selectedShade = shade || product.name.split(" ").slice(0, 2).join(" ");
+    const selectedTone = tone || product.tone || "#a81920";
+    const itemId = `${product.id || product.slug || product.name}-${selectedShade}`;
+    const priceNum = parseProductPrice(product);
+
+    setCartItems((prev) => {
+      const existing = prev.find((i) => i.id === itemId);
+      if (existing) {
+        return prev.map((i) =>
+          i.id === itemId ? { ...i, quantity: i.quantity + quantity } : i
+        );
+      }
+      return [
+        ...prev,
+        {
+          id: itemId,
+          product,
+          quantity,
+          selectedShade,
+          selectedTone,
+          priceNum,
+        },
+      ];
+    });
+    setIsCartDrawerOpen(true);
+    showToast(`✓ Added ${product.name} to your Haute Bag`);
+  }, [showToast]);
+
+  const updateCartQuantity = useCallback((id: string, delta: number) => {
+    setCartItems((prev) =>
+      prev
+        .map((item) => {
+          if (item.id === id) {
+            const newQty = item.quantity + delta;
+            return newQty > 0 ? { ...item, quantity: newQty } : null;
+          }
+          return item;
+        })
+        .filter(Boolean) as CartItem[]
+    );
+  }, []);
+
+  const removeFromCart = useCallback((id: string) => {
+    setCartItems((prev) => prev.filter((item) => item.id !== id));
+    showToast("Removed piece from bag");
+  }, [showToast]);
+
+  const clearCart = useCallback(() => {
+    setCartItems([]);
+  }, []);
+
+  const toggleWishlist = useCallback((product: Product) => {
+    const key = product.id || product.slug || product.name;
+    setWishlist((prev) => {
+      const exists = prev.some((p) => (p.id || p.slug || p.name) === key);
+      if (exists) {
+        showToast(`Removed ${product.name} from Wishlist`);
+        return prev.filter((p) => (p.id || p.slug || p.name) !== key);
+      } else {
+        showToast(`✓ Saved ${product.name} to Wishlist Sanctuary`);
+        return [...prev, product];
+      }
+    });
+  }, [showToast]);
+
+  const isInWishlist = useCallback((productIdOrSlug: string) => {
+    return wishlist.some((p) => (p.id || p.slug || p.name) === productIdOrSlug);
+  }, [wishlist]);
+
+  const moveCartItemToWishlist = useCallback((item: CartItem) => {
+    removeFromCart(item.id);
+    toggleWishlist(item.product);
+  }, [removeFromCart, toggleWishlist]);
+
+  const moveAllWishlistToCart = useCallback(() => {
+    wishlist.forEach((p) => {
+      addToCart(p, 1);
+    });
+    setIsCartDrawerOpen(true);
+  }, [wishlist, addToCart]);
 
   useEffect(() => {
     let mounted = true;
@@ -1609,7 +1793,45 @@ export default function App() {
           setSelectedProduct(product);
           navigateTo("storefront");
         }}
-        onAddBag={() => setCartCount((count) => count + 1)}
+        onAddBag={(product) => addToCart(product, 1)}
+        cartCount={cartCount}
+      />
+    );
+  }
+
+  if (currentView === "cart") {
+    return (
+      <CartView
+        cartItems={cartItems}
+        onUpdateQuantity={updateCartQuantity}
+        onRemoveItem={removeFromCart}
+        onMoveToWishlist={moveCartItemToWishlist}
+        onBackToStore={() => navigateTo("storefront")}
+        onOpenWishlist={() => navigateTo("wishlist")}
+        onSelectProduct={(product) => {
+          setSelectedProduct(product);
+          navigateTo("storefront");
+        }}
+        onClearCart={clearCart}
+      />
+    );
+  }
+
+  if (currentView === "wishlist") {
+    return (
+      <WishlistView
+        wishlist={wishlist}
+        onRemoveFromWishlist={(id) =>
+          setWishlist((prev) => prev.filter((p) => (p.id || p.slug || p.name) !== id))
+        }
+        onAddToCart={(product) => addToCart(product, 1)}
+        onMoveAllToCart={moveAllWishlistToCart}
+        onBackToStore={() => navigateTo("storefront")}
+        onOpenCart={() => setIsCartDrawerOpen(true)}
+        onSelectProduct={(product) => {
+          setSelectedProduct(product);
+          navigateTo("storefront");
+        }}
         cartCount={cartCount}
       />
     );
@@ -1626,22 +1848,48 @@ export default function App() {
             setSelectedProduct(null);
             setTimeout(() => document.getElementById("shop")?.scrollIntoView(), 0);
           }}
-          onAdd={() => setCartCount((count) => count + 1)}
+          onAdd={(qty, shade, tone) => addToCart(selectedProduct, qty, shade, tone)}
           onSelect={setSelectedProduct}
           onOpenReel={setActiveModalReel}
           onOpenAccount={() => navigateTo("account")}
+          onOpenCart={() => setIsCartDrawerOpen(true)}
+          onOpenWishlist={() => navigateTo("wishlist")}
+          isWishlisted={isInWishlist(selectedProduct.id || selectedProduct.slug || selectedProduct.name)}
+          onToggleWishlist={() => toggleWishlist(selectedProduct)}
+          cartCount={cartCount}
+          wishlistCount={wishlist.length}
         />
         {activeModalReel && (
           <ReelViewerModal
             reel={activeModalReel}
             onClose={() => setActiveModalReel(null)}
             onSelectProduct={setSelectedProduct}
-            onAddBag={() => setCartCount((c) => c + 1)}
+            onAddBag={(matchedProduct) => addToCart(matchedProduct, 1)}
             reels={reels}
             onSwitchReel={setActiveModalReel}
             catalog={catalog}
           />
         )}
+        <CartDrawer
+          isOpen={isCartDrawerOpen}
+          onClose={() => setIsCartDrawerOpen(false)}
+          cartItems={cartItems}
+          onUpdateQuantity={updateCartQuantity}
+          onRemoveItem={removeFromCart}
+          onMoveToWishlist={moveCartItemToWishlist}
+          onOpenFullCart={() => {
+            setIsCartDrawerOpen(false);
+            navigateTo("cart");
+          }}
+          onOpenCheckout={() => {
+            setIsCartDrawerOpen(false);
+            navigateTo("cart");
+          }}
+          onSelectProduct={(product) => {
+            setSelectedProduct(product);
+            setIsCartDrawerOpen(false);
+          }}
+        />
       </>
     );
   }
@@ -1686,6 +1934,28 @@ export default function App() {
               className="mobile-account-link"
               onClick={() => {
                 setMenuOpen(false);
+                navigateTo("wishlist");
+              }}
+            >
+              <Icon name="heart" />
+              <span>Wishlist Sanctuary ({wishlist.length})</span>
+            </button>
+            <button
+              type="button"
+              className="mobile-account-link"
+              onClick={() => {
+                setMenuOpen(false);
+                setIsCartDrawerOpen(true);
+              }}
+            >
+              <Icon name="bag" />
+              <span>Shopping Bag ({cartCount})</span>
+            </button>
+            <button
+              type="button"
+              className="mobile-account-link"
+              onClick={() => {
+                setMenuOpen(false);
                 navigateTo("account");
               }}
             >
@@ -1705,13 +1975,32 @@ export default function App() {
             </button>
             <button aria-label="Search"><Icon name="search" /></button>
             <button
+              type="button"
+              aria-label="Wishlist Sanctuary"
+              onClick={() => navigateTo("wishlist")}
+              className="wishlist-nav-btn"
+              title={`Wishlist Sanctuary (${wishlist.length})`}
+            >
+              <Icon name="heart" />
+              {wishlist.length > 0 && <span className="wishlist-badge">{wishlist.length}</span>}
+            </button>
+            <button
               aria-label="Account"
               onClick={() => navigateTo("account")}
               title="Member Account / Sign In"
             >
               <Icon name="user" />
             </button>
-            <button aria-label="Shopping bag" className="bag"><Icon name="bag" /><span>{cartCount}</span></button>
+            <button
+              type="button"
+              aria-label="Shopping bag"
+              className="bag"
+              onClick={() => setIsCartDrawerOpen(true)}
+              title={`Shopping Bag (${cartCount})`}
+            >
+              <Icon name="bag" />
+              <span>{cartCount}</span>
+            </button>
             <button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu"><i /><i /></button>
           </div>
         </header>
@@ -1787,27 +2076,53 @@ export default function App() {
           <ArrowLink>Shop all</ArrowLink>
         </div>
         <div className="product-grid">
-          {catalog.map((product) => (
-            <article className="product-card" key={product.id || product.slug || product.name}>
-              <div className={`product-image product-image-${(product.category || "lip-colour").toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>
-                {product.tag && <span className="tag">{product.tag}</span>}
-                <img className="product-photo" src={product.image} alt={product.name} />
-                <button onClick={() => setCartCount((count) => count + 1)} aria-label={`Add ${product.name} to bag`}>+</button>
-                <button className="quick-view" onClick={() => { setSelectedProduct(product); window.scrollTo(0, 0); }}>View piece</button>
-              </div>
-              <span className="product-category">{product.category}</span>
-              <h3>{product.name}</h3>
-              <div className="product-meta"><p>{product.price}</p><span>{product.note}</span></div>
-              <div className="swatches"><i style={{ background: product.tone }} /><i /><i /><span>More shades coming</span></div>
-            </article>
-          ))}
+          {catalog.map((product) => {
+            const key = product.id || product.slug || product.name;
+            const wishlisted = isInWishlist(key);
+            return (
+              <article className="product-card" key={key}>
+                <div className={`product-image product-image-${(product.category || "lip-colour").toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>
+                  {product.tag && <span className="tag">{product.tag}</span>}
+                  <img className="product-photo" src={product.image} alt={product.name} />
+
+                  {/* Luxury Wishlist Heart Toggle Button */}
+                  <button
+                    type="button"
+                    className={`card-wishlist-btn ${wishlisted ? "active" : ""}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleWishlist(product);
+                    }}
+                    title={wishlisted ? "Remove from Wishlist" : "Save to Wishlist Sanctuary"}
+                    aria-label="Wishlist"
+                  >
+                    <Icon name="heart" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => addToCart(product, 1)}
+                    aria-label={`Add ${product.name} to bag`}
+                    title="Add to Haute Bag"
+                  >
+                    +
+                  </button>
+                  <button className="quick-view" onClick={() => { setSelectedProduct(product); window.scrollTo(0, 0); }}>View piece</button>
+                </div>
+                <span className="product-category">{product.category}</span>
+                <h3>{product.name}</h3>
+                <div className="product-meta"><p>{product.price}</p><span>{product.note}</span></div>
+                <div className="swatches"><i style={{ background: product.tone }} /><i /><i /><span>More shades coming</span></div>
+              </article>
+            );
+          })}
         </div>
       </section>
 
       <ReelsSection
         catalog={catalog}
         onSelectProduct={setSelectedProduct}
-        onAddBag={() => setCartCount((count) => count + 1)}
+        onAddBag={(prod) => addToCart(prod || catalog[0], 1)}
         onOpenReel={setActiveModalReel}
         onOpenRunway={() => navigateTo("runway")}
       />
@@ -1919,10 +2234,36 @@ export default function App() {
           reel={activeModalReel}
           onClose={() => setActiveModalReel(null)}
           onSelectProduct={setSelectedProduct}
-          onAddBag={() => setCartCount((c) => c + 1)}
+          onAddBag={(matchedProduct) => addToCart(matchedProduct, 1)}
           reels={reels}
           onSwitchReel={setActiveModalReel}
+          catalog={catalog}
         />
+      )}
+      <CartDrawer
+        isOpen={isCartDrawerOpen}
+        onClose={() => setIsCartDrawerOpen(false)}
+        cartItems={cartItems}
+        onUpdateQuantity={updateCartQuantity}
+        onRemoveItem={removeFromCart}
+        onMoveToWishlist={moveCartItemToWishlist}
+        onOpenFullCart={() => {
+          setIsCartDrawerOpen(false);
+          navigateTo("cart");
+        }}
+        onOpenCheckout={() => {
+          setIsCartDrawerOpen(false);
+          navigateTo("cart");
+        }}
+        onSelectProduct={(product) => {
+          setSelectedProduct(product);
+          setIsCartDrawerOpen(false);
+        }}
+      />
+      {toastMessage && (
+        <div className="storefront-toast-pill">
+          <span>{toastMessage}</span>
+        </div>
       )}
       </main>
     </>
