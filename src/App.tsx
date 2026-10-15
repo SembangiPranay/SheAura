@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import BrandIntro from "./BrandIntro";
 import AdminView from "./AdminView";
 import AuthAccountView from "./AuthAccountView";
+import RunwayCinemaView from "./RunwayCinemaView";
 import {
   photos,
   resolveAsset,
@@ -278,6 +279,216 @@ const reels: Reel[] = [
     productPrice: "₹1,099.00",
     productImage: photos.scarletBotanical,
     productTag: "PR Unboxing",
+  },
+  {
+    id: "reel-11",
+    title: "Petal Radiance: Shade Blush Rose",
+    subtitle: "Soft-Focus Fresh Floral Flush",
+    productName: "Pink Blossom Blush",
+    category: "blush",
+    videoUrl: resolveAsset("/reels/reel-11-shade-blush-rose.mp4"),
+    poster: photos.blushPortrait,
+    instagramUrl: "https://www.instagram.com/reel/Dd1LXAoSxAk/?utm_source=ig_web_copy_link",
+    handle: "@sheauracosmeticsofficial",
+    avatar: photos.blushPortrait,
+    duration: "0:15",
+    views: "375K",
+    likes: "51.2K",
+    quote: "Shade Blush Rose! Exploring effortless gifting and everyday botanical radiance with natural cheek glow.",
+    step: "Look 11 · Petal Tint",
+    tone: "#e28c8d",
+    productPrice: "₹899.00",
+    productImage: photos.blushStill,
+    productTag: "Floral Edit",
+  },
+  {
+    id: "reel-12",
+    title: "Bullet Lipstick But Make It Luxury",
+    subtitle: "Sculpted Packaging & Velveteen Glide",
+    productName: "Scarlet Rose Lipstick",
+    category: "lips",
+    videoUrl: resolveAsset("/reels/reel-12-bullet-lipstick-luxury.mp4"),
+    poster: photos.scarletBotanical,
+    instagramUrl: "https://www.instagram.com/reel/DdyuxBAPQMs/?utm_source=ig_web_copy_link",
+    handle: "@sheauracosmeticsofficial",
+    avatar: photos.scarletPortrait,
+    duration: "0:20",
+    views: "520K",
+    likes: "79.8K",
+    quote: "Bullet lipstick but make it luxury! The detailing, the shade, the finish — everything is top notch.",
+    step: "Look 12 · Haute Bullet",
+    tone: "#8b1820",
+    productPrice: "₹1,099.00",
+    productImage: photos.scarletBotanical,
+    productTag: "Luxury Edit",
+  },
+  {
+    id: "reel-13",
+    title: "Unveil Your Inner Confidence",
+    subtitle: "Bold, Timeless Scarlet Rose Touch",
+    productName: "Scarlet Rose Lipstick",
+    category: "lips",
+    videoUrl: resolveAsset("/reels/reel-13-scarlet-rose-confidence.mp4"),
+    poster: photos.scarletPortrait,
+    instagramUrl: "https://www.instagram.com/reel/DdyjIg-tdpw/?utm_source=ig_web_copy_link",
+    handle: "@sheauracosmeticsofficial",
+    avatar: photos.model,
+    duration: "0:18",
+    views: "410K",
+    likes: "58.4K",
+    quote: "Unveil your inner confidence with SheAura’s Scarlet Rose Lipstick—the perfect touch of bold, timeless beauty.",
+    step: "Look 13 · Scarlet Confidence",
+    tone: "#a81920",
+    productPrice: "₹1,099.00",
+    productImage: photos.scarletBotanical,
+    productTag: "Confidence",
+  },
+  {
+    id: "reel-14",
+    title: "Viral Runway GRWM Routine",
+    subtitle: "Trending Layering & Effortless Glow",
+    productName: "Pink Blossom Blush",
+    category: "routine",
+    videoUrl: resolveAsset("/reels/reel-14-grwm-viral-trend.mp4"),
+    poster: photos.model,
+    instagramUrl: "https://www.instagram.com/reel/Debtm5PypqV/?utm_source=ig_web_copy_link",
+    handle: "@sheauracosmeticsofficial",
+    avatar: photos.model,
+    duration: "0:26",
+    views: "890K",
+    likes: "134K",
+    quote: "Viral GRWM with the SheAura beauty wardrobe. Layering textures for effortless evening luminescence.",
+    step: "Look 14 · Viral Routine",
+    tone: "#dfb895",
+    productPrice: "₹899.00",
+    productImage: photos.blushStill,
+    productTag: "Viral Trend",
+  },
+  {
+    id: "reel-15",
+    title: "A Little Colour, A Lot of Confidence",
+    subtitle: "The Perfect Nude Lip Hits Different",
+    productName: "Scarlet Rose Lipstick",
+    category: "lips",
+    videoUrl: resolveAsset("/reels/reel-15-colour-confidence-lip.mp4"),
+    poster: photos.lipstick,
+    instagramUrl: "https://www.instagram.com/reel/DebGeA6vwb7/?utm_source=ig_web_copy_link",
+    handle: "@sheauracosmeticsofficial",
+    avatar: photos.scarletPortrait,
+    duration: "0:22",
+    views: "630K",
+    likes: "91.5K",
+    quote: "A little colour, a lot of confidence! The perfect lip shade just hits different on every skin tone.",
+    step: "Look 15 · Statement Nude",
+    tone: "#965b4c",
+    productPrice: "₹1,099.00",
+    productImage: photos.scarletBotanical,
+    productTag: "Confidence",
+  },
+  {
+    id: "reel-16",
+    title: "Try SheAura Body Oil Highlighter",
+    subtitle: "Molten Shimmer & Sunkissed Glow",
+    productName: "Molten Glow Highlighter",
+    category: "glow",
+    videoUrl: resolveAsset("/reels/reel-16-sheaura-body-oil-highlighter.mp4"),
+    poster: photos.highlighterBotanical,
+    instagramUrl: "https://www.instagram.com/reel/DeZ2Y7OvRQs/?utm_source=ig_web_copy_link",
+    handle: "@sheauracosmeticsofficial",
+    avatar: photos.highlighterPortrait,
+    duration: "0:14",
+    views: "340K",
+    likes: "47.2K",
+    quote: "What do you think about this? Try SheAura Body Oil Highlighter for that goddess molten shine on collarbones and shoulders.",
+    step: "Look 16 · Liquid Light",
+    tone: "#c18847",
+    productPrice: "₹1,199.00",
+    productImage: photos.highlighterBotanical,
+    productTag: "Goddess Glow",
+  },
+  {
+    id: "reel-17",
+    title: "Y’all Need To Steal This Vegan Luxe",
+    subtitle: "Clean Ingredients & Heavyweight Elegance",
+    productName: "Scarlet Rose Lipstick",
+    category: "lips",
+    videoUrl: resolveAsset("/reels/reel-17-vegan-luxe-lipstick-steal.mp4"),
+    poster: photos.scarletPortrait,
+    instagramUrl: "https://www.instagram.com/reel/Ddi1IzLo90u/?utm_source=ig_web_copy_link",
+    handle: "@sheauracosmeticsofficial",
+    avatar: photos.model,
+    duration: "0:15",
+    views: "415K",
+    likes: "59.0K",
+    quote: "Y’all need to steal this! It’s vegan, has luxe packaging and goes on smooth as silk without feeling heavy.",
+    step: "Look 17 · Conscious Luxe",
+    tone: "#b72e39",
+    productPrice: "₹1,099.00",
+    productImage: photos.scarletBotanical,
+    productTag: "Vegan Luxe",
+  },
+  {
+    id: "reel-18",
+    title: "3 Reasons to Fall in Love Trio",
+    subtitle: "Because One Is Never Enough",
+    productName: "Pink Blossom Blush",
+    category: "routine",
+    videoUrl: resolveAsset("/reels/reel-18-three-reasons-love-bundle.mp4"),
+    poster: photos.blushStill,
+    instagramUrl: "https://www.instagram.com/reel/DdllwnOBVms/?utm_source=ig_web_copy_link",
+    handle: "@sheauracosmeticsofficial",
+    avatar: photos.blushStill,
+    duration: "0:16",
+    views: "380K",
+    likes: "53.8K",
+    quote: "Because one is never enough... so we’re giving you 3 reasons to fall in love with She’Aura beauty.",
+    step: "Look 18 · The Trio Edit",
+    tone: "#dda196",
+    productPrice: "₹899.00",
+    productImage: photos.blushStill,
+    productTag: "Trio Edit",
+  },
+  {
+    id: "reel-19",
+    title: "The Signature Blush & Lipstick Duo",
+    subtitle: "Effortless Harmonic Monochrome Pairing",
+    productName: "Pink Blossom Blush",
+    category: "blush",
+    videoUrl: resolveAsset("/reels/reel-19-perfect-blush-and-lipstick.mp4"),
+    poster: photos.blushStill,
+    instagramUrl: "https://www.instagram.com/reel/DdjIZCsovzC/?utm_source=ig_web_copy_link",
+    handle: "@sheauracosmeticsofficial",
+    avatar: photos.blushStill,
+    duration: "0:24",
+    views: "585K",
+    likes: "84.3K",
+    quote: "Got my hands on the perfect blush and lipstick! Harmonic hues that bring natural vitality to skin.",
+    step: "Look 19 · Harmonic Duo",
+    tone: "#d26d74",
+    productPrice: "₹899.00",
+    productImage: photos.blushStill,
+    productTag: "Duo Edit",
+  },
+  {
+    id: "reel-20",
+    title: "The Complete Look Finishing Blush",
+    subtitle: "Buildable Flush on Velvet Canvas",
+    productName: "Pink Blossom Blush",
+    category: "blush",
+    videoUrl: resolveAsset("/reels/reel-20-complete-makeup-blush.mp4"),
+    poster: photos.blushPortrait,
+    instagramUrl: "https://www.instagram.com/reel/DdvUvMJS-Ui/?utm_source=ig_web_copy_link",
+    handle: "@sheauracosmeticsofficial",
+    avatar: photos.blushPortrait,
+    duration: "0:17",
+    views: "460K",
+    likes: "66.7K",
+    quote: "The perfect blush from SheAura to complete my makeup look. Soft, romantic, and all-day wear.",
+    step: "Look 20 · The Final Flush",
+    tone: "#c25a62",
+    productPrice: "₹899.00",
+    productImage: photos.blushStill,
+    productTag: "Final Flush",
   },
 ];
 
@@ -568,11 +779,13 @@ function ReelsSection({
   onSelectProduct,
   onAddBag,
   onOpenReel,
+  onOpenRunway,
 }: {
   catalog?: Product[];
   onSelectProduct: (product: Product) => void;
   onAddBag: (product: Product) => void;
   onOpenReel: (reel: Reel) => void;
+  onOpenRunway?: () => void;
 }) {
   const [filter, setFilter] = useState<string>("all");
   const [activeId, setActiveId] = useState(reels[0].id);
@@ -682,16 +895,16 @@ function ReelsSection({
                 <Icon name="sparkle" />
                 <span>Haute Couture Runway</span>
               </span>
-              <span className="reels-live-pulse"><i /> 10 RITUALS RUNNING LIVE</span>
+              <span className="reels-live-pulse"><i /> {filteredReels.length} RITUALS RUNNING LIVE</span>
             </div>
             <h2>Aura in Motion.</h2>
-            <p>Real skin, botanical textures, unedited swatches. Watch our official Instagram reels flowing live—tap any piece to shop the exact shades worn in motion.</p>
+            <p>Real skin, botanical textures, unedited swatches. Watch our 20 official Instagram reels flowing live—tap any piece to shop the exact shades worn in motion.</p>
           </div>
 
           <div className="reels-header-controls">
             <div className="reels-filters">
               {[
-                { id: "all", label: "All Looks (10)" },
+                { id: "all", label: `All Looks (${filteredReels.length})` },
                 { id: "blush", label: "Blush" },
                 { id: "lips", label: "Lipsticks" },
                 { id: "glow", label: "Highlighter & Oil" },
@@ -949,8 +1162,19 @@ function ReelsSection({
       <div className="reels-bottom-note shell">
         <div className="note-left">
           <Icon name="instagram" />
-          <span>Featuring 10 official reels from <b>@sheauracosmeticsofficial</b>. Tag <b>#MySheAura</b> to be featured.</span>
+          <span>Featuring 20 official reels from <b>@sheauracosmeticsofficial</b>. Tag <b>#MySheAura</b> to be featured.</span>
         </div>
+        {onOpenRunway && (
+          <button
+            type="button"
+            className="reels-launch-cinema-pill"
+            onClick={onOpenRunway}
+          >
+            <span className="runway-pulse-dot" />
+            <Icon name="play" />
+            <span>Launch Autonomous Runway Cinema (20 Looks) ↗</span>
+          </button>
+        )}
         <a href="https://www.instagram.com/sheauracosmeticsofficial/" target="_blank" rel="noreferrer" className="follow-link">
           Visit @sheauracosmeticsofficial <Icon name="external" />
         </a>
@@ -1252,17 +1476,18 @@ function ProductPage({
 }
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<"storefront" | "account" | "admin">(() => {
+  const [currentView, setCurrentView] = useState<"storefront" | "account" | "admin" | "runway">(() => {
     if (typeof window !== "undefined") {
       if (window.location.pathname === "/admin") return "admin";
       if (window.location.pathname === "/login" || window.location.pathname === "/account") return "account";
+      if (window.location.pathname === "/runway" || window.location.pathname === "/cinema") return "runway";
     }
     return "storefront";
   });
 
-  const navigateTo = (view: "storefront" | "account" | "admin") => {
+  const navigateTo = (view: "storefront" | "account" | "admin" | "runway") => {
     setCurrentView(view);
-    const path = view === "admin" ? "/admin" : view === "account" ? "/account" : "/";
+    const path = view === "admin" ? "/admin" : view === "account" ? "/account" : view === "runway" ? "/runway" : "/";
     window.history.pushState({}, "", path);
     window.scrollTo(0, 0);
   };
@@ -1271,6 +1496,7 @@ export default function App() {
     const handlePopState = () => {
       if (window.location.pathname === "/admin") setCurrentView("admin");
       else if (window.location.pathname === "/login" || window.location.pathname === "/account") setCurrentView("account");
+      else if (window.location.pathname === "/runway" || window.location.pathname === "/cinema") setCurrentView("runway");
       else setCurrentView("storefront");
     };
     window.addEventListener("popstate", handlePopState);
@@ -1318,6 +1544,22 @@ export default function App() {
           setSelectedProduct(product);
           navigateTo("storefront");
         }}
+      />
+    );
+  }
+
+  if (currentView === "runway") {
+    return (
+      <RunwayCinemaView
+        reels={reels}
+        catalog={catalog}
+        onBack={() => navigateTo("storefront")}
+        onSelectProduct={(product) => {
+          setSelectedProduct(product);
+          navigateTo("storefront");
+        }}
+        onAddBag={() => setCartCount((count) => count + 1)}
+        cartCount={cartCount}
       />
     );
   }
@@ -1379,6 +1621,17 @@ export default function App() {
             ))}
             <button
               type="button"
+              className="nav-runway-badge-link"
+              onClick={() => {
+                setMenuOpen(false);
+                navigateTo("runway");
+              }}
+            >
+              <span className="runway-pulse-dot" />
+              <span>Runway Cinema (20)</span>
+            </button>
+            <button
+              type="button"
               className="mobile-account-link"
               onClick={() => {
                 setMenuOpen(false);
@@ -1390,6 +1643,15 @@ export default function App() {
             </button>
           </nav>
           <div className="nav-actions">
+            <button
+              aria-label="Runway Cinema"
+              onClick={() => navigateTo("runway")}
+              title="Aura Runway Cinema (20 Live Looks)"
+              className="nav-runway-icon-btn"
+            >
+              <span className="runway-pulse-dot" />
+              <span>Cinema (20)</span>
+            </button>
             <button aria-label="Search"><Icon name="search" /></button>
             <button
               aria-label="Account"
@@ -1408,6 +1670,16 @@ export default function App() {
           <p className="hero-copy">Thoughtful formulas. Sensory textures.<br />A more radiant you, every day.</p>
           <div className="hero-cta-group">
             <ArrowLink light>Explore the collection</ArrowLink>
+            <button
+              type="button"
+              className="hero-runway-btn"
+              onClick={() => navigateTo("runway")}
+              title="Enter Fullscreen Autonomous Runway Cinema"
+            >
+              <span className="runway-pulse-dot" />
+              <Icon name="play" />
+              <span>Watch 20 Runway Looks</span>
+            </button>
             <button
               type="button"
               className="hero-film-trigger"
@@ -1486,6 +1758,7 @@ export default function App() {
         onSelectProduct={setSelectedProduct}
         onAddBag={() => setCartCount((count) => count + 1)}
         onOpenReel={setActiveModalReel}
+        onOpenRunway={() => navigateTo("runway")}
       />
 
       <section className="ingredient-wardrobe">
