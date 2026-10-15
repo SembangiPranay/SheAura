@@ -7868,33 +7868,50 @@ footer { background: #ecd7c1; }
 
 .admin-btn-icon {
   background: #ffffff;
-  border: 1px solid rgba(42, 26, 20, 0.15);
-  color: #422a20;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 11px;
+  border: 1px solid rgba(42, 26, 20, 0.14);
+  color: #38241b;
+  padding: 7px 11px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  gap: 6px;
+  line-height: 1;
+  min-height: 32px;
+  box-sizing: border-box;
+}
+
+.admin-btn-icon svg {
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
 }
 
 .admin-btn-icon:hover {
   background: #241610;
   color: #ffffff;
   border-color: #241610;
+  box-shadow: 0 3px 8px rgba(36, 22, 16, 0.15);
+}
+
+.admin-btn-icon:hover svg {
+  transform: scale(1.08);
 }
 
 .admin-btn-icon.delete {
   color: #dc2626;
-  border-color: #fecaca;
+  background: #ffffff;
+  border-color: rgba(220, 38, 38, 0.22);
 }
 
 .admin-btn-icon.delete:hover {
   background: #dc2626;
   color: #ffffff;
   border-color: #dc2626;
+  box-shadow: 0 3px 8px rgba(220, 38, 38, 0.22);
 }
 
 /* Floating Sticky Bulk Actions Bar */
@@ -8189,10 +8206,10 @@ footer { background: #ecd7c1; }
 }
 
 .admin-card-footer {
-  padding: 12px 18px;
+  padding: 12px 16px;
   background: #fdfaf6;
   border-top: 1px solid rgba(42, 26, 20, 0.08);
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 8px;
 }

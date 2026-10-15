@@ -1,4 +1,40 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Pencil,
+  Eye,
+  Trash2,
+  Copy,
+  X,
+  Check,
+  CheckCircle2,
+  Search,
+  Film,
+  Video,
+  Package,
+  BarChart3,
+  Database,
+  Layers,
+  IndianRupee,
+  ExternalLink,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Maximize,
+  RotateCcw,
+  Download,
+  Upload,
+  Sparkles,
+  Zap,
+  LayoutGrid,
+  List,
+  Plus,
+  AlertTriangle,
+  Camera,
+  Archive,
+  ArrowLeft,
+  ArrowRight,
+} from "lucide-react";
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
 import {
   saveLocalCustomProduct,
@@ -942,20 +978,22 @@ export default function AdminView({
             }}
             title="View live customer storefront"
           >
-            <span>Storefront ↗</span>
+            <span>Storefront</span>
+            <ExternalLink size={12} strokeWidth={2} />
           </button>
 
           <button
             type="button"
             className="admin-primary"
-            style={{ padding: "8px 16px", fontSize: "11px" }}
+            style={{ padding: "8px 16px", fontSize: "11px", display: "inline-flex", alignItems: "center", gap: "6px" }}
             onClick={() => {
               setError("");
               setEditing({ ...blank });
               window.scrollTo({ top: 0, behavior: "instant" });
             }}
           >
-            ＋ New Product
+            <Plus size={13} strokeWidth={2.2} />
+            <span>New Product</span>
           </button>
 
           <button
@@ -980,7 +1018,10 @@ export default function AdminView({
           className="admin-notice admin-wide"
           style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap", marginBottom: "16px" }}
         >
-          <span>{notice}</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+            <CheckCircle2 size={15} strokeWidth={2} style={{ color: "#059669" }} />
+            <span>{notice.replace(/^[✓\s]+/, "")}</span>
+          </span>
           {onBack && (
             <button
               type="button"
@@ -994,9 +1035,13 @@ export default function AdminView({
                 fontSize: "11px",
                 cursor: "pointer",
                 fontWeight: 600,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
               }}
             >
-              View on Storefront ↗
+              <span>View on Storefront</span>
+              <ExternalLink size={11} strokeWidth={2} />
             </button>
           )}
         </div>
@@ -1007,7 +1052,7 @@ export default function AdminView({
         <div className="admin-kpi-card">
           <div className="admin-kpi-header">
             <span className="admin-kpi-title">Catalog SKUs</span>
-            <span className="admin-kpi-icon">📦</span>
+            <span className="admin-kpi-icon"><Package size={17} strokeWidth={1.8} /></span>
           </div>
           <div className="admin-kpi-value">{kpis.total}</div>
           <div className="admin-kpi-meta">
@@ -1019,7 +1064,7 @@ export default function AdminView({
         <div className="admin-kpi-card">
           <div className="admin-kpi-header">
             <span className="admin-kpi-title">Total Catalog Worth</span>
-            <span className="admin-kpi-icon">₹</span>
+            <span className="admin-kpi-icon"><IndianRupee size={17} strokeWidth={2.2} /></span>
           </div>
           <div className="admin-kpi-value">₹{kpis.totalValuation.toLocaleString("en-IN")}</div>
           <div className="admin-kpi-meta">
@@ -1030,7 +1075,7 @@ export default function AdminView({
         <div className="admin-kpi-card">
           <div className="admin-kpi-header">
             <span className="admin-kpi-title">Inventory Units</span>
-            <span className="admin-kpi-icon">📊</span>
+            <span className="admin-kpi-icon"><Layers size={17} strokeWidth={1.8} /></span>
           </div>
           <div className="admin-kpi-value">{kpis.totalStock.toLocaleString()}</div>
           <div className="admin-kpi-meta">
@@ -1046,7 +1091,7 @@ export default function AdminView({
         <div className="admin-kpi-card">
           <div className="admin-kpi-header">
             <span className="admin-kpi-title">Video Reel Coverage</span>
-            <span className="admin-kpi-icon">🎬</span>
+            <span className="admin-kpi-icon"><Film size={17} strokeWidth={1.8} /></span>
           </div>
           <div className="admin-kpi-value">{kpis.coveragePercent}%</div>
           <div className="admin-kpi-meta">
@@ -1062,7 +1107,10 @@ export default function AdminView({
           className={`admin-tab-btn ${currentTab === "products" ? "active" : ""}`}
           onClick={() => setCurrentTab("products")}
         >
-          <span>📦 Products Catalog</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+            <Package size={14} strokeWidth={1.8} />
+            Products Catalog
+          </span>
           <span className="admin-tab-badge">{products.length}</span>
         </button>
 
@@ -1071,7 +1119,10 @@ export default function AdminView({
           className={`admin-tab-btn ${currentTab === "reels" ? "active" : ""}`}
           onClick={() => setCurrentTab("reels")}
         >
-          <span>🎬 Media & Reels Studio</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+            <Film size={14} strokeWidth={1.8} />
+            Media & Reels Studio
+          </span>
           <span className="admin-tab-badge">{activeReelsList.length}</span>
         </button>
 
@@ -1080,7 +1131,10 @@ export default function AdminView({
           className={`admin-tab-btn ${currentTab === "inventory" ? "active" : ""}`}
           onClick={() => setCurrentTab("inventory")}
         >
-          <span>📊 Inventory & Stock Analytics</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+            <BarChart3 size={14} strokeWidth={1.8} />
+            Inventory & Stock Analytics
+          </span>
         </button>
 
         <button
@@ -1088,7 +1142,10 @@ export default function AdminView({
           className={`admin-tab-btn ${currentTab === "database" ? "active" : ""}`}
           onClick={() => setCurrentTab("database")}
         >
-          <span>⚙️ Database & Health</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+            <Database size={14} strokeWidth={1.8} />
+            Database & Health
+          </span>
         </button>
       </div>
 
@@ -1107,7 +1164,7 @@ export default function AdminView({
               />
               {searchQuery && (
                 <button type="button" className="admin-search-clear" onClick={() => setSearchQuery("")}>
-                  ✕
+                  <X size={12} strokeWidth={2} />
                 </button>
               )}
             </div>
@@ -1176,7 +1233,8 @@ export default function AdminView({
                 onClick={() => setViewDensity("table")}
                 title="Table view"
               >
-                ☰ Table
+                <List size={13} strokeWidth={2} />
+                <span>Table</span>
               </button>
               <button
                 type="button"
@@ -1184,7 +1242,8 @@ export default function AdminView({
                 onClick={() => setViewDensity("cards")}
                 title="Visual cards view"
               >
-                ⊞ Cards
+                <LayoutGrid size={13} strokeWidth={2} />
+                <span>Cards</span>
               </button>
             </div>
           </div>
@@ -1335,7 +1394,8 @@ export default function AdminView({
                                 }}
                                 title="Watch attached video reel"
                               >
-                                🎬 {videoCount} {videoCount === 1 ? "Reel" : "Reels"}
+                                <Film size={11} strokeWidth={2} />
+                                <span>{videoCount} {videoCount === 1 ? "Reel" : "Reels"}</span>
                               </button>
                             ) : (
                               <span className="admin-reel-btn empty">No reels</span>
@@ -1369,7 +1429,8 @@ export default function AdminView({
                                 title="Edit product details in dedicated editor"
                                 style={{ background: "#241610", color: "#ffffff", borderColor: "#241610" }}
                               >
-                                Edit ✎
+                                <Pencil size={11} strokeWidth={2} />
+                                <span>Edit</span>
                               </button>
                               <button
                                 type="button"
@@ -1377,7 +1438,7 @@ export default function AdminView({
                                 onClick={() => setPreviewProduct(p)}
                                 title="Quick preview storefront card"
                               >
-                                👁
+                                <Eye size={12} strokeWidth={1.8} />
                               </button>
                               <button
                                 type="button"
@@ -1385,7 +1446,7 @@ export default function AdminView({
                                 onClick={() => duplicateProduct(p)}
                                 title="Duplicate this product"
                               >
-                                ⧉
+                                <Copy size={12} strokeWidth={1.8} />
                               </button>
                               <button
                                 type="button"
@@ -1393,7 +1454,7 @@ export default function AdminView({
                                 onClick={() => setDeleteConfirmTarget(p)}
                                 title="Delete product"
                               >
-                                ✕
+                                <Trash2 size={12} strokeWidth={1.8} />
                               </button>
                             </div>
                           </td>
@@ -1450,24 +1511,26 @@ export default function AdminView({
                           window.scrollTo({ top: 0, behavior: "instant" });
                         }}
                         style={{ background: "#241610", color: "#ffffff", borderColor: "#241610", flex: 1, justifyContent: "center" }}
+                        title="Edit product details in dedicated editor"
                       >
-                        Edit Details ✎
+                        <Pencil size={12} strokeWidth={2} />
+                        <span>Edit Details</span>
                       </button>
                       <button
                         type="button"
                         className="admin-btn-icon"
                         onClick={() => setPreviewProduct(p)}
-                        title="Preview"
+                        title="Quick preview storefront card"
                       >
-                        👁
+                        <Eye size={13} strokeWidth={1.8} />
                       </button>
                       <button
                         type="button"
                         className="admin-btn-icon delete"
                         onClick={() => setDeleteConfirmTarget(p)}
-                        title="Delete"
+                        title="Delete product"
                       >
-                        ✕
+                        <Trash2 size={13} strokeWidth={1.8} />
                       </button>
                     </div>
                   </div>
@@ -1485,28 +1548,32 @@ export default function AdminView({
                 className="admin-bulk-btn"
                 onClick={() => void handleBulkStatusChange("published")}
               >
-                ✓ Publish Live
+                <CheckCircle2 size={13} strokeWidth={2} />
+                <span>Publish Live</span>
               </button>
               <button
                 type="button"
                 className="admin-bulk-btn"
                 onClick={() => void handleBulkStatusChange("draft")}
               >
-                📁 Set to Draft
+                <Archive size={13} strokeWidth={1.8} />
+                <span>Set to Draft</span>
               </button>
               <button
                 type="button"
                 className="admin-bulk-btn"
                 onClick={handleExportSelected}
               >
-                📥 Export JSON
+                <Download size={13} strokeWidth={1.8} />
+                <span>Export JSON</span>
               </button>
               <button
                 type="button"
                 className="admin-bulk-btn delete"
                 onClick={() => void handleBulkDelete()}
               >
-                🗑 Delete
+                <Trash2 size={13} strokeWidth={1.8} />
+                <span>Delete</span>
               </button>
               <button
                 type="button"
@@ -1545,7 +1612,9 @@ export default function AdminView({
                 >
                   <img src={reel.poster} alt={reel.title} />
                   <div className="admin-reel-play-overlay">
-                    <span className="admin-reel-play-disc">▶</span>
+                    <span className="admin-reel-play-disc">
+                      <Play size={16} fill="currentColor" style={{ marginLeft: "2px" }} />
+                    </span>
                   </div>
                 </div>
                 <div className="admin-reel-card-body">
@@ -1561,8 +1630,10 @@ export default function AdminView({
                     rel="noopener noreferrer"
                     className="admin-ig-link"
                     title="View original reel on Instagram"
+                    style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
                   >
-                    Instagram ↗
+                    <span>Instagram</span>
+                    <ExternalLink size={11} strokeWidth={2} />
                   </a>
                 </div>
               </div>
@@ -1710,9 +1781,10 @@ export default function AdminView({
                 type="button"
                 className="admin-primary"
                 onClick={() => void testDatabasePing()}
-                style={{ width: "100%", textAlign: "center" }}
+                style={{ width: "100%", textAlign: "center", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
               >
-                {pingResult?.testing ? "Testing Latency…" : "Test Cloud Connection Ping ⚡"}
+                <Zap size={13} strokeWidth={2} />
+                <span>{pingResult?.testing ? "Testing Latency…" : "Test Cloud Connection Ping"}</span>
               </button>
               {pingResult && !pingResult.testing && (
                 <div style={{ marginTop: "12px", fontSize: "11.5px", color: pingResult.ok ? "#059669" : "#b45309", fontWeight: 600 }}>
@@ -1725,7 +1797,7 @@ export default function AdminView({
             <div className="admin-kpi-card" style={{ padding: "24px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
                 <span className="admin-kpi-title">Backup & Seeding Operations</span>
-                <span className="admin-kpi-icon">💾</span>
+                <span className="admin-kpi-icon"><Database size={17} strokeWidth={1.8} /></span>
               </div>
               <p style={{ margin: "0 0 16px", fontSize: "12.5px", color: "#765d50", lineHeight: 1.5 }}>
                 Export full snapshot of your catalog data or restore the 5 official core luxury products with verified reels.
@@ -1737,7 +1809,8 @@ export default function AdminView({
                   onClick={handleExportAll}
                   style={{ padding: "10px 16px", justifyContent: "center", fontWeight: 600 }}
                 >
-                  📥 Download Catalog Backup (JSON)
+                  <Download size={13} strokeWidth={1.8} />
+                  <span>Download Catalog Backup (JSON)</span>
                 </button>
                 <button
                   type="button"
@@ -1745,7 +1818,8 @@ export default function AdminView({
                   onClick={handleSeedOfficialCatalog}
                   style={{ padding: "10px 16px", justifyContent: "center", color: "#b45309", borderColor: "#fed7aa", background: "#fdf3eb" }}
                 >
-                  ⚡ Re-Seed 5 Official Luxury Products
+                  <RotateCcw size={13} strokeWidth={1.8} />
+                  <span>Re-Seed 5 Official Luxury Products</span>
                 </button>
               </div>
             </div>
@@ -1760,7 +1834,7 @@ export default function AdminView({
             <div className="admin-modal-header">
               <h3>Storefront Card Preview</h3>
               <button type="button" className="admin-modal-close" onClick={() => setPreviewProduct(null)}>
-                ✕
+                <X size={16} strokeWidth={2} />
               </button>
             </div>
             <div className="admin-modal-body">
@@ -1804,9 +1878,10 @@ export default function AdminView({
                         setEditing({ ...blank, ...target });
                         window.scrollTo({ top: 0, behavior: "instant" });
                       }}
-                      style={{ flex: 1, textAlign: "center" }}
+                      style={{ flex: 1, textAlign: "center", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
                     >
-                      Open in Full Editor ✎
+                      <Pencil size={12} strokeWidth={2} />
+                      <span>Open in Full Editor</span>
                     </button>
                     <button
                       type="button"
@@ -1854,10 +1929,12 @@ export default function AdminView({
                   width: "32px",
                   height: "32px",
                   cursor: "pointer",
-                  fontSize: "14px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                ✕
+                <X size={16} strokeWidth={2} />
               </button>
             </div>
             <div style={{ padding: "16px 20px" }}>
@@ -1874,9 +1951,10 @@ export default function AdminView({
                   href={previewReel.instagramUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ color: "#e0ba9b", fontSize: "11.5px", fontWeight: 600, textDecoration: "none" }}
+                  style={{ color: "#e0ba9b", fontSize: "11.5px", fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" }}
                 >
-                  Open on Instagram ↗
+                  <span>Open on Instagram</span>
+                  <ExternalLink size={12} strokeWidth={2} />
                 </a>
               </div>
             </div>
@@ -1891,7 +1969,7 @@ export default function AdminView({
             <div className="admin-modal-header">
               <h3>Confirm Deletion</h3>
               <button type="button" className="admin-modal-close" onClick={() => setDeleteConfirmTarget(null)}>
-                ✕
+                <X size={16} strokeWidth={2} />
               </button>
             </div>
             <div className="admin-modal-body">
@@ -1910,9 +1988,10 @@ export default function AdminView({
                   type="button"
                   className="admin-btn-icon delete"
                   onClick={() => void deleteProduct(deleteConfirmTarget)}
-                  style={{ background: "#dc2626", color: "#ffffff", borderColor: "#dc2626" }}
+                  style={{ background: "#dc2626", color: "#ffffff", borderColor: "#dc2626", display: "inline-flex", alignItems: "center", gap: "6px" }}
                 >
-                  Confirm Delete
+                  <Trash2 size={13} strokeWidth={1.8} />
+                  <span>Confirm Delete</span>
                 </button>
               </div>
             </div>
