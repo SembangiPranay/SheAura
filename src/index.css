@@ -490,6 +490,27 @@ img { display: block; width: 100%; }
 .nav-links a { position: relative; font-size: 10px; }
 .nav-links a::after { content: ""; position: absolute; left: 0; right: 100%; bottom: -8px; height: 1px; background: currentColor; transition: right .25s; }
 .nav-links a:hover::after { right: 0; }
+.mobile-account-link { display: none; }
+@media (max-width: 900px) {
+  .mobile-account-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 12px 18px;
+    border-radius: 999px;
+    background: rgba(223, 184, 149, 0.15);
+    border: 1px solid rgba(223, 184, 149, 0.4);
+    color: #dfb895;
+    font-size: 8.5px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+    width: max-content;
+  }
+  .mobile-account-link .icon { width: 14px; height: 14px; }
+}
 .nav-actions { display: flex; align-items: center; gap: 18px; }
 .nav-actions button { position: relative; padding: 0; border: 0; background: none; color: white; }
 .nav-actions .bag span { position: absolute; top: -9px; right: -7px; min-width: 14px; height: 14px; border-radius: 50%; background: var(--cream); color: var(--ink); font-size: 8px; line-height: 14px; }
@@ -2835,3 +2856,1173 @@ footer { background: #ecd7c1; }
     padding: 13px 20px;
   }
 }
+
+/* ==========================================================================
+   SHE'AURA MEMBER & OPERATIONS AUTHENTICATION & ACCOUNT ATELIER
+   ========================================================================== */
+
+.auth-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #fbf7f2 0%, #f3ebe0 50%, #fbf7f2 100%);
+  color: var(--ink);
+  position: relative;
+  overflow-x: hidden;
+  padding-bottom: 80px;
+}
+
+.auth-page::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1000px;
+  height: 500px;
+  background: radial-gradient(ellipse, rgba(223, 184, 149, 0.35) 0%, rgba(251, 247, 242, 0) 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.auth-nav {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 0;
+  border-bottom: 1px solid rgba(223, 184, 149, 0.35);
+}
+
+.auth-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid rgba(43, 19, 12, 0.2);
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #2b130c;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.auth-back-btn .icon {
+  width: 12px;
+  height: 12px;
+  transform: rotate(180deg);
+}
+
+.auth-back-btn:hover {
+  background: #2b130c;
+  color: #ffffff;
+  border-color: #2b130c;
+}
+
+.auth-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  color: #2b130c;
+  font: 500 24px/1 "Cormorant Garamond", serif;
+  letter-spacing: 0.22em;
+}
+
+.auth-brand span {
+  font-size: 6.5px;
+  letter-spacing: 0.28em;
+  color: #8c766a;
+  margin-top: 3px;
+}
+
+.auth-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+
+.auth-pill-btn.admin {
+  background: #32150f;
+  color: #ffffff;
+  border: 1px solid #32150f;
+}
+
+.auth-pill-btn.admin:hover {
+  background: #a81920;
+  border-color: #a81920;
+}
+
+.auth-pill-btn.signout {
+  background: transparent;
+  border: 1px solid rgba(168, 25, 32, 0.35);
+  color: #a81920;
+}
+
+.auth-pill-btn.signout:hover {
+  background: rgba(168, 25, 32, 0.08);
+}
+
+.auth-pill-btn .icon {
+  width: 13px;
+  height: 13px;
+}
+
+/* Card Wrap & Unauthenticated */
+.auth-container {
+  position: relative;
+  z-index: 2;
+  padding-top: 36px;
+}
+
+.auth-loading-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  gap: 16px;
+  color: #765d50;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.auth-spinner {
+  width: 32px;
+  height: 32px;
+  border: 2px solid rgba(193, 136, 71, 0.25);
+  border-top-color: #7d2616;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.auth-card-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 480px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(223, 184, 149, 0.45);
+  border-radius: 26px;
+  padding: 42px 38px;
+  box-shadow: 0 24px 60px rgba(45, 20, 10, 0.08), 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+.auth-card-head {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.auth-crest {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(168, 25, 32, 0.1), rgba(193, 136, 71, 0.25));
+  border: 1px solid rgba(193, 136, 71, 0.45);
+  color: #7d2616;
+  display: grid;
+  place-items: center;
+}
+
+.auth-crest .icon {
+  width: 20px;
+  height: 20px;
+}
+
+.auth-eyebrow {
+  display: block;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: #7d2616;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.auth-card-head h2 {
+  font: 500 34px/1.05 "Cormorant Garamond", serif;
+  color: #2b130c;
+  margin: 0 0 10px;
+}
+
+.auth-card-head p {
+  font-size: 11px;
+  line-height: 1.5;
+  color: #765d50;
+  margin: 0;
+}
+
+/* Mode Switcher Tabs */
+.auth-mode-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4px;
+  background: #f1e6d9;
+  padding: 4px;
+  border-radius: 999px;
+  margin-bottom: 24px;
+}
+
+.auth-mode-tabs button {
+  padding: 9px 10px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: #765d50;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.auth-mode-tabs button.active {
+  background: #ffffff;
+  color: #2b130c;
+  box-shadow: 0 2px 8px rgba(45, 20, 10, 0.08);
+}
+
+.auth-mode-tabs button.admin-tab.active {
+  background: #32150f;
+  color: #ffffff;
+}
+
+.auth-mode-tabs button .icon {
+  width: 11px;
+  height: 11px;
+}
+
+/* Alerts */
+.auth-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 10.5px;
+  margin-bottom: 20px;
+}
+
+.auth-alert.error {
+  background: rgba(168, 25, 32, 0.08);
+  border: 1px solid rgba(168, 25, 32, 0.3);
+  color: #a81920;
+}
+
+.auth-alert.success {
+  background: rgba(46, 105, 48, 0.08);
+  border: 1px solid rgba(46, 105, 48, 0.3);
+  color: #2e6930;
+}
+
+.auth-alert .icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* Form Fields */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auth-field label {
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #53392f;
+}
+
+.auth-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.auth-show-pass-btn {
+  background: transparent;
+  border: none;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #a89182;
+  cursor: pointer;
+}
+
+.auth-show-pass-btn:hover {
+  color: #32150f;
+}
+
+.auth-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.auth-input-wrap .icon {
+  position: absolute;
+  left: 14px;
+  width: 14px;
+  height: 14px;
+  color: #a89182;
+  pointer-events: none;
+}
+
+.auth-input-wrap input {
+  width: 100%;
+  padding: 12px 14px 12px 38px;
+  border-radius: 12px;
+  border: 1px solid rgba(43, 19, 12, 0.2);
+  background: #fdfbf9;
+  color: #2b130c;
+  font-size: 12px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.auth-input-wrap input:focus {
+  border-color: #32150f;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(50, 21, 15, 0.1);
+}
+
+.admin-auth-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(193, 136, 71, 0.12);
+  border: 1px solid rgba(193, 136, 71, 0.3);
+  color: #7d4416;
+  font-size: 9.5px;
+  line-height: 1.4;
+}
+
+.admin-auth-tip .icon {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.auth-submit-btn {
+  margin-top: 6px;
+  background: #32150f;
+  color: #ffffff;
+  border: 1px solid #32150f;
+  border-radius: 999px;
+  padding: 14px 24px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-submit-btn:hover:not(:disabled) {
+  background: #a81920;
+  border-color: #a81920;
+  box-shadow: 0 8px 24px rgba(168, 25, 32, 0.25);
+  transform: translateY(-1px);
+}
+
+.auth-submit-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.auth-submitting {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Quick Demo Shortcuts */
+.auth-quick-demo-section {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(223, 184, 149, 0.35);
+}
+
+.demo-label {
+  display: block;
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #8c766a;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.demo-btns-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.demo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px dashed rgba(43, 19, 12, 0.3);
+  background: rgba(247, 241, 233, 0.5);
+  color: #4b3228;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.demo-btn:hover {
+  background: rgba(43, 19, 12, 0.06);
+  border-color: #32150f;
+}
+
+.demo-btn.admin {
+  border-color: rgba(168, 25, 32, 0.35);
+  color: #7d2616;
+}
+
+.demo-btn.admin:hover {
+  background: rgba(168, 25, 32, 0.08);
+}
+
+.demo-btn .icon {
+  width: 11px;
+  height: 11px;
+}
+
+/* Direct Admin Bypass */
+.auth-admin-bypass {
+  margin-top: 18px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 9px;
+  color: #8c766a;
+}
+
+.admin-direct-link {
+  background: transparent;
+  border: none;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7d2616;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.admin-direct-link:hover {
+  text-decoration: underline;
+}
+
+.admin-direct-link .icon {
+  width: 10px;
+  height: 10px;
+}
+
+.auth-trust-strip {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 22px;
+  flex-wrap: wrap;
+}
+
+.auth-trust-strip div {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8c766a;
+}
+
+.auth-trust-strip .icon {
+  width: 13px;
+  height: 13px;
+  color: #7d2616;
+}
+
+/* =========================================================================
+   LOGGED IN: Member Dashboard Styles
+   ========================================================================= */
+.account-dashboard {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.account-hero-card {
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(223, 184, 149, 0.45);
+  border-radius: 24px;
+  padding: 32px 36px;
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  box-shadow: 0 16px 40px rgba(45, 20, 10, 0.06);
+}
+
+.account-avatar-circle {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #32150f, #7d2616);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font: 500 24px "Cormorant Garamond", serif;
+  box-shadow: 0 6px 20px rgba(50, 21, 15, 0.3);
+  flex-shrink: 0;
+}
+
+.account-hero-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.account-badge-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.account-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.account-badge.tier {
+  background: rgba(193, 136, 71, 0.15);
+  border: 1px solid rgba(193, 136, 71, 0.4);
+  color: #7d4416;
+}
+
+.account-badge.admin {
+  background: rgba(168, 25, 32, 0.12);
+  border: 1px solid rgba(168, 25, 32, 0.4);
+  color: #a81920;
+}
+
+.account-badge .icon {
+  width: 10px;
+  height: 10px;
+}
+
+.account-hero-info h2 {
+  font: 500 32px/1.1 "Cormorant Garamond", serif;
+  color: #2b130c;
+  margin: 0 0 4px;
+}
+
+.account-email {
+  font-size: 11px;
+  color: #765d50;
+  margin: 0 0 6px;
+}
+
+.account-meta-note {
+  font-size: 9px;
+  color: #8c766a;
+}
+
+.account-hero-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.account-admin-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: #32150f;
+  color: #ffffff;
+  border: 1px solid #32150f;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.account-admin-action-btn:hover {
+  background: #a81920;
+  border-color: #a81920;
+}
+
+.account-admin-action-btn .icon {
+  width: 12px;
+  height: 12px;
+}
+
+.account-signout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: transparent;
+  color: #765d50;
+  border: 1px solid rgba(43, 19, 12, 0.2);
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.account-signout-btn:hover {
+  color: #a81920;
+  border-color: #a81920;
+}
+
+.account-signout-btn .icon {
+  width: 12px;
+  height: 12px;
+}
+
+/* Hub Card */
+.account-admin-hub-card {
+  background: linear-gradient(135deg, #ffffff 0%, #faede1 100%);
+  border: 1.5px solid rgba(193, 136, 71, 0.45);
+  border-radius: 20px;
+  padding: 24px 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  box-shadow: 0 10px 30px rgba(193, 136, 71, 0.12);
+}
+
+.hub-card-left {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.hub-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #32150f;
+  color: #dfb895;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.hub-icon-wrap .icon {
+  width: 22px;
+  height: 22px;
+}
+
+.hub-eyebrow {
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: #7d2616;
+  text-transform: uppercase;
+}
+
+.hub-card-left h3 {
+  font: 500 22px/1.2 "Cormorant Garamond", serif;
+  color: #2b130c;
+  margin: 2px 0 4px;
+}
+
+.hub-card-left p {
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: #765d50;
+  margin: 0;
+  max-width: 520px;
+}
+
+.hub-launch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: 999px;
+  background: #7d2616;
+  color: #ffffff;
+  border: none;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+  white-space: nowrap;
+}
+
+.hub-launch-btn:hover {
+  background: #2b130c;
+  transform: translateX(3px);
+  box-shadow: 0 6px 18px rgba(43, 19, 12, 0.25);
+}
+
+.hub-launch-btn .icon {
+  width: 12px;
+  height: 12px;
+}
+
+/* Tabs */
+.account-tabs-row {
+  display: flex;
+  gap: 10px;
+  border-bottom: 1px solid rgba(223, 184, 149, 0.4);
+  padding-bottom: 4px;
+}
+
+.account-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: none;
+  background: transparent;
+  color: #765d50;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -5px;
+  transition: all 0.2s;
+}
+
+.account-tab:hover {
+  color: #2b130c;
+}
+
+.account-tab.active {
+  color: #7d2616;
+  border-bottom-color: #7d2616;
+  font-weight: 700;
+}
+
+.account-tab .icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* Tab Sections */
+.account-grid-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+
+.account-info-card {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(223, 184, 149, 0.45);
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(45, 20, 10, 0.04);
+}
+
+.account-info-card h4 {
+  font: 500 20px "Cormorant Garamond", serif;
+  color: #2b130c;
+  margin: 0 0 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(223, 184, 149, 0.3);
+}
+
+.info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10.5px;
+}
+
+.info-row span {
+  color: #8c766a;
+}
+
+.info-row b {
+  color: #2b130c;
+  text-align: right;
+}
+
+.address-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+  color: #553c30;
+  line-height: 1.5;
+}
+
+.address-box b {
+  font-size: 12px;
+  color: #2b130c;
+}
+
+.address-pill {
+  display: inline-block;
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 3px 8px;
+  background: rgba(46, 105, 48, 0.1);
+  border: 1px solid rgba(46, 105, 48, 0.3);
+  color: #2e6930;
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-radius: 999px;
+}
+
+/* Orders Section */
+.account-orders-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.order-card {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(223, 184, 149, 0.45);
+  border-radius: 18px;
+  padding: 22px 26px;
+  box-shadow: 0 8px 24px rgba(45, 20, 10, 0.04);
+}
+
+.order-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(223, 184, 149, 0.25);
+}
+
+.order-number {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #2b130c;
+  display: block;
+}
+
+.order-date {
+  font-size: 9px;
+  color: #8c766a;
+}
+
+.order-status {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.order-status.dispatch {
+  background: rgba(193, 136, 71, 0.15);
+  color: #8f5319;
+  border: 1px solid rgba(193, 136, 71, 0.4);
+}
+
+.order-status.delivered {
+  background: rgba(46, 105, 48, 0.1);
+  color: #2e6930;
+  border: 1px solid rgba(46, 105, 48, 0.3);
+}
+
+.order-items-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.order-thumb {
+  width: 58px;
+  height: 58px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid rgba(223, 184, 149, 0.3);
+}
+
+.order-item-meta h5 {
+  font: 500 18px "Cormorant Garamond", serif;
+  color: #2b130c;
+  margin: 0 0 2px;
+}
+
+.order-item-meta p {
+  font-size: 9.5px;
+  color: #765d50;
+  margin: 0 0 4px;
+}
+
+.order-item-meta b {
+  font-size: 12px;
+  color: #2b130c;
+}
+
+.order-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(223, 184, 149, 0.2);
+  font-size: 9.5px;
+  color: #765d50;
+}
+
+.order-track-btn {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: transparent;
+  border: 1px solid #32150f;
+  color: #32150f;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.order-track-btn:hover {
+  background: #32150f;
+  color: #ffffff;
+}
+
+/* Wishlist */
+.account-wishlist-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.wishlist-item-card {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(223, 184, 149, 0.45);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(45, 20, 10, 0.04);
+}
+
+.wishlist-thumb-wrap {
+  position: relative;
+  height: 180px;
+  background: #f7eee5;
+}
+
+.wishlist-thumb-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.wishlist-tag {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #a81920;
+  color: #ffffff;
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.wishlist-info {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wishlist-cat {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8c766a;
+}
+
+.wishlist-info h4 {
+  font: 500 18px/1.2 "Cormorant Garamond", serif;
+  color: #2b130c;
+  margin: 0;
+}
+
+.wishlist-info b {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 16px;
+  color: #2b130c;
+  margin-bottom: 8px;
+}
+
+.wishlist-shop-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: #2b130c;
+  color: #ffffff;
+  border: 1px solid #2b130c;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.wishlist-shop-btn:hover {
+  background: #a81920;
+  border-color: #a81920;
+}
+
+.wishlist-shop-btn .icon {
+  width: 10px;
+  height: 10px;
+}
+
+.footer-action-link {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  font-family: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.footer-action-link:hover {
+  color: #ffffff;
+}
+
+@media (max-width: 900px) {
+  .account-hero-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 26px 20px;
+  }
+  .account-badge-row {
+    justify-content: center;
+  }
+  .account-hero-actions {
+    width: 100%;
+    flex-direction: row;
+    justify-content: center;
+  }
+  .account-admin-hub-card {
+    flex-direction: column;
+    text-align: center;
+  }
+  .hub-card-left {
+    flex-direction: column;
+  }
+  .account-grid-section {
+    grid-template-columns: 1fr;
+  }
+  .account-wishlist-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

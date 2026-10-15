@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import BrandIntro from "./BrandIntro";
 import AdminView from "./AdminView";
+import AuthAccountView from "./AuthAccountView";
 
 export const resolveAsset = (path: string): string => {
   if (!path) return "";
@@ -12,7 +13,7 @@ export const resolveAsset = (path: string): string => {
   return base.endsWith("/") ? `${base}${cleanPath}` : `${base}/${cleanPath}`;
 };
 
-const photos = {
+export const photos = {
   hero: "https://images.unsplash.com/photo-1434730737257-3e97ad16f4b6?auto=format&fit=crop&w=2200&q=90",
   lipstick: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=900&q=85",
   makeup: resolveAsset("/products/products.png"),
@@ -33,9 +34,9 @@ const photos = {
   highlighterBotanical: resolveAsset("/campaign/highlighter-glow-still.png"),
 };
 
-type IconName = "search" | "user" | "bag" | "arrow" | "leaf" | "drop" | "sparkle" | "instagram" | "play" | "pause" | "volume" | "volumeX" | "close" | "check" | "external";
+export type IconName = "search" | "user" | "bag" | "arrow" | "leaf" | "drop" | "sparkle" | "instagram" | "play" | "pause" | "volume" | "volumeX" | "close" | "check" | "external" | "lock" | "shield" | "heart" | "package" | "logOut";
 
-function Icon({ name, className }: { name: IconName; className?: string }) {
+export function Icon({ name, className }: { name: IconName; className?: string }) {
   const paths: Record<IconName, React.ReactNode> = {
     search: <><circle cx="11" cy="11" r="6" /><path d="m16 16 4 4" /></>,
     user: <><circle cx="12" cy="8" r="3" /><path d="M5.5 20c.6-4 2.7-6 6.5-6s5.9 2 6.5 6" /></>,
@@ -52,23 +53,28 @@ function Icon({ name, className }: { name: IconName; className?: string }) {
     close: <><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></>,
     check: <polyline points="20 6 9 17 4 12" />,
     external: <><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></>,
+    lock: <><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></>,
+    shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
+    heart: <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />,
+    package: <><line x1="16.5" y1="9.4" x2="7.5" y2="4.21" /><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></>,
+    logOut: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></>,
   };
   return <svg aria-hidden="true" className={`icon ${className || ""}`.trim()} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4">{paths[name]}</svg>;
 }
 
-function ArrowLink({ children, light = false }: { children: React.ReactNode; light?: boolean }) {
+export function ArrowLink({ children, light = false }: { children: React.ReactNode; light?: boolean }) {
   return <a className={`arrow-link ${light ? "light" : ""}`} href="#shop">{children}<Icon name="arrow" /></a>;
 }
 
-const products = [
+export const products = [
   { name: "Scarlet Rose Lipstick", price: "₹1,099.00", image: photos.scarletBotanical, campaign: photos.scarletPortrait, still: photos.scarletBotanical, tag: "Icon", tone: "#a81920", category: "Lip colour", note: "Satin botanical colour", finish: "Sculpted satin", mood: "The red statement", description: "A couture red lip with a petal-embossed silhouette, designed as the finishing piece in your everyday wardrobe." },
   { name: "Pink Blossom Blush", price: "₹899.00", image: photos.blushStill, campaign: photos.blushPortrait, still: photos.blushStill, tag: "Bestseller", tone: "#a94368", category: "Blush", note: "Soft-focus flush", finish: "Silk powder", mood: "The romantic flush", description: "A buildable pink flush presented in a keepsake gold compact, made to move effortlessly from daylight to evening." },
   { name: "Molten Glow Highlighter", price: "₹1,199.00", image: photos.highlighterBotanical, campaign: photos.highlighterPortrait, still: photos.highlighterBotanical, tag: "New", tone: "#c18847", category: "Highlighter", note: "Liquid luminosity", finish: "Molten pearl", mood: "The golden hour", description: "A fluid veil of warm luminosity that catches the light like jewellery and turns skin into the main accessory." },
 ];
 
-type Product = (typeof products)[number];
+export type Product = (typeof products)[number];
 
-type Reel = {
+export type Reel = {
   id: string;
   title: string;
   subtitle: string;
@@ -1048,12 +1054,14 @@ function ProductPage({
   onAdd,
   onSelect,
   onOpenReel,
+  onOpenAccount,
 }: {
   product: Product;
   onBack: () => void;
   onAdd: () => void;
   onSelect: (product: Product) => void;
   onOpenReel: (reel: Reel) => void;
+  onOpenAccount?: () => void;
 }) {
   const [quantity, setQuantity] = useState(1);
   const [detailsOpen, setDetailsOpen] = useState("formula");
@@ -1064,7 +1072,15 @@ function ProductPage({
       <header className="product-nav shell">
         <button className="back-link" onClick={onBack} aria-label="Back to collection"><Icon name="arrow" /> <span>Back to collection</span></button>
         <button className="brand product-brand" onClick={onBack}>SHE’AURA<span>YOUR AURA · YOUR STORY</span></button>
-        <div className="product-nav-actions"><button aria-label="Search"><Icon name="search" /></button><button aria-label="Shopping bag" onClick={onAdd} className="bag"><Icon name="bag" /></button></div>
+        <div className="product-nav-actions">
+          <button aria-label="Search"><Icon name="search" /></button>
+          {onOpenAccount && (
+            <button aria-label="Account" onClick={onOpenAccount} title="Member Account">
+              <Icon name="user" />
+            </button>
+          )}
+          <button aria-label="Shopping bag" onClick={onAdd} className="bag"><Icon name="bag" /></button>
+        </div>
       </header>
 
       <section className="pdp-hero">
@@ -1161,13 +1177,54 @@ function ProductPage({
 }
 
 export default function App() {
-  if (window.location.pathname === "/admin") return <AdminView />;
+  const [currentView, setCurrentView] = useState<"storefront" | "account" | "admin">(() => {
+    if (typeof window !== "undefined") {
+      if (window.location.pathname === "/admin") return "admin";
+      if (window.location.pathname === "/login" || window.location.pathname === "/account") return "account";
+    }
+    return "storefront";
+  });
+
+  const navigateTo = (view: "storefront" | "account" | "admin") => {
+    setCurrentView(view);
+    const path = view === "admin" ? "/admin" : view === "account" ? "/account" : "/";
+    window.history.pushState({}, "", path);
+    window.scrollTo(0, 0);
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (window.location.pathname === "/admin") setCurrentView("admin");
+      else if (window.location.pathname === "/login" || window.location.pathname === "/account") setCurrentView("account");
+      else setCurrentView("storefront");
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [cartCount, setCartCount] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [activeModalReel, setActiveModalReel] = useState<Reel | null>(null);
   const [showIntro, setShowIntro] = useState(true);
   const handleCompleteIntro = useCallback(() => setShowIntro(false), []);
+
+  if (currentView === "admin") {
+    return <AdminView onBack={() => navigateTo("storefront")} />;
+  }
+
+  if (currentView === "account") {
+    return (
+      <AuthAccountView
+        onBack={() => navigateTo("storefront")}
+        onOpenAdmin={() => navigateTo("admin")}
+        onSelectProduct={(product) => {
+          setSelectedProduct(product);
+          navigateTo("storefront");
+        }}
+      />
+    );
+  }
 
   if (selectedProduct) {
     return (
@@ -1182,6 +1239,7 @@ export default function App() {
           onAdd={() => setCartCount((count) => count + 1)}
           onSelect={setSelectedProduct}
           onOpenReel={setActiveModalReel}
+          onOpenAccount={() => navigateTo("account")}
         />
         {activeModalReel && (
           <ReelViewerModal
@@ -1221,10 +1279,27 @@ export default function App() {
                 {item}
               </a>
             ))}
+            <button
+              type="button"
+              className="mobile-account-link"
+              onClick={() => {
+                setMenuOpen(false);
+                navigateTo("account");
+              }}
+            >
+              <Icon name="user" />
+              <span>Member Account / Sign In</span>
+            </button>
           </nav>
           <div className="nav-actions">
             <button aria-label="Search"><Icon name="search" /></button>
-            <button aria-label="Account"><Icon name="user" /></button>
+            <button
+              aria-label="Account"
+              onClick={() => navigateTo("account")}
+              title="Member Account / Sign In"
+            >
+              <Icon name="user" />
+            </button>
             <button aria-label="Shopping bag" className="bag"><Icon name="bag" /><span>{cartCount}</span></button>
             <button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu"><i /><i /></button>
           </div>
@@ -1401,7 +1476,16 @@ export default function App() {
       <footer>
         <div className="footer-main shell">
           <a className="brand" href="#">SHE’AURA<span>YOUR AURA · YOUR STORY</span></a>
-          <div className="footer-links"><div><b>Shop</b><a href="#shop">Makeup</a><a href="#shop">Skincare</a><a href="#shop">Body Care</a></div><div><b>About</b><a href="#about">Our Story</a><a href="#journal">Journal</a><a href="#">Sustainability</a></div><div><b>Help</b><a href="#">Shipping</a><a href="#">Returns</a><a href="#">Contact</a></div></div>
+          <div className="footer-links">
+            <div><b>Shop</b><a href="#shop">Makeup</a><a href="#shop">Skincare</a><a href="#shop">Body Care</a></div>
+            <div><b>About</b><a href="#about">Our Story</a><a href="#journal">Journal</a><a href="#">Sustainability</a></div>
+            <div>
+              <b>Maison & Staff</b>
+              <button type="button" className="footer-action-link" onClick={() => navigateTo("account")}>Member Login</button>
+              <button type="button" className="footer-action-link" onClick={() => navigateTo("admin")}>Admin Studio</button>
+              <a href="#">Concierge</a>
+            </div>
+          </div>
           <div className="newsletter"><h3>Join Our Circle</h3><p>Our edit of beauty, new launches and more.</p><div><input type="email" placeholder="Your email" aria-label="Your email" /><button aria-label="Subscribe"><Icon name="arrow" /></button></div></div>
         </div>
         <div className="footer-bottom shell"><span>© 2025 SHE’AURA. All rights reserved.</span><div><a href="#">Privacy</a><a href="#">Terms</a><Icon name="instagram" /></div></div>

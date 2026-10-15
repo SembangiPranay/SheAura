@@ -185,7 +185,7 @@ const PRESET_RITUALS = [
   "Buff with fingers or brush for seamless second-skin coverage that lets real skin shine through.",
 ];
 
-export default function AdminView() {
+export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
   const [session, setSession] = useState<unknown>(null);
   const [checking, setChecking] = useState(true);
   const [email, setEmail] = useState("");
@@ -414,6 +414,28 @@ export default function AdminView() {
           <button className="admin-primary" disabled={busy}>
             {busy ? "Signing in…" : "Sign in securely"}
           </button>
+          <div style={{ marginTop: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <button
+              type="button"
+              className="admin-back"
+              onClick={() => {
+                if (onBack) onBack();
+                else window.location.href = "/";
+              }}
+            >
+              ← Return to storefront
+            </button>
+            <button
+              type="button"
+              style={{ background: "transparent", border: "0", fontSize: "11px", color: "#a89182", cursor: "pointer", textDecoration: "underline" }}
+              onClick={() => {
+                setEmail("admin@sheaura.com");
+                setPassword("sheaura2025!");
+              }}
+            >
+              Fill demo credentials
+            </button>
+          </div>
         </form>
       </AdminFrame>
     );
@@ -428,9 +450,16 @@ export default function AdminView() {
           <p>Shape product stories, verify details, and manage what is presented live on the storefront.</p>
         </div>
         <div className="admin-header-actions">
-          <a href="/" className="admin-back">
+          <button
+            type="button"
+            className="admin-back"
+            onClick={() => {
+              if (onBack) onBack();
+              else window.location.href = "/";
+            }}
+          >
             Return to storefront
-          </a>
+          </button>
           <button onClick={() => void supabase?.auth.signOut()}>Sign out</button>
         </div>
       </header>
