@@ -22,7 +22,9 @@ export default function RunwayCinemaView({
   // Modes: "dual-kinetic" (One column scrolls up, another scrolls down in a single video edit) OR "solo-theater"
   const [viewMode, setViewMode] = useState<"dual-kinetic" | "solo-theater">("dual-kinetic");
 
-  // Kinetic Dual-Scroll state
+  // Kinetic Multi-Column state
+  const [columnCount, setColumnCount] = useState<2 | 4 | 5>(4); // Defaults to 4 columns as requested
+  const [editModeSource, setEditModeSource] = useState<"interactive-wall" | "rendered-video">("interactive-wall");
   const [isKineticPlaying, setIsKineticPlaying] = useState(true);
   const [kineticSpeed, setKineticSpeed] = useState<"1x" | "1.5x" | "2x">("1x");
   const [activeReelId, setActiveReelId] = useState<string>(reels[0]?.id || "reel-01");
@@ -59,11 +61,17 @@ export default function RunwayCinemaView({
 
   const nextReel = filteredReels[(activeIndex + 1) % filteredReels.length];
 
-  // Divide into two alternating columns for opposing scroll
-  // Column 1 (Left): Odd looks (Look 01, 03, 05, 07, 09, 11, 13, 15, 17, 19)
-  // Column 2 (Right): Even looks (Look 02, 04, 06, 08, 10, 12, 14, 16, 18, 20)
-  const columnLeft = useMemo(() => reels.filter((_, idx) => idx % 2 === 0), [reels]);
-  const columnRight = useMemo(() => reels.filter((_, idx) => idx % 2 === 1), [reels]);
+  // Distribute all 20 reels dynamically across 2, 4, or 5 columns
+  // With 4 columns: 5 reels per column
+  // With 5 columns: 4 reels per column
+  // With 2 columns: 10 reels per column
+  const kineticColumns = useMemo(() => {
+    const cols: Reel[][] = Array.from({ length: columnCount }, () => []);
+    reels.forEach((reel, idx) => {
+      cols[idx % columnCount].push(reel);
+    });
+    return cols;
+  }, [reels, columnCount]);
 
   // Match corresponding product from catalog
   const matchingProduct: Product = useMemo(() => {
@@ -234,21 +242,21 @@ export default function RunwayCinemaView({
             <span className="runway-pulse-dot" />
             <b>SHE’AURA</b>
             <span className="runway-tagline">
-              {viewMode === "dual-kinetic" ? "DUAL-SCROLL VIDEO EDIT · 20 LOOKS" : "SOLO THEATER"}
+              {viewMode === "dual-kinetic" ? `RUNWAY VIDEO EDIT · ${columnCount} COLUMNS · 20 LOOKS` : "SOLO THEATER"}
             </span>
           </div>
         </div>
 
-        {/* Center: Mode Switcher (Dual-Scroll Edit vs Solo Theater) */}
+        {/* Center: Mode Switcher (Multi-Column Edit vs Solo Theater) */}
         <div className="runway-header-center">
           <div className="runway-mode-tabs">
             <button
               className={`mode-tab-btn ${viewMode === "dual-kinetic" ? "active" : ""}`}
               onClick={() => setViewMode("dual-kinetic")}
-              title="Watch all 20 videos composed together in dual scrolling columns"
+              title="Watch all 20 videos composed together in multi-column opposing scroll"
             >
               <span className="mode-icon">☷</span>
-              <span>Dual-Scroll Video Edit</span>
+              <span>{columnCount}-Column Video Wall</span>
             </button>
             <button
               className={`mode-tab-btn ${viewMode === "solo-theater" ? "active" : ""}`}
@@ -295,153 +303,191 @@ export default function RunwayCinemaView({
       </header>
 
       {/* =========================================================================
-          VIEW MODE 1: DUAL-SCROLL VIDEO EDIT (ONE COLUMN UP, ONE COLUMN DOWN)
+          VIEW MODE 1: MULTI-COLUMN VIDEO EDIT (4-5 COLUMNS OPPOSING CONTINUOUS MOTION)
           ========================================================================= */}
       {viewMode === "dual-kinetic" ? (
         <main className="runway-kinetic-stage">
-          <div className="kinetic-cinema-wrapper">
-            {/* The Single Master Video Canvas Bezel containing both columns */}
-            <div className="kinetic-master-bezel">
+          <div className={`kinetic-cinema-wrapper ${columnCount >= 4 ? "wide-wall" : ""}`}>
+            {/* The Single Master Video Canvas Bezel */}
+            <div className={`kinetic-master-bezel cols-${columnCount}`}>
               {/* Top Video Header Overlay */}
               <div className="kinetic-bezel-top-bar">
                 <div className="kinetic-badge">
                   <span className="runway-pulse-dot" />
-                  <span>OPPOSING MOTION VIDEO COMPOSITION · 20 REELS</span>
+                  <span>OPPOSING MOTION · {columnCount} COLUMNS · 20 REELS</span>
                 </div>
-                <div className="kinetic-speed-controls">
-                  <span className="speed-label">SPEED:</span>
-                  {(["1x", "1.5x", "2x"] as const).map((spd) => (
+
+                {/* Column Count Selector: 2, 4 (Mosaic), 5 (Wall) */}
+                <div className="kinetic-col-controls">
+                  <span className="col-label">COLUMNS:</span>
+                  {([2, 4, 5] as const).map((cnt) => (
                     <button
-                      key={spd}
-                      className={`speed-pill ${kineticSpeed === spd ? "active" : ""}`}
-                      onClick={() => setKineticSpeed(spd)}
+                      key={cnt}
+                      className={`col-pill ${columnCount === cnt ? "active" : ""}`}
+                      onClick={() => setColumnCount(cnt)}
+                      title={`Switch to ${cnt} moving columns`}
                     >
-                      {spd}
+                      {cnt === 4 ? "4 Cols (Mosaic)" : cnt === 5 ? "5 Cols (Wall)" : "2 Cols"}
                     </button>
                   ))}
                 </div>
+
+                {/* Video Mode Source: Interactive Wall vs Real Baked MP4 */}
+                <div className="kinetic-source-toggle">
+                  <button
+                    className={`source-toggle-btn ${editModeSource === "interactive-wall" ? "active" : ""}`}
+                    onClick={() => setEditModeSource("interactive-wall")}
+                    title="Interactive 60fps wall with tap-to-shop"
+                  >
+                    Live Wall
+                  </button>
+                  <button
+                    className={`source-toggle-btn ${editModeSource === "rendered-video" ? "active" : ""}`}
+                    onClick={() => setEditModeSource("rendered-video")}
+                    title="Watch actual rendered MP4 video edit"
+                  >
+                    Real Baked MP4
+                  </button>
+                </div>
+
+                {/* Speed Controls */}
+                {editModeSource === "interactive-wall" && (
+                  <div className="kinetic-speed-controls">
+                    <span className="speed-label">SPEED:</span>
+                    {(["1x", "1.5x", "2x"] as const).map((spd) => (
+                      <button
+                        key={spd}
+                        className={`speed-pill ${kineticSpeed === spd ? "active" : ""}`}
+                        onClick={() => setKineticSpeed(spd)}
+                      >
+                        {spd}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* The Dual Opposing Moving Columns Inside One Video Frame */}
-              <div className="kinetic-columns-viewport">
-                {/* COLUMN 1: SCROLLS UP */}
-                <div className="kinetic-scroll-column column-up-wrapper">
-                  <div
-                    className="kinetic-ribbon-track track-scroll-up"
-                    style={{
-                      animationDuration: `${kineticDurationSeconds}s`,
-                      animationPlayState: isKineticPlaying ? "running" : "paused",
-                    }}
-                  >
-                    {/* Duplicated twice for seamless, infinite looping scroll */}
-                    {[...columnLeft, ...columnLeft].map((reel, idx) => {
-                      const isSelected = reel.id === activeReel.id;
-                      return (
-                        <div
-                          key={`col-up-${reel.id}-${idx}`}
-                          className={`kinetic-video-card ${isSelected ? "selected" : ""}`}
-                          onClick={() => setActiveReelId(reel.id)}
-                        >
-                          <video
-                            src={reel.videoUrl}
-                            poster={reel.poster}
-                            autoPlay
-                            loop
-                            muted={isMuted || !isSelected}
-                            playsInline
-                            className="kinetic-card-video"
-                          />
-                          <div className="kinetic-card-overlay">
-                            <span className="card-look-pill">{reel.step}</span>
-                            <span className="card-reel-name">{reel.title}</span>
-                          </div>
-                          {isSelected && (
-                            <div className="card-active-indicator">
-                              <span />
+              {/* Viewport: Either Real Baked MP4 or Multi-Column Interactive Wall */}
+              {editModeSource === "rendered-video" ? (
+                <div className="baked-video-viewport">
+                  <video
+                    src="/reels/sheaura-master-runway-wall.mp4"
+                    autoPlay
+                    loop
+                    muted={isMuted}
+                    controls
+                    playsInline
+                    className="baked-master-video"
+                  />
+                  <div className="baked-video-overlay-badge">
+                    <Icon name="sparkle" />
+                    <span>REAL COMPILED MASTER VIDEO EDIT · 4 COLUMNS OPPOSING CONTINUOUS MOTION</span>
+                  </div>
+                </div>
+              ) : (
+                <div className={`kinetic-columns-viewport cols-${columnCount}`}>
+                  {kineticColumns.map((colReels, colIdx) => {
+                    const isUp = colIdx % 2 === 0;
+                    return (
+                      <React.Fragment key={`col-frag-${colIdx}`}>
+                        {colIdx > 0 && (
+                          <div className="kinetic-center-seam">
+                            <div className="seam-line" />
+                            <div className="seam-arrows">
+                              <span className="arrow-up">{isUp ? "▲" : "▼"}</span>
+                              <span className="arrow-down">{isUp ? "▼" : "▲"}</span>
                             </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Center Golden Seam / Motion Divider */}
-                <div className="kinetic-center-seam">
-                  <div className="seam-line" />
-                  <div className="seam-arrows">
-                    <span className="arrow-up">▲</span>
-                    <span className="arrow-down">▼</span>
-                  </div>
-                  <div className="seam-line" />
-                </div>
-
-                {/* COLUMN 2: SCROLLS DOWN */}
-                <div className="kinetic-scroll-column column-down-wrapper">
-                  <div
-                    className="kinetic-ribbon-track track-scroll-down"
-                    style={{
-                      animationDuration: `${kineticDurationSeconds}s`,
-                      animationPlayState: isKineticPlaying ? "running" : "paused",
-                    }}
-                  >
-                    {/* Duplicated twice for seamless, infinite looping scroll */}
-                    {[...columnRight, ...columnRight].map((reel, idx) => {
-                      const isSelected = reel.id === activeReel.id;
-                      return (
-                        <div
-                          key={`col-down-${reel.id}-${idx}`}
-                          className={`kinetic-video-card ${isSelected ? "selected" : ""}`}
-                          onClick={() => setActiveReelId(reel.id)}
-                        >
-                          <video
-                            src={reel.videoUrl}
-                            poster={reel.poster}
-                            autoPlay
-                            loop
-                            muted={isMuted || !isSelected}
-                            playsInline
-                            className="kinetic-card-video"
-                          />
-                          <div className="kinetic-card-overlay">
-                            <span className="card-look-pill">{reel.step}</span>
-                            <span className="card-reel-name">{reel.title}</span>
+                            <div className="seam-line" />
                           </div>
-                          {isSelected && (
-                            <div className="card-active-indicator">
-                              <span />
-                            </div>
-                          )}
+                        )}
+                        <div className={`kinetic-scroll-column col-wrapper-${colIdx}`}>
+                          <div
+                            className={`kinetic-ribbon-track ${isUp ? "track-scroll-up" : "track-scroll-down"}`}
+                            style={{
+                              animationDuration: `${kineticDurationSeconds}s`,
+                              animationPlayState: isKineticPlaying ? "running" : "paused",
+                            }}
+                          >
+                            {/* Duplicated twice for seamless, infinite looping scroll */}
+                            {[...colReels, ...colReels].map((reel, idx) => {
+                              const isSelected = reel.id === activeReel.id;
+                              return (
+                                <div
+                                  key={`col-${colIdx}-${reel.id}-${idx}`}
+                                  className={`kinetic-video-card ${isSelected ? "selected" : ""}`}
+                                  onClick={() => setActiveReelId(reel.id)}
+                                >
+                                  <video
+                                    src={reel.videoUrl}
+                                    poster={reel.poster}
+                                    autoPlay
+                                    loop
+                                    muted={isMuted || !isSelected}
+                                    playsInline
+                                    className="kinetic-card-video"
+                                  />
+                                  <div className="kinetic-card-overlay">
+                                    <span className="card-look-pill">{reel.step}</span>
+                                    <span className="card-reel-name">{reel.title}</span>
+                                  </div>
+                                  {isSelected && (
+                                    <div className="card-active-indicator">
+                                      <span />
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
-                      );
-                    })}
-                  </div>
+                      </React.Fragment>
+                    );
+                  })}
                 </div>
-              </div>
+              )}
 
               {/* Bottom Video Edit Controls Bar (Play/Pause, Sound, Instructions) */}
               <div className="kinetic-bezel-bottom-bar">
-                <button
-                  className="kinetic-play-toggle-btn"
-                  onClick={() => setIsKineticPlaying(!isKineticPlaying)}
-                  title={isKineticPlaying ? "Pause continuous scroll" : "Resume continuous scroll"}
-                >
-                  <Icon name={isKineticPlaying ? "pause" : "play"} />
-                  <span>{isKineticPlaying ? "PAUSE MOTION" : "RESUME FLOW"}</span>
-                </button>
+                {editModeSource === "interactive-wall" ? (
+                  <button
+                    className="kinetic-play-toggle-btn"
+                    onClick={() => setIsKineticPlaying(!isKineticPlaying)}
+                    title={isKineticPlaying ? "Pause continuous scroll" : "Resume continuous scroll"}
+                  >
+                    <Icon name={isKineticPlaying ? "pause" : "play"} />
+                    <span>{isKineticPlaying ? "PAUSE MOTION" : "RESUME FLOW"}</span>
+                  </button>
+                ) : (
+                  <div className="baked-status-pill">
+                    <span className="runway-pulse-dot" />
+                    <span>Single 1080p Master MP4 Video Edit</span>
+                  </div>
+                )}
 
                 <div className="kinetic-hint-badge">
-                  <span>TAP ANY VIDEO TO PREVIEW & SHOP</span>
+                  <span>{editModeSource === "interactive-wall" ? "TAP ANY LOOK TO SHOP" : "MASTER VIDEO RENDER (11 MB)"}</span>
                 </div>
 
-                <button
-                  className="kinetic-focus-btn"
-                  onClick={() => focusReelInSolo(activeReel.id)}
-                  title="Expand selected reel to full solo theater"
-                >
-                  <Icon name="play" />
-                  <span>FOCUS SOLO</span>
-                </button>
+                <div className="kinetic-bottom-actions">
+                  <a
+                    href="/reels/sheaura-master-runway-wall.mp4"
+                    download="sheaura-master-runway-wall.mp4"
+                    className="kinetic-download-pill"
+                    title="Download the rendered single master video file"
+                  >
+                    <Icon name="arrow" className="rotate-90" />
+                    <span>Download MP4</span>
+                  </a>
+
+                  <button
+                    className="kinetic-focus-btn"
+                    onClick={() => focusReelInSolo(activeReel.id)}
+                    title="Expand selected reel to full solo theater"
+                  >
+                    <Icon name="play" />
+                    <span>FOCUS SOLO</span>
+                  </button>
+                </div>
               </div>
             </div>
 
