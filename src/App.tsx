@@ -25,7 +25,7 @@ export { photos, resolveAsset };
 export const products = defaultProducts;
 export type Product = StorefrontProduct;
 
-export type IconName = "search" | "user" | "bag" | "arrow" | "leaf" | "drop" | "sparkle" | "instagram" | "play" | "pause" | "volume" | "volumeX" | "close" | "check" | "external" | "lock" | "shield" | "heart" | "package" | "logOut";
+export type IconName = "search" | "user" | "bag" | "arrow" | "leaf" | "drop" | "sparkle" | "instagram" | "play" | "pause" | "volume" | "volumeX" | "close" | "check" | "external" | "lock" | "shield" | "heart" | "package" | "logOut" | "home";
 
 export function Icon({ name, className }: { name: IconName; className?: string }) {
   const paths: Record<IconName, React.ReactNode> = {
@@ -49,6 +49,7 @@ export function Icon({ name, className }: { name: IconName; className?: string }
     heart: <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />,
     package: <><line x1="16.5" y1="9.4" x2="7.5" y2="4.21" /><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></>,
     logOut: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></>,
+    home: <><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>,
   };
   return <svg aria-hidden="true" className={`icon ${className || ""}`.trim()} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4">{paths[name]}</svg>;
 }
@@ -1570,6 +1571,94 @@ function ProductPage({
   );
 }
 
+function MobileBottomBar({
+  onOpenStore,
+  onOpenWishlist,
+  onOpenCart,
+  onOpenAccount,
+  cartCount,
+  wishlistCount,
+  currentUser,
+  hidden,
+}: {
+  onOpenStore: () => void;
+  onOpenWishlist: () => void;
+  onOpenCart: () => void;
+  onOpenAccount: () => void;
+  cartCount: number;
+  wishlistCount: number;
+  currentUser: SheAuraUser | null;
+  hidden?: boolean;
+}) {
+  if (hidden) return null;
+
+  return (
+    <aside className="mobile-dock-nav" aria-label="Quick mobile navigation">
+      <button
+        type="button"
+        className="mobile-dock-item"
+        onClick={onOpenStore}
+        aria-label="Storefront Home"
+      >
+        <div className="mobile-dock-icon-wrap">
+          <Icon name="home" />
+        </div>
+        <span className="mobile-dock-label">Maison</span>
+      </button>
+
+      <button
+        type="button"
+        className="mobile-dock-item"
+        onClick={onOpenWishlist}
+        aria-label="Wishlist Sanctuary"
+      >
+        <div className="mobile-dock-icon-wrap">
+          <Icon name="heart" />
+          {wishlistCount > 0 && (
+            <span className="mobile-dock-badge">{wishlistCount}</span>
+          )}
+        </div>
+        <span className="mobile-dock-label">Wishlist</span>
+      </button>
+
+      <button
+        type="button"
+        className="mobile-dock-item mobile-dock-cart"
+        onClick={onOpenCart}
+        aria-label="Haute Shopping Bag"
+      >
+        <div className="mobile-dock-icon-wrap">
+          <Icon name="bag" />
+          {cartCount > 0 && (
+            <span className="mobile-dock-badge mobile-dock-cart-badge">{cartCount}</span>
+          )}
+        </div>
+        <span className="mobile-dock-label">Cart</span>
+      </button>
+
+      <button
+        type="button"
+        className="mobile-dock-item"
+        onClick={onOpenAccount}
+        aria-label="Member Profile"
+      >
+        <div className="mobile-dock-icon-wrap">
+          {currentUser ? (
+            <span className="mobile-dock-avatar">
+              {currentUser.fullName.slice(0, 2).toUpperCase()}
+            </span>
+          ) : (
+            <Icon name="user" />
+          )}
+        </div>
+        <span className="mobile-dock-label">
+          {currentUser ? currentUser.fullName.split(" ")[0] : "Profile"}
+        </span>
+      </button>
+    </aside>
+  );
+}
+
 export default function App() {
   const [currentView, setCurrentView] = useState<"storefront" | "account" | "admin" | "runway" | "cart" | "wishlist">(() => {
     if (typeof window !== "undefined") {
@@ -1873,6 +1962,7 @@ export default function App() {
           onMoveAllToCart={moveAllWishlistToCart}
           onBackToStore={() => navigateTo("storefront")}
           onOpenCart={() => navigateTo("cart")}
+          onOpenAccount={() => navigateTo("account")}
           onOpenRunway={() => navigateTo("runway")}
           onSelectProduct={(product) => {
             setSelectedProduct(product);
@@ -2000,48 +2090,85 @@ export default function App() {
              <span className="brand-tagline">YOUR AURA · YOUR STORY</span>
            </a>
           <nav className={menuOpen ? "nav-links open" : "nav-links"}>
-            {["Shop", "Collections", "Skincare", "Makeup", "About", "Journal"].map((item) => (
-              <a
-                key={item}
-                href={`#${item.toLowerCase()}`}
-                onClick={() => setMenuOpen(false)}
+            <div className="mobile-nav-hub">
+              <div
+                className="mobile-hub-user-card"
+                onClick={() => {
+                  setMenuOpen(false);
+                  navigateTo("account");
+                }}
               >
-                {item}
-              </a>
-            ))}
-            <button
-              type="button"
-              className="mobile-account-link"
-              onClick={() => {
-                setMenuOpen(false);
-                navigateTo("wishlist");
-              }}
-            >
-              <Icon name="heart" />
-              <span>Wishlist Sanctuary ({wishlist.length})</span>
-            </button>
-            <button
-              type="button"
-              className="mobile-account-link"
-              onClick={() => {
-                setMenuOpen(false);
-                setIsCartDrawerOpen(true);
-              }}
-            >
-              <Icon name="bag" />
-              <span>Shopping Bag ({cartCount})</span>
-            </button>
-            <button
-              type="button"
-              className="mobile-account-link"
-              onClick={() => {
-                setMenuOpen(false);
-                navigateTo("account");
-              }}
-            >
-              <Icon name="user" />
-              <span>{currentUser ? `Maison Atelier (${currentUser.fullName.split(" ")[0]})` : "Member Account / Sign In"}</span>
-            </button>
+                <div className="mobile-hub-avatar">
+                  {currentUser ? (
+                    <span className="mobile-hub-initials">
+                      {currentUser.fullName.slice(0, 2).toUpperCase()}
+                    </span>
+                  ) : (
+                    <Icon name="user" />
+                  )}
+                </div>
+                <div className="mobile-hub-info">
+                  <span className="mobile-hub-name">
+                    {currentUser ? currentUser.fullName : "Maison Member"}
+                  </span>
+                  <span className="mobile-hub-status">
+                    {currentUser ? "Aura Beauty Passport Active" : "Sign In / Join Maison"}
+                  </span>
+                </div>
+                <Icon name="arrow" />
+              </div>
+
+              <div className="mobile-hub-actions-row">
+                <button
+                  type="button"
+                  className="mobile-hub-btn mobile-hub-cart-btn"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setIsCartDrawerOpen(true);
+                  }}
+                >
+                  <div className="mobile-hub-btn-icon">
+                    <Icon name="bag" />
+                    {cartCount > 0 && <span className="mobile-hub-badge">{cartCount}</span>}
+                  </div>
+                  <div className="mobile-hub-btn-label">
+                    <strong>Haute Bag</strong>
+                    <span>{cartCount} {cartCount === 1 ? "Piece" : "Pieces"}</span>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  className="mobile-hub-btn mobile-hub-wishlist-btn"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    navigateTo("wishlist");
+                  }}
+                >
+                  <div className="mobile-hub-btn-icon">
+                    <Icon name="heart" />
+                    {wishlist.length > 0 && <span className="mobile-hub-badge">{wishlist.length}</span>}
+                  </div>
+                  <div className="mobile-hub-btn-label">
+                    <strong>Wishlist</strong>
+                    <span>{wishlist.length} Saved</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <div className="mobile-nav-categories">
+              {["Shop", "Collections", "Skincare", "Makeup", "About", "Journal"].map((item) => (
+                <a
+                  key={item}
+                  href={`#${item.toLowerCase()}`}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <span>{item}</span>
+                  <Icon name="arrow" />
+                </a>
+              ))}
+            </div>
           </nav>
           <div className="nav-actions">
             <button aria-label="Search"><Icon name="search" /></button>
@@ -2317,6 +2444,18 @@ export default function App() {
           setSelectedProduct(product);
           setIsCartDrawerOpen(false);
         }}
+      />
+      <MobileBottomBar
+        onOpenStore={() => {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
+        onOpenWishlist={() => navigateTo("wishlist")}
+        onOpenCart={() => setIsCartDrawerOpen(true)}
+        onOpenAccount={() => navigateTo("account")}
+        cartCount={cartCount}
+        wishlistCount={wishlist.length}
+        currentUser={currentUser}
+        hidden={Boolean(activeModalReel || isCartDrawerOpen)}
       />
       {toastMessage && (
         <div className="storefront-toast-pill">

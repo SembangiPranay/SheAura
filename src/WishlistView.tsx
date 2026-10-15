@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Eye,
   Layers,
+  User,
 } from "lucide-react";
 import { Product } from "./lib/cartWishlistContext";
 
@@ -21,6 +22,7 @@ interface WishlistViewProps {
   onMoveAllToCart: () => void;
   onBackToStore: () => void;
   onOpenCart: () => void;
+  onOpenAccount?: () => void;
   onOpenRunway?: () => void;
   onSelectProduct: (product: Product) => void;
   cartCount: number;
@@ -33,6 +35,7 @@ export default function WishlistView({
   onMoveAllToCart,
   onBackToStore,
   onOpenCart,
+  onOpenAccount,
   onOpenRunway,
   onSelectProduct,
   cartCount,
@@ -96,6 +99,17 @@ export default function WishlistView({
           </div>
 
           <div className="wishlist-header-actions">
+            {onOpenAccount && (
+              <button
+                type="button"
+                className="wishlist-account-btn"
+                onClick={onOpenAccount}
+                title="Member Account / Aura Passport"
+                aria-label="View Account"
+              >
+                <User size={16} strokeWidth={1.8} />
+              </button>
+            )}
             <button
               type="button"
               className="wishlist-bag-btn"
