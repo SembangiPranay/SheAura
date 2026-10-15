@@ -1185,17 +1185,6 @@ function ReelsSection({
           <Icon name="instagram" />
           <span>Featuring 20 official reels from <b>@sheauracosmeticsofficial</b>. Tag <b>#MySheAura</b> to be featured.</span>
         </div>
-        {onOpenRunway && (
-          <button
-            type="button"
-            className="reels-launch-cinema-pill"
-            onClick={onOpenRunway}
-          >
-            <span className="runway-pulse-dot" />
-            <Icon name="play" />
-            <span>Launch Autonomous Runway Cinema (20 Looks) ↗</span>
-          </button>
-        )}
         <a href="https://www.instagram.com/sheauracosmeticsofficial/" target="_blank" rel="noreferrer" className="follow-link">
           Visit @sheauracosmeticsofficial <Icon name="external" />
         </a>
@@ -1952,7 +1941,7 @@ export default function App() {
           ref={heroVideoRef}
           className={`hero-video-bg ${heroVideoReady ? "is-ready" : ""}`}
           autoPlay
-          muted={isHeroMuted}
+          muted
           loop
           playsInline
           poster={photos.hero}
@@ -1963,31 +1952,10 @@ export default function App() {
         >
           <source src="/reels/sheaura-master-runway-wall.mp4" type="video/mp4" />
         </video>
-        <img className={`hero-bg ${heroVideoReady ? "is-video-active" : ""}`} src={photos.hero} alt="She'Aura Haute Maison" />
         <div className="hero-wash" />
         <div className="hero-botanical hero-botanical-left" style={{ backgroundImage: `url(${photos.scarletBotanical})` }} />
         <div className="hero-botanical hero-botanical-right" style={{ backgroundImage: `url(${photos.highlighterBotanical})` }} />
 
-        {/* Ambient Video Sound & Playback Controller */}
-        <div className="hero-video-controls">
-          <button
-            type="button"
-            className="hero-video-pill"
-            onClick={toggleHeroAudio}
-            title={isHeroMuted ? "Unmute Runway Music" : "Mute Runway Music"}
-          >
-            <Icon name={isHeroMuted ? "volumeX" : "volume"} />
-            <span>{isHeroMuted ? "RUNWAY AUDIO" : "AUDIO ON"}</span>
-          </button>
-          <button
-            type="button"
-            className="hero-video-pill play-toggle"
-            onClick={toggleHeroPlay}
-            title={isHeroPlaying ? "Pause Video Backdrop" : "Play Video Backdrop"}
-          >
-            <Icon name={isHeroPlaying ? "pause" : "play"} />
-          </button>
-        </div>
         <header className="nav shell">
            <a className="brand brand-light brand-animated" href="#" aria-label="She Aura">
              <span className="brand-name" aria-hidden="true">SHE’AURA</span>
@@ -2003,17 +1971,6 @@ export default function App() {
                 {item}
               </a>
             ))}
-            <button
-              type="button"
-              className="nav-runway-badge-link"
-              onClick={() => {
-                setMenuOpen(false);
-                navigateTo("runway");
-              }}
-            >
-              <span className="runway-pulse-dot" />
-              <span>Runway Cinema (20)</span>
-            </button>
             <button
               type="button"
               className="mobile-account-link"
@@ -2049,15 +2006,6 @@ export default function App() {
             </button>
           </nav>
           <div className="nav-actions">
-            <button
-              aria-label="Runway Cinema"
-              onClick={() => navigateTo("runway")}
-              title="Aura Runway Cinema (20 Live Looks)"
-              className="nav-runway-icon-btn"
-            >
-              <span className="runway-pulse-dot" />
-              <span>Cinema (20)</span>
-            </button>
             <button aria-label="Search"><Icon name="search" /></button>
             <button
               type="button"
@@ -2102,25 +2050,6 @@ export default function App() {
           <p className="hero-copy">Thoughtful formulas. Sensory textures.<br />A more radiant you, every day.</p>
           <div className="hero-cta-group">
             <ArrowLink light>Explore the collection</ArrowLink>
-            <button
-              type="button"
-              className="hero-runway-btn"
-              onClick={() => navigateTo("runway")}
-              title="Enter Fullscreen Autonomous Runway Cinema"
-            >
-              <span className="runway-pulse-dot" />
-              <Icon name="play" />
-              <span>Watch 20 Runway Looks</span>
-            </button>
-            <button
-              type="button"
-              className="hero-film-trigger"
-              onClick={() => setShowIntro(true)}
-              aria-label="Replay Brand Intro"
-            >
-              <Icon name="play" />
-              <span>Replay Intro</span>
-            </button>
           </div>
         </div>
         <div className="scroll-note">Scroll to discover <span /></div>
