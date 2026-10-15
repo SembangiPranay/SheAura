@@ -19,6 +19,7 @@ import {
   loadStorefrontCatalog,
   StorefrontProduct,
 } from "./lib/catalog";
+import { getCurrentUser, onAuthStateChanged, SheAuraUser } from "./lib/auth";
 
 export { photos, resolveAsset };
 export const products = defaultProducts;
@@ -1632,6 +1633,13 @@ export default function App() {
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string>("");
 
+  // User Authentication State
+  const [currentUser, setCurrentUser] = useState<SheAuraUser | null>(() => getCurrentUser());
+  useEffect(() => {
+    const unsub = onAuthStateChanged((user) => setCurrentUser(user));
+    return () => unsub();
+  }, []);
+
   const showToast = useCallback((msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(""), 3500);
@@ -1960,7 +1968,7 @@ export default function App() {
               }}
             >
               <Icon name="user" />
-              <span>Member Account / Sign In</span>
+              <span>{currentUser ? `Maison Atelier (${currentUser.fullName.split(" ")[0]})` : "Member Account / Sign In"}</span>
             </button>
           </nav>
           <div className="nav-actions">
@@ -1987,9 +1995,16 @@ export default function App() {
             <button
               aria-label="Account"
               onClick={() => navigateTo("account")}
-              title="Member Account / Sign In"
+              className={`account-nav-btn ${currentUser ? "is-logged" : ""}`}
+              title={currentUser ? `Maison Member: ${currentUser.fullName}` : "Member Account / Sign In"}
             >
-              <Icon name="user" />
+              {currentUser ? (
+                <span className="account-nav-initials">
+                  {currentUser.fullName.slice(0, 2).toUpperCase()}
+                </span>
+              ) : (
+                <Icon name="user" />
+              )}
             </button>
             <button
               type="button"

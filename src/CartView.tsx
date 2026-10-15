@@ -29,6 +29,7 @@ import {
   VALID_PROMOS,
   DELUXE_SAMPLES,
 } from "./lib/cartWishlistContext";
+import { getCurrentUser } from "./lib/auth";
 
 interface CartViewProps {
   cartItems: CartItem[];
@@ -66,16 +67,20 @@ export default function CartView({
   const [isGiftNoteOpen, setIsGiftNoteOpen] = useState(false);
   const [giftNoteMessage, setGiftNoteMessage] = useState("");
 
-  // Shipping Form State
-  const [shippingForm, setShippingForm] = useState({
-    fullName: "Aaradhya Sharma",
-    phone: "9876543210",
-    email: "aaradhya.sharma@example.com",
-    address: "74 Haute Boulevard, Jubilee Hills",
-    city: "Hyderabad",
-    state: "Telangana",
-    pincode: "500033",
-    deliverySpeed: "standard", // "standard" | "express"
+  // Shipping Form State (Auto-populated from logged in Maison Member Profile)
+  const [shippingForm, setShippingForm] = useState(() => {
+    const active = getCurrentUser();
+    const addr = active?.addressBook?.[0];
+    return {
+      fullName: addr?.fullName || active?.fullName || "Aaradhya Sharma",
+      phone: addr?.phone?.replace(/[^0-9]/g, "") || active?.phone?.replace(/[^0-9]/g, "") || "9876543210",
+      email: active?.email || "aaradhya.sharma@example.com",
+      address: addr?.street || "74 Haute Boulevard, Jubilee Hills",
+      city: addr?.city || "Hyderabad",
+      state: addr?.state || "Telangana",
+      pincode: addr?.postalCode || "500033",
+      deliverySpeed: "standard", // "standard" | "express"
+    };
   });
 
   // Payment Form State

@@ -1303,6 +1303,9 @@ img { display: block; width: 100%; }
 }
 .nav-actions { display: flex; align-items: center; gap: 18px; }
 .nav-actions button { position: relative; padding: 0; border: 0; background: none; color: white; }
+.account-nav-btn { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s ease; }
+.account-nav-btn:hover { transform: translateY(-1px); }
+.account-nav-initials { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(135deg, #dfb895, #c18847); color: #2b130c; font-size: 8px; font-weight: 700; letter-spacing: 0.04em; box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.4); }
 .nav-actions .bag span { position: absolute; top: -9px; right: -7px; min-width: 14px; height: 14px; border-radius: 50%; background: var(--cream); color: var(--ink); font-size: 8px; line-height: 14px; }
 .menu-button { display: none; }
 .hero-content { position: relative; z-index: 2; padding-top: 142px; animation: heroCopyReveal 1.15s 2.05s cubic-bezier(.2,.82,.22,1) both; }

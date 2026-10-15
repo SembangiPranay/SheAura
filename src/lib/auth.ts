@@ -1,0 +1,648 @@
+import { supabase } from "./supabase";
+
+export interface AddressBookItem {
+  id: string;
+  isDefault: boolean;
+  fullName: string;
+  street: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  phone: string;
+}
+
+export interface OrderItem {
+  name: string;
+  shade: string;
+  price: string;
+  image: string;
+}
+
+export interface OrderHistoryItem {
+  id: string;
+  date: string;
+  itemsCount: number;
+  totalAmount: string;
+  status: "dispatched" | "delivered" | "processing";
+  trackingNumber: string;
+  eta: string;
+  items: OrderItem[];
+}
+
+export interface BeautyProfile {
+  undertone: string;
+  preferredFinish: string;
+  signatureScent: string;
+  skinType: string;
+}
+
+export interface SheAuraUser {
+  id: string;
+  email: string;
+  fullName: string;
+  role: "admin" | "member";
+  tier: "Radiance Circle" | "Haute Connoisseur" | "Maison Ambassador";
+  memberSince: string;
+  phone?: string;
+  loyaltyPoints: number;
+  beautyProfile: BeautyProfile;
+  addressBook: AddressBookItem[];
+  orders: OrderHistoryItem[];
+}
+
+const STORAGE_SESSION_KEY = "sheaura_active_session_v2";
+const STORAGE_USERS_KEY = "sheaura_registered_members_v2";
+const AUTH_EVENT_NAME = "sheaura-auth-state-changed";
+
+// Pre-seeded VIP Maison Demo Profiles
+const DEMO_ADMIN: SheAuraUser = {
+  id: "admin-vip-001",
+  email: "admin@sheaura.com",
+  fullName: "Maison Administrator",
+  role: "admin",
+  tier: "Maison Ambassador",
+  memberSince: "October 2024",
+  phone: "+91 98200 11223",
+  loyaltyPoints: 1250,
+  beautyProfile: {
+    undertone: "Neutral Rose",
+    preferredFinish: "Sculpted satin",
+    signatureScent: "Damask Rose & Botanical Amber",
+    skinType: "Normal to Dry",
+  },
+  addressBook: [
+    {
+      id: "addr-admin-1",
+      isDefault: true,
+      fullName: "Maison She'Aura Headquarters",
+      street: "Atelier 18, Couture Boulevard",
+      city: "Mumbai",
+      state: "Maharashtra",
+      postalCode: "400050",
+      country: "India",
+      phone: "+91 98200 11223",
+    },
+  ],
+  orders: [
+    {
+      id: "SA-2025-ADMIN-01",
+      date: "October 14, 2025",
+      itemsCount: 3,
+      totalAmount: "₹9,800",
+      status: "delivered",
+      trackingNumber: "MAISON-EXP-9921",
+      eta: "Delivered to Atelier",
+      items: [
+        {
+          name: "The Sculpted Satin Lipstick",
+          shade: "The Red Statement",
+          price: "₹2,400",
+          image: "/Instagram_photos/Product_photos/1.jpg",
+        },
+      ],
+    },
+  ],
+};
+
+const DEMO_CLIENT: SheAuraUser = {
+  id: "client-vip-001",
+  email: "client@sheaura.com",
+  fullName: "Aaradhya Sharma",
+  role: "member",
+  tier: "Radiance Circle",
+  memberSince: "September 2025",
+  phone: "+91 98765 43210",
+  loyaltyPoints: 350,
+  beautyProfile: {
+    undertone: "Warm Golden",
+    preferredFinish: "Sculpted satin & Soft Silk Powder",
+    signatureScent: "Damask Rose & Botanical Amber",
+    skinType: "Combination / Radiance Seeking",
+  },
+  addressBook: [
+    {
+      id: "addr-client-1",
+      isDefault: true,
+      fullName: "Aaradhya Sharma",
+      street: "74 Haute Boulevard, Jubilee Hills",
+      city: "Hyderabad",
+      state: "Telangana",
+      postalCode: "500033",
+      country: "India",
+      phone: "+91 98765 43210",
+    },
+  ],
+  orders: [
+    {
+      id: "SA-2025-8841",
+      date: "October 15, 2025",
+      itemsCount: 2,
+      totalAmount: "₹5,200",
+      status: "dispatched",
+      trackingNumber: "EXP-BLUEDART-88412",
+      eta: "Arriving Tomorrow by 2:00 PM",
+      items: [
+        {
+          name: "The Sculpted Satin Lipstick",
+          shade: "The Red Statement",
+          price: "₹2,400",
+          image: "/Instagram_photos/Product_photos/1.jpg",
+        },
+        {
+          name: "Luminous Silk Blush",
+          shade: "Pink Blossom",
+          price: "₹2,800",
+          image: "/Instagram_photos/Product_photos/2.jpg",
+        },
+      ],
+    },
+    {
+      id: "SA-2025-7192",
+      date: "September 28, 2025",
+      itemsCount: 1,
+      totalAmount: "₹2,800",
+      status: "delivered",
+      trackingNumber: "EXP-BLUEDART-71920",
+      eta: "Delivered to Residence",
+      items: [
+        {
+          name: "Luminous Silk Blush",
+          shade: "Pink Blossom",
+          price: "₹2,800",
+          image: "/Instagram_photos/Product_photos/2.jpg",
+        },
+      ],
+    },
+  ],
+};
+
+// Helper: Broadcast auth state changes to all components in the tab
+function emitAuthChange(user: SheAuraUser | null) {
+  if (typeof window !== "undefined") {
+    try {
+      window.dispatchEvent(new CustomEvent(AUTH_EVENT_NAME, { detail: { user } }));
+    } catch {
+      // safe fallback
+    }
+  }
+}
+
+// Helper: Retrieve local registered user list
+function getLocalUsers(): Record<string, { user: SheAuraUser; passwordHash: string }> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(STORAGE_USERS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+// Helper: Save local registered user
+function saveLocalUser(user: SheAuraUser, password: string) {
+  if (typeof window === "undefined") return;
+  try {
+    const users = getLocalUsers();
+    // simple base64 obfuscation for offline testing
+    const passwordHash = btoa(password);
+    users[user.email.toLowerCase()] = { user, passwordHash };
+    localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(users));
+  } catch (err) {
+    console.warn("Could not save user locally:", err);
+  }
+}
+
+/** Retrieve currently active user session */
+export function getCurrentUser(): SheAuraUser | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(STORAGE_SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Set active session and notify app listeners */
+export function setActiveUser(user: SheAuraUser | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (user) {
+      localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(STORAGE_SESSION_KEY);
+    }
+    emitAuthChange(user);
+  } catch (err) {
+    console.warn("Could not persist active session:", err);
+  }
+}
+
+/** Convert Supabase Auth User object into a rich SheAuraUser */
+export function formatSupabaseUser(sbUser: any): SheAuraUser {
+  const metadata = sbUser.user_metadata || {};
+  const email = sbUser.email || "";
+  const name =
+    metadata.full_name ||
+    metadata.name ||
+    email.split("@")[0].replace(/[._-]/g, " ") ||
+    "Maison Member";
+  const isAdmin = email.toLowerCase().includes("admin");
+
+  return {
+    id: sbUser.id,
+    email,
+    fullName: name,
+    role: isAdmin ? "admin" : "member",
+    tier: isAdmin ? "Maison Ambassador" : "Radiance Circle",
+    memberSince: new Date(sbUser.created_at || Date.now()).toLocaleDateString("en-US", {
+      month: "long",
+      year: "numeric",
+    }),
+    loyaltyPoints: isAdmin ? 1000 : 250,
+    beautyProfile: {
+      undertone: "Neutral Rose",
+      preferredFinish: "Sculpted satin",
+      signatureScent: "Damask Rose & Botanical Amber",
+      skinType: "Radiant & Nourished",
+    },
+    addressBook: [
+      {
+        id: "addr-sb-1",
+        isDefault: true,
+        fullName: name,
+        street: "42 Luxury Boulevard, Suite 10",
+        city: "Mumbai",
+        state: "Maharashtra",
+        postalCode: "400050",
+        country: "India",
+        phone: "+91 98200 55443",
+      },
+    ],
+    orders: [
+      {
+        id: `SA-2025-${Math.floor(1000 + Math.random() * 9000)}`,
+        date: "Today · Verified Member Dispatch",
+        itemsCount: 1,
+        totalAmount: "₹2,400",
+        status: "dispatched",
+        trackingNumber: `EXP-SA-${Math.floor(10000 + Math.random() * 90000)}`,
+        eta: "Tomorrow by 2:00 PM",
+        items: [
+          {
+            name: "The Sculpted Satin Lipstick",
+            shade: "The Red Statement",
+            price: "₹2,400",
+            image: "/Instagram_photos/Product_photos/1.jpg",
+          },
+        ],
+      },
+    ],
+  };
+}
+
+/** Initializes the auth state on application startup */
+export async function initAuth(): Promise<SheAuraUser | null> {
+  const local = getCurrentUser();
+
+  try {
+    const { data } = await supabase.auth.getSession();
+    if (data?.session?.user) {
+      const formatted = formatSupabaseUser(data.session.user);
+      // Preserve any local enhancements if existing
+      if (local && local.email.toLowerCase() === formatted.email.toLowerCase()) {
+        const merged: SheAuraUser = {
+          ...formatted,
+          beautyProfile: local.beautyProfile || formatted.beautyProfile,
+          addressBook: local.addressBook?.length ? local.addressBook : formatted.addressBook,
+          orders: local.orders?.length ? local.orders : formatted.orders,
+        };
+        setActiveUser(merged);
+        return merged;
+      }
+      setActiveUser(formatted);
+      return formatted;
+    }
+  } catch (err) {
+    console.warn("Supabase session check fallback to local storage:", err);
+  }
+
+  return local;
+}
+
+export interface AuthResult {
+  success: boolean;
+  user?: SheAuraUser;
+  message?: string;
+  error?: string;
+  accountExists?: boolean;
+}
+
+/**
+ * Resilient Sign-In Method:
+ * 1. Recognizes VIP Maison testing profiles instantly.
+ * 2. Authenticates with live Supabase Auth.
+ * 3. Fallback checks locally registered accounts if network or credentials match.
+ */
+export async function signIn(emailInput: string, passwordInput: string): Promise<AuthResult> {
+  const email = emailInput.trim().toLowerCase();
+  const password = passwordInput.trim();
+
+  if (!email || !password) {
+    return { success: false, error: "Please enter both your email address and password." };
+  }
+
+  // 1. VIP Demo Accounts
+  if (email === "admin@sheaura.com" && (password === "sheaura2025!" || password === "admin123")) {
+    setActiveUser(DEMO_ADMIN);
+    return { success: true, user: DEMO_ADMIN, message: "Welcome back, Maison Administrator." };
+  }
+
+  if (email === "client@sheaura.com" && (password === "sheaura2025!" || password === "client123")) {
+    setActiveUser(DEMO_CLIENT);
+    return { success: true, user: DEMO_CLIENT, message: "Welcome back, Aaradhya Sharma." };
+  }
+
+  // 2. Primary: Supabase Authentication
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (!error && data?.session?.user) {
+      const user = formatSupabaseUser(data.session.user);
+      setActiveUser(user);
+      return { success: true, user, message: `Welcome back to She'Aura, ${user.fullName}.` };
+    }
+
+    // 3. Fallback check: Locally registered user
+    const localUsers = getLocalUsers();
+    const stored = localUsers[email];
+    if (stored) {
+      if (stored.passwordHash === btoa(password)) {
+        setActiveUser(stored.user);
+        return { success: true, user: stored.user, message: `Welcome back, ${stored.user.fullName}.` };
+      }
+      return { success: false, error: "The password entered does not match our records." };
+    }
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+  } catch (err: any) {
+    // If network fails, check local
+    const localUsers = getLocalUsers();
+    const stored = localUsers[email];
+    if (stored && stored.passwordHash === btoa(password)) {
+      setActiveUser(stored.user);
+      return { success: true, user: stored.user, message: `Welcome back, ${stored.user.fullName}.` };
+    }
+    return { success: false, error: err?.message || "Authentication could not be completed." };
+  }
+
+  return { success: false, error: "Invalid email or password credentials." };
+}
+
+/**
+ * Resilient Sign-Up Method:
+ * 1. Validates form inputs.
+ * 2. Attempts live registration in Supabase Auth.
+ * 3. Gracefully activates an immediate client session so customer checkout & lookbook access are never blocked.
+ * 4. Gracefully recovers if email rate limits or unconfirmed emails occur.
+ */
+export async function signUp(
+  fullNameInput: string,
+  emailInput: string,
+  passwordInput: string
+): Promise<AuthResult> {
+  const fullName = fullNameInput.trim();
+  const email = emailInput.trim().toLowerCase();
+  const password = passwordInput.trim();
+
+  if (!fullName) {
+    return { success: false, error: "Please provide your full name for your Maison profile." };
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return { success: false, error: "Please enter a valid email address (e.g. name@domain.com)." };
+  }
+
+  if (password.length < 6) {
+    return { success: false, error: "Password must be at least 6 characters in length." };
+  }
+
+  // Check if account already exists locally
+  const localUsers = getLocalUsers();
+  if (localUsers[email]) {
+    return {
+      success: false,
+      accountExists: true,
+      error: "An account with this email address already exists. Please sign in with your password.",
+    };
+  }
+
+  // Create base user structure
+  const newUser: SheAuraUser = {
+    id: `sa-user-${Date.now()}`,
+    email,
+    fullName,
+    role: email.includes("admin") ? "admin" : "member",
+    tier: "Radiance Circle",
+    memberSince: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }),
+    loyaltyPoints: 250, // Welcome gift points
+    beautyProfile: {
+      undertone: "Neutral Rose",
+      preferredFinish: "Sculpted satin",
+      signatureScent: "Damask Rose & Botanical Amber",
+      skinType: "Radiant & Nourished",
+    },
+    addressBook: [
+      {
+        id: `addr-${Date.now()}`,
+        isDefault: true,
+        fullName,
+        street: "Residence Address",
+        city: "Mumbai",
+        state: "Maharashtra",
+        postalCode: "400050",
+        country: "India",
+        phone: "+91 ",
+      },
+    ],
+    orders: [],
+  };
+
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+        },
+      },
+    });
+
+    if (error) {
+      const msg = error.message.toLowerCase();
+      // If user already exists or recent request
+      if (msg.includes("security purposes") || msg.includes("already registered") || msg.includes("already exists")) {
+        return {
+          success: false,
+          accountExists: true,
+          error: "An account with this email already exists in She'Aura. Please sign in with your password below.",
+        };
+      }
+
+      // If Supabase free tier rate-limits confirmation emails or flags domain
+      if (msg.includes("rate limit") || msg.includes("email provider") || msg.includes("invalid")) {
+        // Fallback: register locally so customer checkout and experience is never blocked
+        saveLocalUser(newUser, password);
+        setActiveUser(newUser);
+        return {
+          success: true,
+          user: newUser,
+          message: `Account created successfully! Welcome to the She'Aura Radiance Circle, ${fullName}.`,
+        };
+      }
+
+      return { success: false, error: error.message };
+    }
+
+    // In Supabase Auth, when email confirmation is enabled and user is ALREADY registered,
+    // signUp returns a user object with an empty identities array []
+    if (data?.user && Array.isArray((data.user as any).identities) && (data.user as any).identities.length === 0) {
+      return {
+        success: false,
+        accountExists: true,
+        error: "An account with this email address already exists in She'Aura. Please sign in with your password.",
+      };
+    }
+
+    // Supabase success:
+    if (data?.user) {
+      newUser.id = data.user.id;
+    }
+
+    saveLocalUser(newUser, password);
+    setActiveUser(newUser);
+
+    if (data?.session) {
+      return {
+        success: true,
+        user: newUser,
+        message: `Welcome to the Maison She'Aura Circle, ${fullName}! Your account is active.`,
+      };
+    } else {
+      // Supabase has email confirmation enabled
+      return {
+        success: true,
+        user: newUser,
+        message: `Welcome, ${fullName}! Your She'Aura account has been created and your session is active. (A verification link was also sent to ${email}).`,
+      };
+    }
+  } catch (err: any) {
+    // Graceful offline/network fallback
+    saveLocalUser(newUser, password);
+    setActiveUser(newUser);
+    return {
+      success: true,
+      user: newUser,
+      message: `Welcome to She'Aura, ${fullName}! Your member account has been registered.`,
+    };
+  }
+}
+
+/** Signs out of both Supabase and active local session */
+export async function signOut(): Promise<void> {
+  try {
+    await supabase.auth.signOut();
+  } catch (err) {
+    console.warn("Supabase signout notice:", err);
+  }
+  setActiveUser(null);
+}
+
+/** Updates user beauty profile */
+export function updateBeautyProfile(profile: Partial<BeautyProfile>): SheAuraUser | null {
+  const current = getCurrentUser();
+  if (!current) return null;
+
+  const updated: SheAuraUser = {
+    ...current,
+    beautyProfile: {
+      ...current.beautyProfile,
+      ...profile,
+    },
+  };
+
+  setActiveUser(updated);
+
+  // Sync with local users store
+  const localUsers = getLocalUsers();
+  if (localUsers[updated.email.toLowerCase()]) {
+    localUsers[updated.email.toLowerCase()].user = updated;
+    localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(localUsers));
+  }
+
+  return updated;
+}
+
+/** Updates user default delivery address */
+export function updateAddress(address: AddressBookItem): SheAuraUser | null {
+  const current = getCurrentUser();
+  if (!current) return null;
+
+  const updatedBook = current.addressBook.map((a) =>
+    a.id === address.id ? { ...address, isDefault: true } : { ...a, isDefault: false }
+  );
+
+  if (!updatedBook.some((a) => a.id === address.id)) {
+    updatedBook.unshift({ ...address, isDefault: true });
+  }
+
+  const updated: SheAuraUser = {
+    ...current,
+    addressBook: updatedBook,
+  };
+
+  setActiveUser(updated);
+  return updated;
+}
+
+/** Event listener subscription for auth changes */
+export function onAuthStateChanged(callback: (user: SheAuraUser | null) => void): () => void {
+  const handler = (event: Event) => {
+    const custom = event as CustomEvent<{ user: SheAuraUser | null }>;
+    callback(custom.detail?.user ?? getCurrentUser());
+  };
+
+  if (typeof window !== "undefined") {
+    window.addEventListener(AUTH_EVENT_NAME, handler);
+    window.addEventListener("storage", (e) => {
+      if (e.key === STORAGE_SESSION_KEY) {
+        callback(getCurrentUser());
+      }
+    });
+  }
+
+  // Also listen to Supabase native auth state
+  const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    if (session?.user) {
+      const u = formatSupabaseUser(session.user);
+      callback(u);
+    } else if (!getCurrentUser()) {
+      callback(null);
+    }
+  });
+
+  return () => {
+    if (typeof window !== "undefined") {
+      window.removeEventListener(AUTH_EVENT_NAME, handler);
+    }
+    sub?.subscription?.unsubscribe();
+  };
+}
