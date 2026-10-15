@@ -2,37 +2,17 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import BrandIntro from "./BrandIntro";
 import AdminView from "./AdminView";
 import AuthAccountView from "./AuthAccountView";
+import {
+  photos,
+  resolveAsset,
+  defaultProducts,
+  loadStorefrontCatalog,
+  StorefrontProduct,
+} from "./lib/catalog";
 
-export const resolveAsset = (path: string): string => {
-  if (!path) return "";
-  if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("data:") || path.startsWith("blob:")) {
-    return path;
-  }
-  const base = import.meta.env.BASE_URL || "./";
-  const cleanPath = path.replace(/^\.?\//, "");
-  return base.endsWith("/") ? `${base}${cleanPath}` : `${base}/${cleanPath}`;
-};
-
-export const photos = {
-  hero: "https://images.unsplash.com/photo-1434730737257-3e97ad16f4b6?auto=format&fit=crop&w=2200&q=90",
-  lipstick: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=900&q=85",
-  makeup: resolveAsset("/products/products.png"),
-  skincare: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?auto=format&fit=crop&w=900&q=85",
-  model: "https://images.unsplash.com/photo-1675773051474-55c4b7d2cf53?auto=format&fit=crop&w=1400&q=90",
-  floral: "https://images.unsplash.com/photo-1536568033156-c6bf7b18dfba?auto=format&fit=crop&w=900&q=85",
-  perfume: "https://images.unsplash.com/photo-1726758004499-b4ea21408bcf?auto=format&fit=crop&w=1400&q=90",
-  cream: "https://images.unsplash.com/photo-1622618991746-fe6004db3a47?auto=format&fit=crop&w=900&q=85",
-  foundation: "https://images.unsplash.com/photo-1650529192390-19528c5db606?auto=format&fit=crop&w=900&q=85",
-  oil: "https://images.unsplash.com/photo-1695972235594-8478ab831602?auto=format&fit=crop&w=900&q=85",
-  ingredients: "https://images.unsplash.com/photo-1726758004519-7ccecda8b076?auto=format&fit=crop&w=1800&q=90",
-  arches: "https://images.unsplash.com/photo-1543682388-4b46a14c91db?auto=format&fit=crop&w=2000&q=90",
-  scarletPortrait: resolveAsset("/campaign/scarlet-portrait.png"),
-  scarletBotanical: resolveAsset("/campaign/scarlet-botanical.png"),
-  blushPortrait: resolveAsset("/campaign/pink-blossom-portrait.png"),
-  blushStill: resolveAsset("/campaign/pink-blossom-still.png"),
-  highlighterPortrait: resolveAsset("/campaign/highlighter-glow-portrait.png"),
-  highlighterBotanical: resolveAsset("/campaign/highlighter-glow-still.png"),
-};
+export { photos, resolveAsset };
+export const products = defaultProducts;
+export type Product = StorefrontProduct;
 
 export type IconName = "search" | "user" | "bag" | "arrow" | "leaf" | "drop" | "sparkle" | "instagram" | "play" | "pause" | "volume" | "volumeX" | "close" | "check" | "external" | "lock" | "shield" | "heart" | "package" | "logOut";
 
@@ -65,14 +45,6 @@ export function Icon({ name, className }: { name: IconName; className?: string }
 export function ArrowLink({ children, light = false }: { children: React.ReactNode; light?: boolean }) {
   return <a className={`arrow-link ${light ? "light" : ""}`} href="#shop">{children}<Icon name="arrow" /></a>;
 }
-
-export const products = [
-  { name: "Scarlet Rose Lipstick", price: "₹1,099.00", image: photos.scarletBotanical, campaign: photos.scarletPortrait, still: photos.scarletBotanical, tag: "Icon", tone: "#a81920", category: "Lip colour", note: "Satin botanical colour", finish: "Sculpted satin", mood: "The red statement", description: "A couture red lip with a petal-embossed silhouette, designed as the finishing piece in your everyday wardrobe." },
-  { name: "Pink Blossom Blush", price: "₹899.00", image: photos.blushStill, campaign: photos.blushPortrait, still: photos.blushStill, tag: "Bestseller", tone: "#a94368", category: "Blush", note: "Soft-focus flush", finish: "Silk powder", mood: "The romantic flush", description: "A buildable pink flush presented in a keepsake gold compact, made to move effortlessly from daylight to evening." },
-  { name: "Molten Glow Highlighter", price: "₹1,199.00", image: photos.highlighterBotanical, campaign: photos.highlighterPortrait, still: photos.highlighterBotanical, tag: "New", tone: "#c18847", category: "Highlighter", note: "Liquid luminosity", finish: "Molten pearl", mood: "The golden hour", description: "A fluid veil of warm luminosity that catches the light like jewellery and turns skin into the main accessory." },
-];
-
-export type Product = (typeof products)[number];
 
 export type Reel = {
   id: string;
@@ -318,6 +290,7 @@ function ReelViewerModal({
   onAddBag,
   reels,
   onSwitchReel,
+  catalog,
 }: {
   reel: Reel;
   onClose: () => void;
@@ -325,13 +298,14 @@ function ReelViewerModal({
   onAddBag: (product: Product) => void;
   reels: Reel[];
   onSwitchReel: (reel: Reel) => void;
+  catalog?: Product[];
 }) {
   const modalVideoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
   const [progress, setProgress] = useState(0);
   const [addedToast, setAddedToast] = useState(false);
-  const matchingProduct = products.find((p) => p.name === reel.productName) || products[0];
+  const matchingProduct = (catalog || products).find((p) => p.name === reel.productName) || (catalog && catalog[0]) || products[0];
 
   const currentIndex = reels.findIndex((r) => r.id === reel.id);
 
@@ -590,10 +564,12 @@ function ReelViewerModal({
 }
 
 function ReelsSection({
+  catalog,
   onSelectProduct,
   onAddBag,
   onOpenReel,
 }: {
+  catalog?: Product[];
   onSelectProduct: (product: Product) => void;
   onAddBag: (product: Product) => void;
   onOpenReel: (reel: Reel) => void;
@@ -604,9 +580,51 @@ function ReelsSection({
   const [addedToast, setAddedToast] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  const dynamicReels = useMemo(() => {
+    if (!catalog || catalog.length === 0) return reels;
+    const dynamicList: Reel[] = [];
+    catalog.forEach((prod) => {
+      if (Array.isArray(prod.videos) && prod.videos.length > 0) {
+        prod.videos.forEach((v, idx) => {
+          if (v.video_url || v.instagram_url) {
+            dynamicList.push({
+              id: v.id || `dyn-reel-${(prod.slug || prod.name).toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${idx}`,
+              title: v.title || `${prod.name} · Motion Look`,
+              subtitle: prod.finish || "Sensorial Glide",
+              productName: prod.name,
+              category: prod.category.toLowerCase().includes("lip") ? "lips" : prod.category.toLowerCase().includes("blush") ? "blush" : prod.category.toLowerCase().includes("glow") || prod.category.toLowerCase().includes("high") ? "glow" : "all",
+              videoUrl: v.video_url || resolveAsset("/reels/reel-01-perfect-blush.mp4"),
+              poster: v.poster_url || prod.campaign || prod.image,
+              instagramUrl: v.instagram_url || "https://www.instagram.com/sheauracosmeticsofficial/",
+              handle: v.social_handle || "@sheauracosmeticsofficial",
+              avatar: prod.image,
+              duration: "0:25",
+              views: "310K",
+              likes: "42K",
+              quote: v.quote || `Finding a formula that glides smoothly and hydrates all day.`,
+              step: v.title || `Look 0${idx + 1}`,
+              tone: prod.tone,
+              productPrice: prod.price,
+              productImage: prod.image,
+              productTag: prod.tag,
+            });
+          }
+        });
+      }
+    });
+
+    const combined = [...reels];
+    for (const d of dynamicList) {
+      if (!combined.some((r) => r.productName === d.productName && r.videoUrl === d.videoUrl)) {
+        combined.push(d);
+      }
+    }
+    return combined;
+  }, [catalog]);
+
   const filteredReels = useMemo(() => {
-    return filter === "all" ? reels : reels.filter((r) => r.category === filter);
-  }, [filter]);
+    return filter === "all" ? dynamicReels : dynamicReels.filter((r) => r.category === filter);
+  }, [filter, dynamicReels]);
 
   useEffect(() => {
     if (!filteredReels.some((reel) => reel.id === activeId)) {
@@ -617,8 +635,8 @@ function ReelsSection({
   const activeIndex = Math.max(0, filteredReels.findIndex((reel) => reel.id === activeId));
   const activeReel = filteredReels[activeIndex] || filteredReels[0] || reels[0];
   const matchingProduct = useMemo(() => {
-    return products.find((p) => p.name === activeReel.productName) || products[0];
-  }, [activeReel.productName]);
+    return (catalog || products).find((p) => p.name === activeReel.productName) || (catalog && catalog[0]) || products[0];
+  }, [activeReel.productName, catalog]);
 
   const move = (direction: number) => {
     const nextIdx = (activeIndex + direction + filteredReels.length) % filteredReels.length;
@@ -894,7 +912,7 @@ function ReelsSection({
 
           <div className="reels-runway-ribbon" role="region" aria-label="Runway looks">
             {filteredReels.map((reel, idx) => {
-              const prod = products.find((p) => p.name === reel.productName);
+              const prod = (catalog || products).find((p) => p.name === reel.productName);
               const isSelected = reel.id === activeReel.id;
               return (
                 <button
@@ -1105,6 +1123,7 @@ function CommunityStrip() {
 
 function ProductPage({
   product,
+  catalog,
   onBack,
   onAdd,
   onSelect,
@@ -1112,6 +1131,7 @@ function ProductPage({
   onOpenAccount,
 }: {
   product: Product;
+  catalog?: Product[];
   onBack: () => void;
   onAdd: () => void;
   onSelect: (product: Product) => void;
@@ -1120,7 +1140,7 @@ function ProductPage({
 }) {
   const [quantity, setQuantity] = useState(1);
   const [detailsOpen, setDetailsOpen] = useState("formula");
-  const related = products.filter((item) => item.name !== product.name);
+  const related = (catalog || products).filter((item) => item.name !== product.name);
 
   return (
     <main className="product-page">
@@ -1259,10 +1279,31 @@ export default function App() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [cartCount, setCartCount] = useState(1);
+  const [catalog, setCatalog] = useState<Product[]>(defaultProducts);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [activeModalReel, setActiveModalReel] = useState<Reel | null>(null);
   const [showIntro, setShowIntro] = useState(true);
   const handleCompleteIntro = useCallback(() => setShowIntro(false), []);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchCatalog = () => {
+      loadStorefrontCatalog().then((items) => {
+        if (mounted && items && items.length > 0) {
+          setCatalog(items);
+        }
+      });
+    };
+    fetchCatalog();
+
+    window.addEventListener("sheaura:catalog-updated", fetchCatalog);
+    window.addEventListener("focus", fetchCatalog);
+    return () => {
+      mounted = false;
+      window.removeEventListener("sheaura:catalog-updated", fetchCatalog);
+      window.removeEventListener("focus", fetchCatalog);
+    };
+  }, []);
 
   if (currentView === "admin") {
     return <AdminView onBack={() => navigateTo("storefront")} />;
@@ -1287,6 +1328,7 @@ export default function App() {
         {showIntro && <BrandIntro onComplete={handleCompleteIntro} />}
         <ProductPage
           product={selectedProduct}
+          catalog={catalog}
           onBack={() => {
             setSelectedProduct(null);
             setTimeout(() => document.getElementById("shop")?.scrollIntoView(), 0);
@@ -1304,6 +1346,7 @@ export default function App() {
             onAddBag={() => setCartCount((c) => c + 1)}
             reels={reels}
             onSwitchReel={setActiveModalReel}
+            catalog={catalog}
           />
         )}
       </>
@@ -1421,9 +1464,9 @@ export default function App() {
           <ArrowLink>Shop all</ArrowLink>
         </div>
         <div className="product-grid">
-          {products.map((product) => (
-            <article className="product-card" key={product.name}>
-              <div className={`product-image product-image-${product.category.toLowerCase().replace(" ", "-")}`}>
+          {catalog.map((product) => (
+            <article className="product-card" key={product.id || product.slug || product.name}>
+              <div className={`product-image product-image-${(product.category || "lip-colour").toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>
                 {product.tag && <span className="tag">{product.tag}</span>}
                 <img className="product-photo" src={product.image} alt={product.name} />
                 <button onClick={() => setCartCount((count) => count + 1)} aria-label={`Add ${product.name} to bag`}>+</button>
@@ -1439,6 +1482,7 @@ export default function App() {
       </section>
 
       <ReelsSection
+        catalog={catalog}
         onSelectProduct={setSelectedProduct}
         onAddBag={() => setCartCount((count) => count + 1)}
         onOpenReel={setActiveModalReel}

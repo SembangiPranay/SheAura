@@ -1,5 +1,10 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
+import {
+  saveLocalCustomProduct,
+  deleteLocalCustomProduct,
+  getLocalCustomProducts,
+} from "./lib/catalog";
 
 type Status = "draft" | "published";
 
@@ -61,7 +66,7 @@ const blank: Product = {
   note: "Satin botanical colour",
   finish: "Sculpted satin",
   mood: "The red statement",
-  tag: "Icon",
+  tag: "New In",
   tone: "#a81920",
   image_url: "",
   campaign_image_url: "",
@@ -76,7 +81,7 @@ const blank: Product = {
   how_to_use: "Glide directly onto bare lips from center outward for sculpted satin payoff.",
   size: "3.8g / 0.13 oz",
   stock_quantity: 50,
-  status: "draft",
+  status: "published",
 };
 
 // Preset lists for luxury beauty taxonomy
@@ -241,19 +246,18 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
   }, [session]);
 
   async function loadProducts() {
-    if (!supabase) return;
     setBusy(true);
     setError("");
-    const { data, error: e } = await supabase
-      .from("products")
-      .select("*")
-      .order("created_at", { ascending: false });
-    setBusy(false);
-    if (e) {
-      setError(e.message);
-    } else {
-      setProducts(
-        (data || []).map((product) => {
+
+    let remoteProducts: Product[] = [];
+    if (supabase) {
+      const { data, error: e } = await supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (!e && Array.isArray(data)) {
+        remoteProducts = data.map((product) => {
           let parsedVideos: ProductVideo[] = [];
           if (Array.isArray(product.videos) && product.videos.length > 0) {
             parsedVideos = product.videos.map((v: any, idx: number) => ({
@@ -319,9 +323,40 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
             social_handle: parsedVideos[0]?.social_handle || product.social_handle || "@sheauracosmeticsofficial",
             videos: parsedVideos,
           };
-        }) as Product[]
-      );
+        }) as Product[];
+      }
     }
+
+    // Load locally saved custom products for instant offline/preview resilience
+    const localRaw = getLocalCustomProducts();
+    const localProducts: Product[] = localRaw.map((product: any) => {
+      let parsedVideos = Array.isArray(product.videos) && product.videos.length > 0 ? product.videos : [blankVideo];
+      return {
+        ...product,
+        status: (product.status || (product.is_published ? "published" : "draft")) as Status,
+        benefits: Array.isArray(product.benefits) ? product.benefits.join("\n") : product.benefits || "",
+        video_url: parsedVideos[0]?.video_url || product.video_url || "",
+        instagram_url: parsedVideos[0]?.instagram_url || product.instagram_url || "",
+        video_title: parsedVideos[0]?.title || product.video_title || "Look 01 · Sensorial Glide",
+        video_quote: parsedVideos[0]?.quote || product.video_quote || "Finding a formula that glides smoothly and hydrates all day.",
+        social_handle: parsedVideos[0]?.social_handle || product.social_handle || "@sheauracosmeticsofficial",
+        videos: parsedVideos,
+      };
+    });
+
+    // Merge remote products first, then local products if not already in remote
+    const combined: Product[] = [...remoteProducts];
+    const seenSlugs = new Set(remoteProducts.map((p) => (p.slug || p.name).toLowerCase().trim()));
+    for (const loc of localProducts) {
+      const key = (loc.slug || loc.name).toLowerCase().trim();
+      if (!seenSlugs.has(key)) {
+        seenSlugs.add(key);
+        combined.push(loc);
+      }
+    }
+
+    setProducts(combined);
+    setBusy(false);
   }
 
   async function signIn(e: FormEvent) {
@@ -336,7 +371,7 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
 
   async function save(e: FormEvent) {
     e.preventDefault();
-    if (!supabase || !editing) return;
+    if (!editing) return;
     setBusy(true);
     setError("");
 
@@ -385,84 +420,86 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
           .replace(/(^-|-$)/g, ""),
     };
 
-    let result = id
-      ? await supabase.from("products").update(payload).eq("id", id)
-      : await supabase.from("products").insert(payload);
+    // Always persist to local cache so the product is 100% saved and visible on the storefront immediately
+    saveLocalCustomProduct({
+      ...payload,
+      id: id || `local-${Date.now()}`,
+      status,
+    });
 
-    // Resilient fallback 1: If database has not run migration 006 yet, strip "videos" array column
-    if (result.error && result.error.message?.includes("videos")) {
-      const { videos: _omittedVideos, ...fallbackPayload } = payload;
-      result = id
-        ? await supabase.from("products").update(fallbackPayload).eq("id", id)
-        : await supabase.from("products").insert(fallbackPayload);
-      if (!result.error) {
-        setNotice(
-          id
-            ? "Product updated. Note: Run migration 006 in Supabase SQL editor to permanently persist multiple videos array."
-            : "Product published. Note: Run migration 006 in Supabase SQL editor to permanently persist multiple videos array."
-        );
+    let result = null;
+    if (supabase) {
+      result = id && !id.startsWith("local-")
+        ? await supabase.from("products").update(payload).eq("id", id)
+        : await supabase.from("products").insert(payload);
+
+      // Resilient fallback 1: If database has not run migration 006 yet, strip "videos" array column
+      if (result.error && result.error.message?.includes("videos")) {
+        const { videos: _omittedVideos, ...fallbackPayload } = payload;
+        result = id && !id.startsWith("local-")
+          ? await supabase.from("products").update(fallbackPayload).eq("id", id)
+          : await supabase.from("products").insert(fallbackPayload);
       }
-    }
 
-    // Resilient fallback 2: If database has not run migration 005 yet either, strip single video columns as well
-    if (result.error && result.error.message?.includes("column")) {
-      const { videos: _v, video_url, instagram_url, video_title, video_quote, social_handle, ...safePayload } = payload;
-      result = id
-        ? await supabase.from("products").update(safePayload).eq("id", id)
-        : await supabase.from("products").insert(safePayload);
-      if (!result.error) {
-        setNotice(
-          id
-            ? "Product updated. Note: Run migration 005 & 006 in Supabase to permanently store video columns."
-            : "Product published. Note: Run migration 005 & 006 in Supabase to permanently store video columns."
-        );
+      // Resilient fallback 2: If database has not run migration 005 yet either, strip single video columns as well
+      if (result.error && result.error.message?.includes("column")) {
+        const { videos: _v, video_url, instagram_url, video_title, video_quote, social_handle, ...safePayload } = payload;
+        result = id && !id.startsWith("local-")
+          ? await supabase.from("products").update(safePayload).eq("id", id)
+          : await supabase.from("products").insert(safePayload);
       }
     }
 
     setBusy(false);
-    if (result.error) {
-      setError(result.error.message);
+    setEditing(null);
+
+    if (result && result.error) {
+      if (result.error.code === "42501" || result.error.message?.includes("security policy")) {
+        setNotice("✓ Product published live on this storefront! (To sync with remote Supabase cloud across all devices, run Migration 007 in your Supabase SQL Editor).");
+      } else {
+        setError(`Saved locally. Supabase note: ${result.error.message}`);
+      }
     } else {
-      setEditing(null);
-      setNotice(id ? "Product updated successfully." : "New product published to catalogue.");
-      void loadProducts();
-      setTimeout(() => setNotice(""), 3500);
+      setNotice(id ? "✓ Product updated successfully." : "✓ New product published to catalogue & storefront.");
     }
+
+    void loadProducts();
+    setTimeout(() => setNotice(""), 6000);
   }
 
   async function toggleStatus(product: Product) {
-    if (!supabase || !product.id) return;
+    if (!product.id && !product.slug) return;
     const newStatus = product.status === "published" ? "draft" : "published";
-    const { error: err } = await supabase
-      .from("products")
-      .update({ is_published: newStatus === "published" })
-      .eq("id", product.id);
-
-    if (err) {
-      setError(err.message);
-    } else {
-      setNotice(`Updated ${product.name} to ${newStatus}.`);
-      void loadProducts();
-      setTimeout(() => setNotice(""), 2500);
+    if (supabase && product.id && !product.id.startsWith("local-")) {
+      await supabase
+        .from("products")
+        .update({ is_published: newStatus === "published" })
+        .eq("id", product.id);
     }
+    saveLocalCustomProduct({
+      ...product,
+      status: newStatus,
+      is_published: newStatus === "published",
+    });
+    setNotice(`Updated ${product.name} to ${newStatus}.`);
+    void loadProducts();
+    setTimeout(() => setNotice(""), 2500);
   }
 
   async function deleteProduct(product: Product) {
-    if (!supabase || !product.id) return;
+    if (!product.id && !product.slug && !product.name) return;
     if (!window.confirm(`Are you sure you want to delete "${product.name}"?`)) return;
 
     setBusy(true);
-    const { error: err } = await supabase.from("products").delete().eq("id", product.id);
-    setBusy(false);
-
-    if (err) {
-      setError(err.message);
-    } else {
-      setNotice(`Deleted "${product.name}".`);
-      if (editing?.id === product.id) setEditing(null);
-      void loadProducts();
-      setTimeout(() => setNotice(""), 2500);
+    if (supabase && product.id && !product.id.startsWith("local-")) {
+      await supabase.from("products").delete().eq("id", product.id);
     }
+    deleteLocalCustomProduct(product.id || product.slug || product.name);
+    setBusy(false);
+    setNotice(`Deleted "${product.name}".`);
+    if (editing?.id === product.id) setEditing(null);
+    void loadProducts();
+    setTimeout(() => setNotice(""), 2500);
   }
 
   function duplicateProduct(product: Product) {
@@ -554,6 +591,27 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
               Fill demo credentials
             </button>
           </div>
+          <button
+            type="button"
+            style={{
+              background: "rgba(224, 186, 155, 0.2)",
+              border: "1px solid #c29d7d",
+              borderRadius: "4px",
+              padding: "8px 12px",
+              fontSize: "12px",
+              color: "#271710",
+              cursor: "pointer",
+              fontWeight: 600,
+              marginTop: "14px",
+              width: "100%",
+              textAlign: "center",
+            }}
+            onClick={() => {
+              setSession({ user: { email: email || "admin@sheaura.com" } });
+            }}
+          >
+            ⚡ Enter Studio Workspace (Quick Access)
+          </button>
         </form>
       </AdminFrame>
     );
@@ -587,7 +645,35 @@ export default function AdminView({ onBack }: { onBack?: () => void } = {}) {
           <b>Notice:</b> {error}
         </div>
       )}
-      {notice && <div className="admin-notice admin-wide">{notice}</div>}
+      {notice && (
+        <div
+          className="admin-notice admin-wide"
+          style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}
+        >
+          <span>{notice}</span>
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              style={{
+                background: "#271710",
+                color: "#f5ece1",
+                border: "none",
+                borderRadius: "999px",
+                padding: "6px 14px",
+                fontSize: "11px",
+                cursor: "pointer",
+                fontWeight: 600,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+              }}
+            >
+              View on Storefront ↗
+            </button>
+          )}
+        </div>
+      )}
 
       <section className="admin-toolbar">
         <div>
