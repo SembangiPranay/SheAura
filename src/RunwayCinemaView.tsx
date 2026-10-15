@@ -19,6 +19,15 @@ export default function RunwayCinemaView({
   onAddBag,
   cartCount,
 }: RunwayCinemaViewProps) {
+  // Modes: "dual-kinetic" (One column scrolls up, another scrolls down in a single video edit) OR "solo-theater"
+  const [viewMode, setViewMode] = useState<"dual-kinetic" | "solo-theater">("dual-kinetic");
+
+  // Kinetic Dual-Scroll state
+  const [isKineticPlaying, setIsKineticPlaying] = useState(true);
+  const [kineticSpeed, setKineticSpeed] = useState<"1x" | "1.5x" | "2x">("1x");
+  const [activeReelId, setActiveReelId] = useState<string>(reels[0]?.id || "reel-01");
+
+  // Solo Theater state
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
@@ -40,8 +49,21 @@ export default function RunwayCinemaView({
     return reels.filter((r) => r.category === categoryFilter);
   }, [reels, categoryFilter]);
 
-  const activeReel = filteredReels[activeIndex] || filteredReels[0] || reels[0];
+  // Current active reel (shared across both modes)
+  const activeReel = useMemo(() => {
+    if (viewMode === "dual-kinetic") {
+      return reels.find((r) => r.id === activeReelId) || reels[0];
+    }
+    return filteredReels[activeIndex] || filteredReels[0] || reels[0];
+  }, [viewMode, activeReelId, activeIndex, filteredReels, reels]);
+
   const nextReel = filteredReels[(activeIndex + 1) % filteredReels.length];
+
+  // Divide into two alternating columns for opposing scroll
+  // Column 1 (Left): Odd looks (Look 01, 03, 05, 07, 09, 11, 13, 15, 17, 19)
+  // Column 2 (Right): Even looks (Look 02, 04, 06, 08, 10, 12, 14, 16, 18, 20)
+  const columnLeft = useMemo(() => reels.filter((_, idx) => idx % 2 === 0), [reels]);
+  const columnRight = useMemo(() => reels.filter((_, idx) => idx % 2 === 1), [reels]);
 
   // Match corresponding product from catalog
   const matchingProduct: Product = useMemo(() => {
@@ -69,7 +91,7 @@ export default function RunwayCinemaView({
     } as Product;
   }, [catalog, activeReel]);
 
-  // Jump to specific index with smooth animation
+  // Jump to specific index in solo mode
   const jumpTo = useCallback(
     (index: number) => {
       if (index === activeIndex) return;
@@ -91,7 +113,15 @@ export default function RunwayCinemaView({
     jumpTo((activeIndex - 1 + filteredReels.length) % filteredReels.length);
   }, [activeIndex, filteredReels.length, jumpTo]);
 
-  // Handle video progress & autonomous scroll
+  // Switch to solo mode focused on a specific reel
+  const focusReelInSolo = (reelId: string) => {
+    const idx = filteredReels.findIndex((r) => r.id === reelId);
+    if (idx !== -1) setActiveIndex(idx);
+    setActiveReelId(reelId);
+    setViewMode("solo-theater");
+  };
+
+  // Solo video progress handler
   const handleTimeUpdate = () => {
     const v = activeVideoRef.current;
     if (!v || !v.duration) return;
@@ -107,12 +137,11 @@ export default function RunwayCinemaView({
     setDurationStr(`${durM}:${String(durS).padStart(2, "0")}`);
   };
 
-  // When a video reaches the end -> AUTO-SCROLL to next video!
+  // Solo video auto-advance
   const handleVideoEnded = () => {
     if (autoAdvance) {
       goNext();
     } else {
-      // Loop current video
       if (activeVideoRef.current) {
         activeVideoRef.current.currentTime = 0;
         activeVideoRef.current.play().catch(() => {});
@@ -123,62 +152,51 @@ export default function RunwayCinemaView({
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowDown" || e.key === "PageDown") {
-        e.preventDefault();
-        goNext();
-      } else if (e.key === "ArrowUp" || e.key === "PageUp") {
-        e.preventDefault();
-        goPrev();
+      if (e.key === "Escape") {
+        onBack();
       } else if (e.key === " " || e.code === "Space") {
         e.preventDefault();
-        setIsPlaying((p) => {
-          if (activeVideoRef.current) {
-            if (p) activeVideoRef.current.pause();
-            else activeVideoRef.current.play().catch(() => {});
-          }
-          return !p;
-        });
+        if (viewMode === "dual-kinetic") {
+          setIsKineticPlaying((p) => !p);
+        } else {
+          setIsPlaying((p) => {
+            if (activeVideoRef.current) {
+              if (p) activeVideoRef.current.pause();
+              else activeVideoRef.current.play().catch(() => {});
+            }
+            return !p;
+          });
+        }
       } else if (e.key === "m" || e.key === "M") {
         setIsMuted((m) => !m);
-      } else if (e.key === "Escape") {
-        onBack();
+      } else if (viewMode === "solo-theater") {
+        if (e.key === "ArrowDown" || e.key === "PageDown") {
+          e.preventDefault();
+          goNext();
+        } else if (e.key === "ArrowUp" || e.key === "PageUp") {
+          e.preventDefault();
+          goPrev();
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [goNext, goPrev, onBack]);
+  }, [viewMode, goNext, goPrev, onBack]);
 
-  // Touch swipe support for mobile
+  // Touch swipe support for solo theater
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartY.current === null) return;
+    if (touchStartY.current === null || viewMode !== "solo-theater") return;
     const diff = touchStartY.current - e.changedTouches[0].clientY;
     if (diff > 50) {
-      goNext(); // Swiped up -> next reel
+      goNext();
     } else if (diff < -50) {
-      goPrev(); // Swiped down -> prev reel
+      goPrev();
     }
     touchStartY.current = null;
-  };
-
-  // Play/pause toggle
-  const togglePlay = () => {
-    if (!activeVideoRef.current) return;
-    if (isPlaying) {
-      activeVideoRef.current.pause();
-      setIsPlaying(false);
-    } else {
-      activeVideoRef.current.play().catch(() => {});
-      setIsPlaying(true);
-    }
-  };
-
-  // Unmute toggle
-  const toggleMute = () => {
-    setIsMuted((prev) => !prev);
   };
 
   // Add to cart handler
@@ -188,17 +206,20 @@ export default function RunwayCinemaView({
     setTimeout(() => setAddedToast(false), 2400);
   };
 
+  // Scroll duration in seconds based on kinetic speed
+  const kineticDurationSeconds = kineticSpeed === "2x" ? 22 : kineticSpeed === "1.5x" ? 34 : 48;
+
   return (
     <div
       className="runway-cinema-page"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Background ambient lighting */}
+      {/* Background ambient lighting halo */}
       <div
         className="runway-ambient-halo"
         style={{
-          background: `radial-gradient(circle at 50% 40%, ${matchingProduct.tone || "#a81920"}33 0%, rgba(12, 6, 4, 0.95) 75%)`,
+          background: `radial-gradient(circle at 50% 40%, ${matchingProduct.tone || "#a81920"}36 0%, rgba(12, 6, 4, 0.95) 75%)`,
         }}
       />
 
@@ -212,36 +233,42 @@ export default function RunwayCinemaView({
           <div className="runway-brand-badge">
             <span className="runway-pulse-dot" />
             <b>SHE’AURA</b>
-            <span className="runway-tagline">HAUTE RUNWAY CINEMA · 20 LOOKS</span>
+            <span className="runway-tagline">
+              {viewMode === "dual-kinetic" ? "DUAL-SCROLL VIDEO EDIT · 20 LOOKS" : "SOLO THEATER"}
+            </span>
           </div>
         </div>
 
-        {/* Center: Autonomous Self-Scroll Control */}
+        {/* Center: Mode Switcher (Dual-Scroll Edit vs Solo Theater) */}
         <div className="runway-header-center">
-          <button
-            className={`runway-autoscroll-toggle ${autoAdvance ? "active" : ""}`}
-            onClick={() => setAutoAdvance(!autoAdvance)}
-            title={autoAdvance ? "Auto-scroll is ON. Videos advance themselves automatically." : "Auto-scroll paused. Click to resume hands-free mode."}
-          >
-            <span className="autoscroll-indicator">
-              <span className="autoscroll-pulse" />
-            </span>
-            <span className="autoscroll-text">
-              {autoAdvance ? "AUTO-SCROLL: ACTIVE" : "AUTO-SCROLL: PAUSED"}
-            </span>
-          </button>
-          <span className="runway-counter">
-            {String(activeIndex + 1).padStart(2, "0")} / {String(filteredReels.length).padStart(2, "0")}
-          </span>
+          <div className="runway-mode-tabs">
+            <button
+              className={`mode-tab-btn ${viewMode === "dual-kinetic" ? "active" : ""}`}
+              onClick={() => setViewMode("dual-kinetic")}
+              title="Watch all 20 videos composed together in dual scrolling columns"
+            >
+              <span className="mode-icon">☷</span>
+              <span>Dual-Scroll Video Edit</span>
+            </button>
+            <button
+              className={`mode-tab-btn ${viewMode === "solo-theater" ? "active" : ""}`}
+              onClick={() => setViewMode("solo-theater")}
+              title="Watch individual reels full-screen with auto-advance"
+            >
+              <span className="mode-icon">▯</span>
+              <span>Solo Theater</span>
+            </button>
+          </div>
         </div>
 
+        {/* Right Header Actions */}
         <div className="runway-header-right">
           <button
             className={`runway-sound-pill ${!isMuted ? "sound-on" : ""}`}
-            onClick={toggleMute}
+            onClick={() => setIsMuted(!isMuted)}
             aria-label={isMuted ? "Audio muted. Click to enable sound." : "Sound live. Click to mute."}
           >
-            <div className={`runway-eq-bars ${!isMuted && isPlaying ? "playing" : ""}`}>
+            <div className={`runway-eq-bars ${!isMuted ? "playing" : ""}`}>
               <span /><span /><span /><span />
             </div>
             <span>{isMuted ? "MUTED" : "LIVE AUDIO"}</span>
@@ -267,266 +294,537 @@ export default function RunwayCinemaView({
         </div>
       </header>
 
-      {/* Main Cinema Theater Stage */}
-      <main className="runway-main-stage">
-        {/* Navigation arrow buttons (Desktop / Tablet) */}
-        <button
-          className="runway-nav-arrow runway-prev-arrow"
-          onClick={goPrev}
-          aria-label="Previous look (Up)"
-          title="Previous look"
-        >
-          <Icon name="arrow" />
-        </button>
-
-        <button
-          className="runway-nav-arrow runway-next-arrow"
-          onClick={goNext}
-          aria-label="Next look (Down)"
-          title="Next look"
-        >
-          <Icon name="arrow" />
-        </button>
-
-        {/* The 9:16 Authentic Vertical Phone Frame */}
-        <div className={`runway-theater-bezel ${transitioning ? "transitioning" : ""}`}>
-          {/* Top Story Progress Bar */}
-          <div className="runway-story-progress">
-            {filteredReels.map((_, idx) => (
-              <div
-                key={idx}
-                className={`story-bar-segment ${
-                  idx < activeIndex ? "completed" : idx === activeIndex ? "active" : ""
-                }`}
-                onClick={() => jumpTo(idx)}
-                title={`Jump to Look ${idx + 1}`}
-              >
-                <div
-                  className="story-bar-fill"
-                  style={{
-                    width:
-                      idx < activeIndex
-                        ? "100%"
-                        : idx === activeIndex
-                        ? `${progress}%`
-                        : "0%",
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-
-          {/* Video Player */}
-          <div className="runway-video-container" onClick={togglePlay}>
-            <video
-              ref={activeVideoRef}
-              key={activeReel.videoUrl}
-              src={activeReel.videoUrl}
-              poster={activeReel.poster}
-              playsInline
-              autoPlay
-              muted={isMuted}
-              onTimeUpdate={handleTimeUpdate}
-              onEnded={handleVideoEnded}
-              className="runway-video-element"
-            />
-
-            {/* Hidden preloader for the NEXT video for zero buffering delay */}
-            {nextReel && (
-              <video
-                src={nextReel.videoUrl}
-                preload="auto"
-                muted
-                style={{ display: "none" }}
-              />
-            )}
-
-            {/* Play/Pause overlay indicator */}
-            {!isPlaying && (
-              <div className="runway-pause-scrim">
-                <div className="runway-pause-icon">
-                  <Icon name="play" />
+      {/* =========================================================================
+          VIEW MODE 1: DUAL-SCROLL VIDEO EDIT (ONE COLUMN UP, ONE COLUMN DOWN)
+          ========================================================================= */}
+      {viewMode === "dual-kinetic" ? (
+        <main className="runway-kinetic-stage">
+          <div className="kinetic-cinema-wrapper">
+            {/* The Single Master Video Canvas Bezel containing both columns */}
+            <div className="kinetic-master-bezel">
+              {/* Top Video Header Overlay */}
+              <div className="kinetic-bezel-top-bar">
+                <div className="kinetic-badge">
+                  <span className="runway-pulse-dot" />
+                  <span>OPPOSING MOTION VIDEO COMPOSITION · 20 REELS</span>
                 </div>
-                <span>PAUSED · TAP TO RESUME</span>
+                <div className="kinetic-speed-controls">
+                  <span className="speed-label">SPEED:</span>
+                  {(["1x", "1.5x", "2x"] as const).map((spd) => (
+                    <button
+                      key={spd}
+                      className={`speed-pill ${kineticSpeed === spd ? "active" : ""}`}
+                      onClick={() => setKineticSpeed(spd)}
+                    >
+                      {spd}
+                    </button>
+                  ))}
+                </div>
               </div>
-            )}
 
-            {/* Unmute prompt banner (when muted) */}
-            {isMuted && (
+              {/* The Dual Opposing Moving Columns Inside One Video Frame */}
+              <div className="kinetic-columns-viewport">
+                {/* COLUMN 1: SCROLLS UP */}
+                <div className="kinetic-scroll-column column-up-wrapper">
+                  <div
+                    className="kinetic-ribbon-track track-scroll-up"
+                    style={{
+                      animationDuration: `${kineticDurationSeconds}s`,
+                      animationPlayState: isKineticPlaying ? "running" : "paused",
+                    }}
+                  >
+                    {/* Duplicated twice for seamless, infinite looping scroll */}
+                    {[...columnLeft, ...columnLeft].map((reel, idx) => {
+                      const isSelected = reel.id === activeReel.id;
+                      return (
+                        <div
+                          key={`col-up-${reel.id}-${idx}`}
+                          className={`kinetic-video-card ${isSelected ? "selected" : ""}`}
+                          onClick={() => setActiveReelId(reel.id)}
+                        >
+                          <video
+                            src={reel.videoUrl}
+                            poster={reel.poster}
+                            autoPlay
+                            loop
+                            muted={isMuted || !isSelected}
+                            playsInline
+                            className="kinetic-card-video"
+                          />
+                          <div className="kinetic-card-overlay">
+                            <span className="card-look-pill">{reel.step}</span>
+                            <span className="card-reel-name">{reel.title}</span>
+                          </div>
+                          {isSelected && (
+                            <div className="card-active-indicator">
+                              <span />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Center Golden Seam / Motion Divider */}
+                <div className="kinetic-center-seam">
+                  <div className="seam-line" />
+                  <div className="seam-arrows">
+                    <span className="arrow-up">▲</span>
+                    <span className="arrow-down">▼</span>
+                  </div>
+                  <div className="seam-line" />
+                </div>
+
+                {/* COLUMN 2: SCROLLS DOWN */}
+                <div className="kinetic-scroll-column column-down-wrapper">
+                  <div
+                    className="kinetic-ribbon-track track-scroll-down"
+                    style={{
+                      animationDuration: `${kineticDurationSeconds}s`,
+                      animationPlayState: isKineticPlaying ? "running" : "paused",
+                    }}
+                  >
+                    {/* Duplicated twice for seamless, infinite looping scroll */}
+                    {[...columnRight, ...columnRight].map((reel, idx) => {
+                      const isSelected = reel.id === activeReel.id;
+                      return (
+                        <div
+                          key={`col-down-${reel.id}-${idx}`}
+                          className={`kinetic-video-card ${isSelected ? "selected" : ""}`}
+                          onClick={() => setActiveReelId(reel.id)}
+                        >
+                          <video
+                            src={reel.videoUrl}
+                            poster={reel.poster}
+                            autoPlay
+                            loop
+                            muted={isMuted || !isSelected}
+                            playsInline
+                            className="kinetic-card-video"
+                          />
+                          <div className="kinetic-card-overlay">
+                            <span className="card-look-pill">{reel.step}</span>
+                            <span className="card-reel-name">{reel.title}</span>
+                          </div>
+                          {isSelected && (
+                            <div className="card-active-indicator">
+                              <span />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Video Edit Controls Bar (Play/Pause, Sound, Instructions) */}
+              <div className="kinetic-bezel-bottom-bar">
+                <button
+                  className="kinetic-play-toggle-btn"
+                  onClick={() => setIsKineticPlaying(!isKineticPlaying)}
+                  title={isKineticPlaying ? "Pause continuous scroll" : "Resume continuous scroll"}
+                >
+                  <Icon name={isKineticPlaying ? "pause" : "play"} />
+                  <span>{isKineticPlaying ? "PAUSE MOTION" : "RESUME FLOW"}</span>
+                </button>
+
+                <div className="kinetic-hint-badge">
+                  <span>TAP ANY VIDEO TO PREVIEW & SHOP</span>
+                </div>
+
+                <button
+                  className="kinetic-focus-btn"
+                  onClick={() => focusReelInSolo(activeReel.id)}
+                  title="Expand selected reel to full solo theater"
+                >
+                  <Icon name="play" />
+                  <span>FOCUS SOLO</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Synchronized Side Product Atelier Card */}
+            <aside className="kinetic-side-atelier">
+              <div className="atelier-header">
+                <span className="atelier-eyebrow">
+                  <Icon name="sparkle" />
+                  <span>SELECTED IN MOTION</span>
+                </span>
+                <span className="atelier-step-label">{activeReel.step}</span>
+              </div>
+
+              <div className="atelier-card">
+                <div className="atelier-card-top">
+                  <div
+                    className="atelier-thumb-wrap"
+                    onClick={() => {
+                      onSelectProduct(matchingProduct);
+                      window.scrollTo(0, 0);
+                    }}
+                    title={`Explore ${matchingProduct.name}`}
+                  >
+                    <img
+                      src={activeReel.productImage || matchingProduct.image}
+                      alt={matchingProduct.name}
+                      className="atelier-thumb"
+                    />
+                    <span className="atelier-thumb-tag">{matchingProduct.tag || "Couture"}</span>
+                  </div>
+
+                  <div className="atelier-card-meta">
+                    <span className="atelier-category">{matchingProduct.category}</span>
+                    <h3
+                      className="atelier-product-title"
+                      onClick={() => {
+                        onSelectProduct(matchingProduct);
+                        window.scrollTo(0, 0);
+                      }}
+                    >
+                      {matchingProduct.name}
+                    </h3>
+                    <div className="atelier-swatch-row">
+                      <span
+                        className="atelier-swatch-dot"
+                        style={{ backgroundColor: activeReel.tone || matchingProduct.tone || "#a81920" }}
+                      />
+                      <span className="atelier-finish-name">{matchingProduct.finish}</span>
+                    </div>
+                    <div className="atelier-price-row">
+                      <b>{activeReel.productPrice || matchingProduct.price}</b>
+                      <small>Taxes included</small>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="atelier-desc">
+                  “{activeReel.quote}”
+                </p>
+
+                <div className="atelier-creator-row">
+                  <img src={activeReel.avatar} alt="" className="creator-avatar" />
+                  <div>
+                    <b>{activeReel.handle}</b>
+                    <small>{activeReel.views} watches · Official SheAura Reel</small>
+                  </div>
+                  <a
+                    href={activeReel.instagramUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="creator-ig-btn"
+                  >
+                    <Icon name="instagram" /> Instagram
+                  </a>
+                </div>
+
+                <div className="atelier-actions">
+                  <button
+                    className={`atelier-add-bag-btn ${addedToast ? "added" : ""}`}
+                    onClick={handleAddToCart}
+                  >
+                    {addedToast ? "Added to Bag ✓" : `Quick Add to Bag — ${activeReel.productPrice || matchingProduct.price}`}
+                  </button>
+
+                  <div className="atelier-action-duo">
+                    <button
+                      className="atelier-solo-btn"
+                      onClick={() => focusReelInSolo(activeReel.id)}
+                    >
+                      <Icon name="play" />
+                      <span>Watch Fullscreen Solo</span>
+                    </button>
+                    <button
+                      className="atelier-details-btn"
+                      onClick={() => {
+                        onSelectProduct(matchingProduct);
+                        window.scrollTo(0, 0);
+                      }}
+                    >
+                      <span>Formula Details</span>
+                      <Icon name="arrow" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Jump Ribbon */}
+              <div className="kinetic-quick-strip">
+                <span className="strip-label">OR JUMP DIRECTLY TO ANY LOOK (20 TOTAL):</span>
+                <div className="strip-pills">
+                  {reels.map((r, i) => (
+                    <button
+                      key={r.id}
+                      className={`strip-pill-btn ${r.id === activeReel.id ? "active" : ""}`}
+                      onClick={() => setActiveReelId(r.id)}
+                    >
+                      {String(i + 1).padStart(2, "0")}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </aside>
+          </div>
+        </main>
+      ) : (
+        /* =========================================================================
+            VIEW MODE 2: SOLO THEATER (INDIVIDUAL FULLSCREEN REELS)
+            ========================================================================= */
+        <main className="runway-main-stage">
+          {/* Navigation arrow buttons */}
+          <button
+            className="runway-nav-arrow runway-prev-arrow"
+            onClick={goPrev}
+            aria-label="Previous look (Up)"
+            title="Previous look"
+          >
+            <Icon name="arrow" />
+          </button>
+
+          <button
+            className="runway-nav-arrow runway-next-arrow"
+            onClick={goNext}
+            aria-label="Next look (Down)"
+            title="Next look"
+          >
+            <Icon name="arrow" />
+          </button>
+
+          {/* The 9:16 Authentic Vertical Phone Frame */}
+          <div className={`runway-theater-bezel ${transitioning ? "transitioning" : ""}`}>
+            {/* Top Story Progress Bar */}
+            <div className="runway-story-progress">
+              {filteredReels.map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`story-bar-segment ${
+                    idx < activeIndex ? "completed" : idx === activeIndex ? "active" : ""
+                  }`}
+                  onClick={() => jumpTo(idx)}
+                  title={`Jump to Look ${idx + 1}`}
+                >
+                  <div
+                    className="story-bar-fill"
+                    style={{
+                      width:
+                        idx < activeIndex
+                          ? "100%"
+                          : idx === activeIndex
+                          ? `${progress}%`
+                          : "0%",
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Video Player */}
+            <div className="runway-video-container" onClick={() => setIsPlaying(!isPlaying)}>
+              <video
+                ref={activeVideoRef}
+                key={activeReel.videoUrl}
+                src={activeReel.videoUrl}
+                poster={activeReel.poster}
+                playsInline
+                autoPlay
+                muted={isMuted}
+                onTimeUpdate={handleTimeUpdate}
+                onEnded={handleVideoEnded}
+                className="runway-video-element"
+              />
+
+              {nextReel && (
+                <video
+                  src={nextReel.videoUrl}
+                  preload="auto"
+                  muted
+                  style={{ display: "none" }}
+                />
+              )}
+
+              {!isPlaying && (
+                <div className="runway-pause-scrim">
+                  <div className="runway-pause-icon">
+                    <Icon name="play" />
+                  </div>
+                  <span>PAUSED · TAP TO RESUME</span>
+                </div>
+              )}
+
+              {isMuted && (
+                <div
+                  className="runway-unmute-prompt"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsMuted(false);
+                  }}
+                >
+                  <Icon name="volumeX" />
+                  <span>SOUND MUTED · TAP TO UNMUTE RUNWAY AUDIO</span>
+                </div>
+              )}
+
+              <div className="runway-video-overlay-info">
+                <div className="overlay-eyebrow">
+                  <span className="overlay-step-badge">{activeReel.step}</span>
+                  <span className="overlay-views-pill">{activeReel.views} watches</span>
+                </div>
+                <h2 className="overlay-title">{activeReel.title}</h2>
+                <p className="overlay-quote">“{activeReel.quote}”</p>
+                <div className="overlay-handle-row">
+                  <img src={activeReel.avatar} alt="" className="overlay-avatar" />
+                  <span>{activeReel.handle}</span>
+                  <a
+                    href={activeReel.instagramUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="overlay-ig-badge"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Icon name="instagram" /> Instagram <Icon name="external" />
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Scrubber */}
+            <div className="runway-bottom-scrubber">
+              <span className="scrubber-time">{currentTimeStr}</span>
               <div
-                className="runway-unmute-prompt"
+                className="scrubber-track"
                 onClick={(e) => {
                   e.stopPropagation();
-                  toggleMute();
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const clickX = e.clientX - rect.left;
+                  const pct = clickX / rect.width;
+                  if (activeVideoRef.current && activeVideoRef.current.duration) {
+                    activeVideoRef.current.currentTime = pct * activeVideoRef.current.duration;
+                  }
                 }}
               >
-                <Icon name="volumeX" />
-                <span>SOUND MUTED · TAP TO UNMUTE RUNWAY AUDIO</span>
+                <div className="scrubber-fill" style={{ width: `${progress}%` }} />
               </div>
-            )}
+              <span className="scrubber-time">{durationStr}</span>
+            </div>
+          </div>
 
-            {/* In-Video Story Information Overlay */}
-            <div className="runway-video-overlay-info">
-              <div className="overlay-eyebrow">
-                <span className="overlay-step-badge">{activeReel.step}</span>
-                <span className="overlay-views-pill">{activeReel.views} watches</span>
-              </div>
-              <h2 className="overlay-title">{activeReel.title}</h2>
-              <p className="overlay-quote">“{activeReel.quote}”</p>
-              <div className="overlay-handle-row">
-                <img src={activeReel.avatar} alt="" className="overlay-avatar" />
-                <span>{activeReel.handle}</span>
-                <a
-                  href={activeReel.instagramUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="overlay-ig-badge"
-                  onClick={(e) => e.stopPropagation()}
+          {/* Floating Side Editorial Atelier */}
+          <aside className="runway-product-atelier">
+            <div className="atelier-header">
+              <span className="atelier-eyebrow">
+                <Icon name="sparkle" />
+                <span>FEATURED IN THIS LOOK</span>
+              </span>
+              <span className="atelier-step-label">{activeReel.step}</span>
+            </div>
+
+            <div className="atelier-card">
+              <div className="atelier-card-top">
+                <div
+                  className="atelier-thumb-wrap"
+                  onClick={() => {
+                    onSelectProduct(matchingProduct);
+                    window.scrollTo(0, 0);
+                  }}
+                  title={`Explore ${matchingProduct.name}`}
                 >
-                  <Icon name="instagram" /> Instagram <Icon name="external" />
-                </a>
-              </div>
-            </div>
-          </div>
+                  <img
+                    src={activeReel.productImage || matchingProduct.image}
+                    alt={matchingProduct.name}
+                    className="atelier-thumb"
+                  />
+                  <span className="atelier-thumb-tag">{matchingProduct.tag || "Couture"}</span>
+                </div>
 
-          {/* Bottom Video Progress Scrub Line */}
-          <div className="runway-bottom-scrubber">
-            <span className="scrubber-time">{currentTimeStr}</span>
-            <div
-              className="scrubber-track"
-              onClick={(e) => {
-                e.stopPropagation();
-                const rect = e.currentTarget.getBoundingClientRect();
-                const clickX = e.clientX - rect.left;
-                const pct = clickX / rect.width;
-                if (activeVideoRef.current && activeVideoRef.current.duration) {
-                  activeVideoRef.current.currentTime = pct * activeVideoRef.current.duration;
-                }
-              }}
-            >
-              <div className="scrubber-fill" style={{ width: `${progress}%` }} />
-            </div>
-            <span className="scrubber-time">{durationStr}</span>
-          </div>
-        </div>
-
-        {/* Floating Side Editorial Atelier (Product & Checkout) */}
-        <aside className="runway-product-atelier">
-          <div className="atelier-header">
-            <span className="atelier-eyebrow">
-              <Icon name="sparkle" />
-              <span>FEATURED IN THIS LOOK</span>
-            </span>
-            <span className="atelier-step-label">{activeReel.step}</span>
-          </div>
-
-          <div className="atelier-card">
-            <div className="atelier-card-top">
-              <div
-                className="atelier-thumb-wrap"
-                onClick={() => {
-                  onSelectProduct(matchingProduct);
-                  window.scrollTo(0, 0);
-                }}
-                title={`Explore ${matchingProduct.name}`}
-              >
-                <img
-                  src={activeReel.productImage || matchingProduct.image}
-                  alt={matchingProduct.name}
-                  className="atelier-thumb"
-                />
-                <span className="atelier-thumb-tag">{matchingProduct.tag || "Couture"}</span>
+                <div className="atelier-card-meta">
+                  <span className="atelier-category">{matchingProduct.category}</span>
+                  <h3
+                    className="atelier-product-title"
+                    onClick={() => {
+                      onSelectProduct(matchingProduct);
+                      window.scrollTo(0, 0);
+                    }}
+                  >
+                    {matchingProduct.name}
+                  </h3>
+                  <div className="atelier-swatch-row">
+                    <span
+                      className="atelier-swatch-dot"
+                      style={{ backgroundColor: activeReel.tone || matchingProduct.tone || "#a81920" }}
+                    />
+                    <span className="atelier-finish-name">{matchingProduct.finish}</span>
+                  </div>
+                  <div className="atelier-price-row">
+                    <b>{activeReel.productPrice || matchingProduct.price}</b>
+                    <small>Taxes included</small>
+                  </div>
+                </div>
               </div>
 
-              <div className="atelier-card-meta">
-                <span className="atelier-category">{matchingProduct.category}</span>
-                <h3
-                  className="atelier-product-title"
+              <p className="atelier-desc">
+                {matchingProduct.description || activeReel.quote}
+              </p>
+
+              <div className="atelier-attributes">
+                <div>
+                  <span>Wear</span>
+                  <b>Buildable</b>
+                </div>
+                <div>
+                  <span>Standard</span>
+                  <b>Botanical</b>
+                </div>
+                <div>
+                  <span>Finish</span>
+                  <b>{matchingProduct.finish.split(" ")[0]}</b>
+                </div>
+              </div>
+
+              <div className="atelier-actions">
+                <button
+                  className={`atelier-add-bag-btn ${addedToast ? "added" : ""}`}
+                  onClick={handleAddToCart}
+                >
+                  {addedToast ? "Added to Bag ✓" : `Quick Add to Bag — ${activeReel.productPrice || matchingProduct.price}`}
+                </button>
+
+                <button
+                  className="atelier-details-btn"
                   onClick={() => {
                     onSelectProduct(matchingProduct);
                     window.scrollTo(0, 0);
                   }}
                 >
-                  {matchingProduct.name}
-                </h3>
-                <div className="atelier-swatch-row">
-                  <span
-                    className="atelier-swatch-dot"
-                    style={{ backgroundColor: activeReel.tone || matchingProduct.tone || "#a81920" }}
-                  />
-                  <span className="atelier-finish-name">{matchingProduct.finish}</span>
-                </div>
-                <div className="atelier-price-row">
-                  <b>{activeReel.productPrice || matchingProduct.price}</b>
-                  <small>Taxes included</small>
-                </div>
+                  <span>Explore Full Formula</span>
+                  <Icon name="arrow" />
+                </button>
               </div>
             </div>
 
-            <p className="atelier-desc">
-              {matchingProduct.description || activeReel.quote}
-            </p>
-
-            <div className="atelier-attributes">
-              <div>
-                <span>Wear</span>
-                <b>Buildable</b>
-              </div>
-              <div>
-                <span>Standard</span>
-                <b>Botanical</b>
-              </div>
-              <div>
-                <span>Finish</span>
-                <b>{matchingProduct.finish.split(" ")[0]}</b>
-              </div>
-            </div>
-
-            <div className="atelier-actions">
-              <button
-                className={`atelier-add-bag-btn ${addedToast ? "added" : ""}`}
-                onClick={handleAddToCart}
-              >
-                {addedToast ? "Added to Bag ✓" : `Quick Add to Bag — ${activeReel.productPrice || matchingProduct.price}`}
+            {/* Quick Lookbook Navigation Pill Row */}
+            <div className="atelier-quick-stepper">
+              <button className="stepper-pill-btn" onClick={goPrev}>
+                <Icon name="arrow" className="rotate-180" />
+                <span>Previous Look</span>
               </button>
-
-              <button
-                className="atelier-details-btn"
-                onClick={() => {
-                  onSelectProduct(matchingProduct);
-                  window.scrollTo(0, 0);
-                }}
-              >
-                <span>Explore Full Formula</span>
+              <button className="stepper-pill-btn next" onClick={goNext}>
+                <span>Next Look</span>
                 <Icon name="arrow" />
               </button>
             </div>
-          </div>
 
-          {/* Quick Lookbook Navigation Pill Row */}
-          <div className="atelier-quick-stepper">
-            <button className="stepper-pill-btn" onClick={goPrev}>
-              <Icon name="arrow" className="rotate-180" />
-              <span>Previous Look</span>
+            <button
+              className="atelier-filmstrip-toggle"
+              onClick={() => setFilmstripOpen(!filmstripOpen)}
+            >
+              <span>{filmstripOpen ? "Hide All 20 Looks" : "Explore All 20 Runway Looks"}</span>
+              <Icon name="sparkle" />
             </button>
-            <button className="stepper-pill-btn next" onClick={goNext}>
-              <span>Next Look</span>
-              <Icon name="arrow" />
-            </button>
-          </div>
+          </aside>
+        </main>
+      )}
 
-          {/* Filmstrip drawer toggle button */}
-          <button
-            className="atelier-filmstrip-toggle"
-            onClick={() => setFilmstripOpen(!filmstripOpen)}
-          >
-            <span>{filmstripOpen ? "Hide All 20 Looks" : "Explore All 20 Runway Looks"}</span>
-            <Icon name="sparkle" />
-          </button>
-        </aside>
-      </main>
-
-      {/* Expandable Bottom 20-Look Runway Filmstrip */}
+      {/* Expandable Bottom 20-Look Filmstrip Drawer (Available in solo mode) */}
       <footer className={`runway-filmstrip-drawer ${filmstripOpen ? "open" : ""}`}>
         <div className="filmstrip-drawer-head">
           <div className="drawer-title-row">

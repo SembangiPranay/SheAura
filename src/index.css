@@ -5227,11 +5227,53 @@ footer { background: #ecd7c1; }
   text-transform: uppercase;
 }
 
-/* Center Auto-Scroll Toggle */
+/* Center Mode Switcher Tabs */
 .runway-header-center {
   display: flex;
   align-items: center;
   gap: 14px;
+}
+
+.runway-mode-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  padding: 4px;
+}
+
+.mode-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  background: transparent;
+  border: 0;
+  color: #dfb895;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.mode-tab-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.mode-tab-btn.active {
+  background: linear-gradient(135deg, #a81920 0%, #7d1318 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(168, 25, 32, 0.4);
+}
+
+.mode-icon {
+  font-size: 11px;
 }
 
 .runway-autoscroll-toggle {
@@ -5376,6 +5418,546 @@ footer { background: #ecd7c1; }
 .runway-close-btn .icon {
   width: 14px;
   height: 14px;
+}
+
+/* ==========================================================================
+   VIEW MODE 1: DUAL-SCROLL VIDEO EDIT (OPPOSING MOTION SHOWCASE)
+   ========================================================================== */
+
+.runway-kinetic-stage {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px 24px 60px;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.kinetic-cinema-wrapper {
+  display: grid;
+  grid-template-columns: minmax(480px, 640px) minmax(360px, 420px);
+  gap: 38px;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Master Cinema Bezel — The single unified video frame */
+.kinetic-master-bezel {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  max-height: 84vh;
+  background: #080302;
+  border-radius: 32px;
+  border: 3px solid rgba(223, 184, 149, 0.55);
+  box-shadow: 0 35px 95px rgba(0, 0, 0, 0.9), 0 0 70px rgba(193, 136, 71, 0.22);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top Bezel Bar */
+.kinetic-bezel-top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: linear-gradient(180deg, rgba(8, 3, 2, 0.95) 0%, rgba(8, 3, 2, 0.72) 65%, transparent 100%);
+  pointer-events: auto;
+}
+
+.kinetic-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #dfb895;
+  text-transform: uppercase;
+}
+
+.kinetic-speed-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 3px 6px;
+}
+
+.speed-label {
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.65);
+  margin-left: 4px;
+}
+
+.speed-pill {
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 0;
+  background: transparent;
+  color: #dfb895;
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.speed-pill:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.speed-pill.active {
+  background: #a81920;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(168, 25, 32, 0.55);
+}
+
+/* Columns Viewport */
+.kinetic-columns-viewport {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 14px 1fr;
+  overflow: hidden;
+  background: #000000;
+}
+
+.kinetic-scroll-column {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
+.kinetic-ribbon-track {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 12px;
+  will-change: transform;
+}
+
+/* Continuous 60fps Opposing Infinite Motion */
+.track-scroll-up {
+  animation-name: kineticScrollUp;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.track-scroll-down {
+  animation-name: kineticScrollDown;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes kineticScrollUp {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+
+@keyframes kineticScrollDown {
+  0% {
+    transform: translateY(-50%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* Video Card in moving columns */
+.kinetic-video-card {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #140805;
+  border: 1.5px solid rgba(223, 184, 149, 0.32);
+  cursor: pointer;
+  transition: transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.24s, box-shadow 0.24s;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.kinetic-video-card:hover {
+  transform: scale(1.02);
+  border-color: #dfb895;
+  box-shadow: 0 12px 30px rgba(223, 184, 149, 0.35);
+  z-index: 5;
+}
+
+.kinetic-video-card.selected {
+  border: 2px solid #a81920;
+  box-shadow: 0 0 25px rgba(168, 25, 32, 0.7), 0 10px 30px rgba(0, 0, 0, 0.75);
+}
+
+.kinetic-card-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+
+.kinetic-card-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 30px 10px 10px;
+  background: linear-gradient(0deg, rgba(8, 3, 2, 0.95) 0%, rgba(8, 3, 2, 0.5) 60%, transparent 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  pointer-events: none;
+}
+
+.card-look-pill {
+  align-self: flex-start;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #a81920;
+  color: #ffffff;
+  font-size: 6.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.card-reel-name {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.02em;
+}
+
+.card-active-indicator {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #a81920;
+  box-shadow: 0 0 10px #a81920;
+  display: grid;
+  place-items: center;
+}
+
+.card-active-indicator span {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+/* Center Golden Seam Divider */
+.kinetic-center-seam {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 10;
+  background: rgba(8, 3, 2, 0.85);
+}
+
+.seam-line {
+  flex: 1;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(223, 184, 149, 0.5) 20%, rgba(223, 184, 149, 0.5) 80%, transparent 100%);
+}
+
+.seam-arrows {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 8px;
+  color: #dfb895;
+  background: rgba(22, 10, 6, 0.9);
+  padding: 6px 3px;
+  border-radius: 999px;
+  border: 1px solid rgba(223, 184, 149, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.seam-arrows .arrow-up {
+  color: #dfb895;
+  animation: bounceArrowUp 1.8s infinite;
+}
+
+.seam-arrows .arrow-down {
+  color: #dfb895;
+  animation: bounceArrowDown 1.8s infinite;
+}
+
+@keyframes bounceArrowUp {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+@keyframes bounceArrowDown {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(2px); }
+}
+
+/* Bottom Bezel Bar */
+.kinetic-bezel-bottom-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  background: linear-gradient(0deg, rgba(8, 3, 2, 0.98) 0%, rgba(8, 3, 2, 0.8) 70%, transparent 100%);
+}
+
+.kinetic-play-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.kinetic-play-toggle-btn:hover {
+  background: #a81920;
+  border-color: #a81920;
+}
+
+.kinetic-play-toggle-btn .icon {
+  width: 10px;
+  height: 10px;
+}
+
+.kinetic-hint-badge {
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #dfb895;
+  text-transform: uppercase;
+  background: rgba(223, 184, 149, 0.12);
+  border: 1px solid rgba(223, 184, 149, 0.3);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.kinetic-focus-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: #dfb895;
+  border: 1px solid #dfb895;
+  color: #1a0b06;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.kinetic-focus-btn:hover {
+  background: #ffffff;
+  border-color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.kinetic-focus-btn .icon {
+  width: 10px;
+  height: 10px;
+}
+
+/* Side Atelier in Kinetic Mode */
+.kinetic-side-atelier {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.atelier-creator-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(247, 241, 233, 0.65);
+  border-radius: 12px;
+  border: 1px solid rgba(223, 184, 149, 0.35);
+}
+
+.creator-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid #dfb895;
+}
+
+.atelier-creator-row b {
+  display: block;
+  font-size: 8.5px;
+  color: #2b130c;
+}
+
+.atelier-creator-row small {
+  display: block;
+  font-size: 7.5px;
+  color: #8c766a;
+}
+
+.creator-ig-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #2b130c;
+  color: #ffffff;
+  font-size: 7.5px;
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: 0.08em;
+  transition: background 0.2s;
+}
+
+.creator-ig-btn:hover {
+  background: #a81920;
+}
+
+.creator-ig-btn .icon {
+  width: 10px;
+  height: 10px;
+}
+
+.atelier-action-duo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.atelier-solo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  background: rgba(168, 25, 32, 0.12);
+  color: #a81920;
+  border: 1px solid rgba(168, 25, 32, 0.35);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.atelier-solo-btn:hover {
+  background: #a81920;
+  color: #ffffff;
+}
+
+.atelier-solo-btn .icon {
+  width: 10px;
+  height: 10px;
+}
+
+/* Quick Jump Strip */
+.kinetic-quick-strip {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(223, 184, 149, 0.2);
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.strip-label {
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #dfb895;
+  text-transform: uppercase;
+}
+
+.strip-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.strip-pill-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: #dfb895;
+  font-size: 8px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.strip-pill-btn:hover {
+  border-color: #dfb895;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.strip-pill-btn.active {
+  background: #a81920;
+  border-color: #a81920;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(168, 25, 32, 0.5);
 }
 
 /* ==========================================================================
@@ -6363,6 +6945,18 @@ footer { background: #ecd7c1; }
    RESPONSIVE ADJUSTMENTS FOR RUNWAY CINEMA
    ========================================================================== */
 
+@media (max-width: 1024px) {
+  .kinetic-cinema-wrapper {
+    grid-template-columns: 1fr;
+    max-width: 580px;
+    gap: 32px;
+  }
+  .kinetic-master-bezel {
+    aspect-ratio: 9/12;
+    max-height: 72vh;
+  }
+}
+
 @media (max-width: 900px) {
   .runway-main-stage {
     flex-direction: column;
@@ -6381,6 +6975,45 @@ footer { background: #ecd7c1; }
 }
 
 @media (max-width: 600px) {
+  .runway-kinetic-stage {
+    padding: 14px 12px 40px;
+  }
+  .kinetic-master-bezel {
+    border-radius: 22px;
+    border-width: 2px;
+    aspect-ratio: 9/13;
+    max-height: 65vh;
+  }
+  .kinetic-bezel-top-bar {
+    padding: 8px 12px;
+  }
+  .kinetic-badge span:last-child {
+    font-size: 6.5px;
+  }
+  .kinetic-columns-viewport {
+    grid-template-columns: 1fr 10px 1fr;
+  }
+  .kinetic-ribbon-track {
+    gap: 10px;
+    padding: 10px 6px;
+  }
+  .card-reel-name {
+    font-size: 13px;
+  }
+  .kinetic-bezel-bottom-bar {
+    padding: 10px 12px;
+  }
+  .kinetic-hint-badge {
+    display: none;
+  }
+  .kinetic-play-toggle-btn, .kinetic-focus-btn {
+    padding: 6px 10px;
+    font-size: 7.5px;
+  }
+  .mode-tab-btn {
+    padding: 6px 10px;
+    font-size: 7.5px;
+  }
   .runway-top-header {
     padding: 10px 14px;
   }
