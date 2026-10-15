@@ -675,8 +675,8 @@ function ReelsSection({
   return (
     <section className="reels-section" id="rituals">
       <div className="shell reels-header-wrap">
-        <div className="section-heading">
-          <div>
+        <div className="section-heading reels-heading-block">
+          <div className="reels-heading-copy">
             <div className="reels-eyebrow-row">
               <span className="reels-haute-pill">
                 <Icon name="sparkle" />

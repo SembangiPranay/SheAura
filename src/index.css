@@ -1628,8 +1628,14 @@ footer { background: #ecd7c1; }
   .image-pair { display: none; }
   .values { grid-template-columns: 1fr 1fr; row-gap: 28px; }
   .section-heading { align-items: start; gap: 25px; }
-  .section-heading h2, .section-heading.compact h2 { font-size: 40px; }
+  .section-heading h2, .section-heading.compact h2 { font-size: clamp(32px, 8vw, 40px); }
   .section-heading > .arrow-link { flex-shrink: 0; }
+  .reels-heading-block {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+    width: 100% !important;
+  }
   .shop { padding-top: 70px; padding-bottom: 76px; }
   .product-grid { gap: 12px; row-gap: 35px; }
   .product-grid { grid-template-columns: 1fr; gap: 50px; }
@@ -1705,19 +1711,19 @@ footer { background: #ecd7c1; }
   .pdp-gallery { min-height: 400px; max-height: 450px; }
   .pdp-index { left: 14px; top: 16px; font-size: 6.5px; padding: 6px 8px; }
   .pdp-caption { left: 14px; right: 14px; bottom: 16px; font-size: 6.5px; }
-  .pdp-info { padding: 36px 18px; }
-  .pdp-info h1 { font-size: 44px; }
+  .pdp-info { padding: 32px 18px; }
+  .pdp-info h1 { font-size: clamp(34px, 8.5vw, 42px); }
   .wear-profile { gap: 7px; }
   .wear-profile b { font-size: 12px; }
   .purchase-row { flex-direction: column; }
   .quantity { align-self: stretch; justify-content: space-between; }
   .quantity button { flex: 1; }
-  .fashion-panel { height: 540px; }
-  .campaign-break > img { height: 540px; }
-  .campaign-break > div { min-height: 370px; padding: 60px 24px; }
-  .campaign-break h2 { font-size: 49px; }
-  .fashion-panel h2, .formula-panel h2, .bento-title h2 { font-size: 49px; }
-  .formula-panel { min-height: auto; padding: 70px 24px; }
+  .fashion-panel { height: 440px; }
+  .campaign-break > img { height: 420px; }
+  .campaign-break > div { min-height: 320px; padding: 48px 20px; }
+  .campaign-break h2 { font-size: clamp(32px, 8vw, 42px); }
+  .fashion-panel h2, .formula-panel h2, .bento-title h2 { font-size: clamp(30px, 7.5vw, 40px); }
+  .formula-panel { min-height: auto; padding: 50px 20px; }
   .formula-principles { grid-template-columns: 1fr; }
   .formula-principles > div { min-height: 170px; }
   .formula-principles .icon { margin: 8px 0 23px; }
@@ -2636,8 +2642,35 @@ footer { background: #ecd7c1; }
   width: 13px;
 }
 
-/* Responsive adjustments */
+/* Responsive adjustments for Haute Cinema Atelier */
 @media (max-width: 900px) {
+  .reels-heading-block {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 18px !important;
+  }
+  .reels-heading-copy {
+    width: 100% !important;
+  }
+  .reels-header-controls {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 14px !important;
+    margin-top: 12px !important;
+  }
+  .reels-filters {
+    flex: 1;
+    min-width: 0;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .reels-filters::-webkit-scrollbar {
+    display: none;
+  }
   .reels-atelier-stage {
     grid-template-columns: 1fr;
     gap: 36px;
@@ -2654,20 +2687,31 @@ footer { background: #ecd7c1; }
   }
 }
 
+@media (hover: none), (max-width: 768px) {
+  /* Prevent tap to expand cue from sticking permanently on touch devices */
+  .reels-cinema-center-cue {
+    display: none !important;
+  }
+  /* Hide redundant second volume icon on mobile so top bar never overflows */
+  .reels-cinema-actions .reels-cinema-icon-btn {
+    display: none !important;
+  }
+}
+
 @media (max-width: 600px) {
   .reels-cinema-bezel {
-    border-radius: 24px;
+    border-radius: 26px;
     max-width: 320px;
   }
   .reels-editorial-title {
-    font-size: 32px;
+    font-size: clamp(28px, 7.5vw, 34px);
   }
   .reels-ribbon-card {
-    flex-basis: 90px;
+    flex-basis: 92px;
   }
   .ribbon-card-media {
-    width: 90px;
-    height: 118px;
+    width: 92px;
+    height: 120px;
   }
 }
 
@@ -3466,7 +3510,12 @@ footer { background: #ecd7c1; }
     gap: 0;
   }
   .pdp-motion-video-wrap {
-    height: 380px;
+    width: 100%;
+    max-width: 320px;
+    aspect-ratio: 9/16;
+    height: auto;
+    margin: 20px auto 0;
+    border-radius: 20px;
   }
   .pdp-motion-copy {
     padding: 30px 24px;
@@ -3477,94 +3526,261 @@ footer { background: #ecd7c1; }
 }
 
 @media (max-width: 600px) {
-  /* Reels Section Mobile Polish */
+  /* ==========================================================================
+     REELS SECTION MOBILE POLISH (AURA IN MOTION)
+     ========================================================================== */
   .reels-section {
-    padding: 60px 0 70px;
+    padding: 48px 0 60px;
   }
   .reels-header-wrap {
-    margin-bottom: 24px;
+    margin-bottom: 20px;
+  }
+  .reels-heading-block {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 14px !important;
+    width: 100% !important;
+  }
+  .reels-heading-copy {
+    width: 100% !important;
+  }
+  .reels-heading-copy h2 {
+    font-size: clamp(32px, 8.5vw, 40px) !important;
+    margin-bottom: 8px !important;
+  }
+  .reels-heading-copy p {
+    font-size: 11px !important;
+    line-height: 1.55 !important;
+    max-width: 100% !important;
   }
   .reels-eyebrow-row {
     flex-wrap: wrap;
     gap: 8px;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
   }
-  .reels-filters {
-    width: 100%;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    padding-bottom: 8px;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    gap: 8px;
+  .reels-haute-pill {
+    padding: 4px 10px;
+    font-size: 7px;
   }
-  .reels-filters::-webkit-scrollbar {
-    display: none;
-  }
-  .reels-filters button {
-    flex-shrink: 0;
-    padding: 8px 16px;
+  .reels-live-pulse {
     font-size: 7.5px;
-  }
-  .reels-motion-controls {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    margin-top: 14px;
-  }
-  .reels-flow-toggle {
-    padding: 8px 14px;
-    font-size: 7.5px;
-  }
-  .reels-arrow-btns button {
-    width: 38px;
-    height: 38px;
-  }
-  .reels-runway-arrow {
-    display: none;
-  }
-  .reels-stage-mask {
-    width: 20px;
-  }
-  .reels-track-inner {
-    padding: 0 16px;
-    gap: 16px;
-  }
-  .reel-card {
-    width: 250px;
-    height: 440px;
-    border-radius: 16px;
-  }
-  .reel-quote {
-    font-size: 8.5px;
-    margin-bottom: 8px;
-  }
-  .reel-product-card {
-    padding: 8px 10px;
-    border-radius: 12px;
-  }
-  .reel-prod-thumb {
-    width: 38px;
-    height: 38px;
-    border-radius: 8px;
-  }
-  .reel-prod-title {
-    font-size: 12px;
-  }
-  .reel-quick-add {
-    width: 28px;
-    height: 28px;
-    font-size: 13px;
-  }
-  .reels-bottom-note {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-    margin-top: 24px;
-    padding-top: 18px;
   }
 
-  /* Fullscreen Immersive Mobile Story Modal */
+  /* Filter Pills & Stepper Counter Row */
+  .reels-header-controls {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    margin-top: 10px !important;
+  }
+  .reels-filters {
+    flex: 1 !important;
+    min-width: 0 !important;
+    display: flex !important;
+    gap: 7px !important;
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    padding: 4px 0 6px !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+  .reels-filters::-webkit-scrollbar {
+    display: none !important;
+  }
+  .reels-filters button {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    padding: 7px 13px !important;
+    font-size: 7.5px !important;
+    letter-spacing: 0.12em !important;
+  }
+  .reels-stepper-counter {
+    flex-shrink: 0 !important;
+    font-size: 19px !important;
+  }
+  .reels-stepper-counter .divider {
+    font-size: 12px !important;
+  }
+
+  /* Cinema Bezel Mobile Sizing */
+  .reels-atelier-stage {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+    padding: 6px 0 28px !important;
+  }
+  .reels-cinema-column {
+    width: 100% !important;
+    max-width: 320px !important;
+    margin: 0 auto !important;
+  }
+  .reels-cinema-bezel {
+    width: 100% !important;
+    max-width: 310px !important;
+    border-radius: 26px !important;
+    border-width: 2.5px !important;
+    box-shadow: 0 16px 45px rgba(35, 14, 8, 0.22) !important;
+  }
+  .reels-cinema-top {
+    top: 12px !important;
+    left: 12px !important;
+    right: 12px !important;
+  }
+  .reels-cinema-creator-pill {
+    max-width: 130px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    padding: 5px 9px !important;
+    font-size: 7.5px !important;
+    gap: 5px !important;
+  }
+  .reels-cinema-actions .reels-cinema-icon-btn {
+    display: none !important;
+  }
+  .reels-sound-visualizer {
+    padding: 5px 9px !important;
+    font-size: 7px !important;
+    gap: 5px !important;
+  }
+  .reels-cinema-center-cue {
+    display: none !important;
+  }
+  .reels-cinema-bottom {
+    bottom: 12px !important;
+    left: 12px !important;
+    right: 12px !important;
+  }
+  .reels-cinema-step-pill {
+    padding: 5px 9px !important;
+    font-size: 7.5px !important;
+  }
+  .reels-cinema-views-pill {
+    padding: 5px 8px !important;
+    font-size: 7px !important;
+  }
+
+  /* Editorial Column Mobile */
+  .reels-editorial-column {
+    width: 100% !important;
+    gap: 16px !important;
+  }
+  .reels-editorial-header {
+    gap: 6px !important;
+  }
+  .reels-editorial-title {
+    font-size: clamp(26px, 7vw, 32px) !important;
+  }
+  .reels-editorial-subtitle {
+    font-size: 11px !important;
+    line-height: 1.45 !important;
+  }
+  .reels-editorial-quote-box {
+    padding: 14px 16px !important;
+    border-radius: 14px !important;
+  }
+  .reels-editorial-quote-box .quote-mark {
+    font-size: 46px !important;
+    top: 4px !important;
+    right: 10px !important;
+  }
+  .reels-editorial-quote-text {
+    font-size: 13.5px !important;
+    line-height: 1.45 !important;
+    margin-bottom: 10px !important;
+  }
+  .quote-author-row {
+    padding-top: 10px !important;
+    gap: 9px !important;
+  }
+  .quote-avatar {
+    width: 28px !important;
+    height: 28px !important;
+  }
+  .quote-author-row b {
+    font-size: 9px !important;
+  }
+  .quote-author-row small {
+    font-size: 8px !important;
+  }
+
+  /* Editorial Product Card */
+  .reels-editorial-product-card {
+    padding: 12px 14px !important;
+    border-radius: 14px !important;
+    gap: 12px !important;
+  }
+  .prod-card-top {
+    gap: 12px !important;
+  }
+  .prod-card-thumb-wrap {
+    width: 58px !important;
+    height: 58px !important;
+    border-radius: 10px !important;
+  }
+  .prod-card-name {
+    font-size: 18px !important;
+  }
+  .prod-card-price {
+    font-size: 16px !important;
+  }
+  .prod-card-actions {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+  .prod-card-add-btn,
+  .prod-card-details-btn {
+    padding: 10px 14px !important;
+    font-size: 8px !important;
+    width: 100% !important;
+  }
+
+  /* Stepper Navigation Pills */
+  .reels-editorial-nav-row {
+    gap: 8px !important;
+  }
+  .reels-nav-pill-btn {
+    padding: 10px 12px !important;
+    font-size: 7.5px !important;
+    gap: 6px !important;
+  }
+
+  /* Runway Filmstrip Ribbon */
+  .reels-runway-ribbon-wrap {
+    margin-top: 4px !important;
+    padding-top: 20px !important;
+  }
+  .reels-ribbon-head {
+    margin-bottom: 10px !important;
+  }
+  .reels-ribbon-card {
+    flex: 0 0 88px !important;
+  }
+  .ribbon-card-media {
+    width: 88px !important;
+    height: 114px !important;
+    border-radius: 11px !important;
+    margin-bottom: 6px !important;
+  }
+  .ribbon-card-info b {
+    font-size: 8px !important;
+  }
+  .ribbon-card-info small {
+    font-size: 7px !important;
+  }
+  .reels-bottom-note {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+    margin-top: 18px !important;
+    padding-top: 14px !important;
+    font-size: 7.5px !important;
+  }
+
+  /* ==========================================================================
+     FULLSCREEN STORY VIEWER MODAL MOBILE
+     ========================================================================== */
   .reel-modal-backdrop {
     padding: 0;
   }
@@ -3577,117 +3793,159 @@ footer { background: #ecd7c1; }
   }
   .reel-modal-theater {
     width: 100%;
-    height: 52%;
+    height: 50%;
   }
   .reel-modal-close {
-    top: 14px;
-    right: 14px;
-    width: 36px;
-    height: 36px;
+    top: 12px;
+    right: 12px;
+    width: 34px;
+    height: 34px;
     z-index: 25;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.75);
     backdrop-filter: blur(8px);
   }
   .theater-controls {
-    margin-right: 44px;
-    gap: 6px;
+    margin-right: 40px;
+    gap: 5px;
   }
   .theater-ig-badge {
-    padding: 5px 9px;
+    padding: 4px 8px;
     font-size: 7px;
   }
   .theater-icon-btn {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
   }
   .reel-modal-sidebar {
     width: 100%;
-    height: 48%;
-    padding: 16px 16px 24px;
+    height: 50%;
+    padding: 14px 16px 20px;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
   .sidebar-header {
-    margin-bottom: 6px;
-  }
-  .sidebar-product-hero {
-    height: 76px;
-    margin: 6px 0 10px;
-  }
-  .sidebar-info h3 {
-    font-size: 20px;
     margin-bottom: 4px;
   }
+  .sidebar-product-hero {
+    height: 68px;
+    margin: 4px 0 8px;
+  }
+  .sidebar-info h3 {
+    font-size: 19px;
+    margin-bottom: 3px;
+  }
   .sidebar-price-row {
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }
   .sidebar-desc {
-    font-size: 8.5px;
-    margin-bottom: 10px;
+    font-size: 8px;
+    margin-bottom: 8px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
   .sidebar-attributes {
-    padding: 8px 0;
-    margin-bottom: 12px;
-    gap: 6px;
+    padding: 6px 0;
+    margin-bottom: 10px;
+    gap: 5px;
   }
   .sidebar-attributes div b {
-    font-size: 9px;
+    font-size: 8.5px;
   }
   .sidebar-add-bag {
-    height: 44px;
-    font-size: 8px;
+    height: 40px;
+    font-size: 7.5px;
   }
   .sidebar-view-details {
-    height: 38px;
-    font-size: 8px;
-  }
-  .sidebar-ig-link {
     height: 36px;
     font-size: 7.5px;
   }
+  .sidebar-ig-link {
+    height: 34px;
+    font-size: 7px;
+  }
   .reel-nav-btn {
-    display: none;
+    width: 34px;
+    height: 34px;
+    top: 25%;
+    transform: translateY(-50%);
+    z-index: 15;
+  }
+  .reel-nav-btn.prev {
+    left: 10px;
+  }
+  .reel-nav-btn.next {
+    left: auto;
+    right: 10px;
   }
 
-  /* PDP Mobile Enhancements */
+  /* ==========================================================================
+     PRODUCT DETAILS PAGE (PDP) MOTION STUDIO MOBILE
+     ========================================================================== */
   .pdp-motion {
-    padding-top: 36px;
-    padding-bottom: 50px;
+    padding-top: 28px;
+    padding-bottom: 42px;
   }
   .pdp-motion-card {
     grid-template-columns: 1fr;
     margin: 0;
-    border-radius: 16px;
+    border-radius: 18px;
+    overflow: hidden;
   }
   .pdp-motion-video-wrap {
-    height: 300px;
+    width: 100%;
+    max-width: 280px;
+    aspect-ratio: 9/16;
+    height: auto;
+    margin: 16px auto 0;
+    border-radius: 20px;
+    box-shadow: 0 10px 28px rgba(35, 14, 8, 0.18);
   }
   .pdp-motion-copy {
-    padding: 22px 18px;
+    padding: 20px 16px 24px;
   }
   .pdp-motion-copy h2 {
-    font-size: 30px;
+    font-size: clamp(26px, 7vw, 32px);
+  }
+  .pdp-motion-desc {
+    font-size: 11px;
+    margin-bottom: 18px;
+  }
+  .pdp-motion-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 6px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .pdp-motion-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .pdp-motion-tab {
+    flex-shrink: 0;
+    padding: 5px 11px;
+    font-size: 7.5px;
   }
   .pdp-motion-meta {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 10px;
-    padding: 14px 0;
-    margin-bottom: 20px;
+    padding: 12px 0;
+    margin-bottom: 18px;
   }
   .pdp-motion-actions {
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     width: 100%;
   }
   .pdp-motion-btn,
   .pdp-motion-ig-btn {
     width: 100%;
     justify-content: center;
-    padding: 13px 20px;
+    padding: 12px 18px;
+    font-size: 8px;
   }
 }
 
