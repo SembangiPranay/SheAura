@@ -1004,54 +1004,83 @@ img { display: block; width: 100%; }
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #faf6f0;
-  color: #1b100c;
+  background: #120603;
+  color: #ffffff;
   cursor: default;
   overflow: hidden;
   user-select: none;
   touch-action: none;
-  animation: introBlendOut 1.05s cubic-bezier(0.38, 0, 0.24, 1) 1.85s forwards;
-  will-change: opacity, filter;
+  transition: opacity 0.7s cubic-bezier(0.38, 0, 0.24, 1), transform 0.7s cubic-bezier(0.38, 0, 0.24, 1);
+  will-change: opacity, filter, transform;
 }
 
-@keyframes introBlendOut {
-  0% {
-    opacity: 1;
-    pointer-events: auto;
-  }
-  15% {
-    pointer-events: none;
-  }
-  100% {
-    opacity: 0;
-    pointer-events: none;
-    visibility: hidden;
-  }
+.brand-intro-curtain.is-exiting {
+  opacity: 0;
+  transform: scale(1.03);
+  pointer-events: none;
+}
+
+.brand-intro-video-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  filter: sepia(.12) saturate(1.2) brightness(0.85);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.brand-intro-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(27, 14, 10, 0.6) 0%, rgba(15, 6, 3, 0.88) 100%),
+              linear-gradient(0deg, rgba(15, 6, 3, 0.82) 0%, transparent 50%, rgba(15, 6, 3, 0.82) 100%);
+  backdrop-filter: blur(1.5px);
+  z-index: 1;
+  pointer-events: none;
 }
 
 .brand-intro-content {
   position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   width: min(92vw, 680px);
   padding: 0 20px;
-  animation: introContentDissolve 1.05s cubic-bezier(0.38, 0, 0.24, 1) 1.85s forwards;
-  will-change: transform, opacity, filter;
 }
 
-@keyframes introContentDissolve {
-  0% {
-    transform: scale(1) translate3d(0, 0, 0);
-    opacity: 1;
-    filter: blur(0px);
-  }
-  100% {
-    transform: scale(1.04) translate3d(0, -8px, 0);
-    opacity: 0;
-    filter: blur(6px);
-  }
+.brand-intro-eyebrow-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: rgba(223, 184, 149, 0.16);
+  border: 1px solid rgba(223, 184, 149, 0.45);
+  color: #dfb895;
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.intro-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #dfb895;
+  box-shadow: 0 0 8px #dfb895;
+  animation: introPulse 1.8s infinite;
+}
+
+@keyframes introPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
 }
 
 /* Calligraphic ink signature flourish */
@@ -1108,7 +1137,8 @@ img { display: block; width: 100%; }
   justify-content: center;
   font: 400 clamp(44px, 8.5vw, 92px) / 0.88 "Cormorant Garamond", serif;
   letter-spacing: 0.14em;
-  color: #1b100c;
+  color: #ffffff;
+  text-shadow: 0 4px 30px rgba(0, 0, 0, 0.7), 0 0 50px rgba(223, 184, 149, 0.4);
 }
 
 .char-mask {
@@ -1140,7 +1170,7 @@ img { display: block; width: 100%; }
 .brand-intro-hairline {
   width: 0;
   height: 1px;
-  background: #c59868;
+  background: linear-gradient(90deg, transparent, #dfb895, transparent);
   margin: 22px auto 14px;
   animation: hairlineExpand 0.75s 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -1156,16 +1186,44 @@ img { display: block; width: 100%; }
 
 /* Tagline Breathing In with Tracked Micro-Caps */
 .brand-intro-tagline {
-  margin: 0;
+  margin: 0 0 24px;
   font-size: 8.5px;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.52em;
   text-indent: 0.52em;
   text-transform: uppercase;
-  color: #7b5847;
+  color: #dfb895;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
   opacity: 0;
   transform: translateY(8px);
   animation: taglineFadeIn 0.7s 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.brand-intro-enter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 26px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(223, 184, 149, 0.65);
+  color: #ffffff;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.brand-intro-enter-btn:hover {
+  background: #dfb895;
+  color: #1b100c;
+  border-color: #dfb895;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(223, 184, 149, 0.45);
 }
 
 @keyframes taglineFadeIn {
