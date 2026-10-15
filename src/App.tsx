@@ -806,9 +806,34 @@ function PdpReelHighlight({
   product: Product;
   onOpenReel: (reel: Reel) => void;
 }) {
+  // Check if product has an assigned video or custom reel from Admin Studio
+  const assignedVideo = (product as unknown as Record<string, string>)?.video_url || (product as unknown as Record<string, string>)?.videoUrl;
+  const assignedInstagram = (product as unknown as Record<string, string>)?.instagram_url || (product as unknown as Record<string, string>)?.instagramUrl;
+  const customReel: Reel | null = assignedVideo ? {
+    id: `custom-reel-${product.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+    title: (product as unknown as Record<string, string>)?.video_title || `See ${product.name} in Motion`,
+    subtitle: product.finish || "Sensorial Glide",
+    productName: product.name,
+    category: (product.category === "Lip colour" ? "lips" : product.category === "Blush" ? "blush" : product.category === "Highlighter" ? "glow" : "all"),
+    videoUrl: assignedVideo,
+    poster: (product as unknown as Record<string, string>)?.campaign_image_url || product.campaign || product.image,
+    instagramUrl: assignedInstagram || "https://www.instagram.com/sheauracosmeticsofficial/",
+    handle: (product as unknown as Record<string, string>)?.social_handle || "@sheauracosmeticsofficial",
+    avatar: product.image,
+    duration: "0:20",
+    views: "520K",
+    likes: "74K",
+    quote: (product as unknown as Record<string, string>)?.video_quote || `Sensorial application of ${product.name}. Layerable, skin-first texture.`,
+    step: (product as unknown as Record<string, string>)?.video_title || "Featured Look",
+    tone: product.tone,
+    productPrice: product.price,
+    productImage: product.image,
+    productTag: product.tag,
+  } : null;
+
   // Find matching reels for this product category
   const matchingReels = reels.filter((r) => r.productName === product.name || (product.category === "Lip colour" && r.category === "lips") || (product.category === "Blush" && r.category === "blush") || (product.category === "Highlighter" && r.category === "glow"));
-  const primaryReel = matchingReels[0] || reels[0];
+  const primaryReel = customReel || matchingReels[0] || reels[0];
 
   return (
     <section className="pdp-motion shell">

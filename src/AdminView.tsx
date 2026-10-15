@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
 
 type Status = "draft" | "published";
@@ -17,6 +17,11 @@ export type Product = {
   tone: string;
   image_url: string;
   campaign_image_url: string;
+  video_url: string;
+  instagram_url: string;
+  video_title: string;
+  video_quote: string;
+  social_handle: string;
   ingredients: string;
   benefits: string;
   how_to_use: string;
@@ -39,6 +44,11 @@ const blank: Product = {
   tone: "#a81920",
   image_url: "",
   campaign_image_url: "",
+  video_url: "",
+  instagram_url: "",
+  video_title: "Look 01 · Sensorial Glide",
+  video_quote: "Finding a formula that glides smoothly and hydrates all day.",
+  social_handle: "@sheauracosmeticsofficial",
   ingredients: "Damask Rose Petal Extract, Plant Squalane (Olive-Derived), Shea Butter",
   benefits: "12H Hydra-Glide Comfort\nPetal-Soft Satin Texture\n100% Vegan & Cruelty-Free",
   how_to_use: "Glide directly onto bare lips from center outward for sculpted satin payoff.",
@@ -91,6 +101,32 @@ const PRESET_TAGS = [
   "Festive Edit",
   "PR Unboxing",
   "Clean Ritual",
+];
+
+const PRESET_VIDEO_STEPS = [
+  "Look 01 · Sensorial Glide",
+  "Look 02 · Second-Skin Base",
+  "Look 03 · Molten Shimmer Veil",
+  "Look 04 · Festive Radiance",
+  "Look 05 · Sunset Warmth",
+  "Look 06 · Minimal GRWM Routine",
+  "Look 07 · High-Impact Satin Payoff",
+];
+
+const PRESET_VIDEO_QUOTES = [
+  "Finding a formula that glides smoothly and hydrates all day.",
+  "The PERFECT BLUSH for everyday use. Melts effortlessly into skin with buildable rose pigment.",
+  "Liquid shimmer & luxury glow that turns skin into the main accessory.",
+  "This is not a filter, it’s my foundation. Featherweight coverage that lets real skin shine through.",
+  "Pair your traditional look with She’aura to get the natural glow and festive elegance.",
+  "Fresh, blooming, and effortless. Designed to move seamlessly from day into evening.",
+];
+
+const PRESET_HANDLES = [
+  "@sheauracosmeticsofficial",
+  "@sheaurabeauty",
+  "@vogueindia",
+  "@harpersbazaarin",
 ];
 
 const PRESET_SHADES = [
@@ -199,6 +235,11 @@ export default function AdminView() {
           ...product,
           status: product.is_published ? "published" : "draft",
           benefits: Array.isArray(product.benefits) ? product.benefits.join("\n") : product.benefits || "",
+          video_url: product.video_url || "",
+          instagram_url: product.instagram_url || "",
+          video_title: product.video_title || "Look 01 · Sensorial Glide",
+          video_quote: product.video_quote || "Finding a formula that glides smoothly and hydrates all day.",
+          social_handle: product.social_handle || "@sheauracosmeticsofficial",
         })) as Product[]
       );
     }
@@ -241,9 +282,24 @@ export default function AdminView() {
           .replace(/(^-|-$)/g, ""),
     };
 
-    const result = id
+    let result = id
       ? await supabase.from("products").update(payload).eq("id", id)
       : await supabase.from("products").insert(payload);
+
+    // Resilient fallback: If database has not run migration 005 yet, strip new columns and save core fields
+    if (result.error && result.error.message?.includes("column")) {
+      const { video_url, instagram_url, video_title, video_quote, social_handle, ...safePayload } = payload;
+      result = id
+        ? await supabase.from("products").update(safePayload).eq("id", id)
+        : await supabase.from("products").insert(safePayload);
+      if (!result.error) {
+        setNotice(
+          id
+            ? "Product updated. Note: Run migration 005 in Supabase to permanently store video columns."
+            : "Product published. Note: Run migration 005 in Supabase to permanently store video columns."
+        );
+      }
+    }
 
     setBusy(false);
     if (result.error) {
@@ -252,7 +308,7 @@ export default function AdminView() {
       setEditing(null);
       setNotice(id ? "Product updated successfully." : "New product published to catalogue.");
       void loadProducts();
-      setTimeout(() => setNotice(""), 3000);
+      setTimeout(() => setNotice(""), 3500);
     }
   }
 
@@ -475,7 +531,19 @@ export default function AdminView() {
               />
               <span className="admin-product-swatch" style={{ background: p.tone || "#a81920" }} title={p.tone} />
               <div className="admin-product-name">
-                <b>{p.name}</b>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                  <b>{p.name}</b>
+                  {p.video_url && (
+                    <span style={{ fontSize: "10px", background: "#fdf3eb", color: "#c18847", padding: "1px 6px", borderRadius: "4px", border: "1px solid #ebd3c0" }} title="Motion video attached">
+                      🎬 Video
+                    </span>
+                  )}
+                  {p.instagram_url && (
+                    <span style={{ fontSize: "10px", background: "#fdf0f5", color: "#bc1888", padding: "1px 6px", borderRadius: "4px", border: "1px solid #f6ccdf" }} title="Instagram reel linked">
+                      📸 Reel
+                    </span>
+                  )}
+                </div>
                 <small>{p.category || "Uncategorised"} · {p.mood || p.finish || "Standard edit"}</small>
               </div>
               <button
@@ -979,6 +1047,502 @@ function ImageUploadField({
   );
 }
 
+// Motion & Instagram Video Studio Component
+function MotionVideoStudio({
+  videoUrl,
+  onVideoUrlChange,
+  instagramUrl,
+  onInstagramUrlChange,
+  videoTitle,
+  onVideoTitleChange,
+  videoQuote,
+  onVideoQuoteChange,
+  socialHandle,
+  onSocialHandleChange,
+  posterUrl,
+  productName,
+  productPrice,
+  tone,
+}: {
+  videoUrl: string;
+  onVideoUrlChange: (url: string) => void;
+  instagramUrl: string;
+  onInstagramUrlChange: (url: string) => void;
+  videoTitle: string;
+  onVideoTitleChange: (val: string) => void;
+  videoQuote: string;
+  onVideoQuoteChange: (val: string) => void;
+  socialHandle: string;
+  onSocialHandleChange: (val: string) => void;
+  posterUrl?: string;
+  productName: string;
+  productPrice: number | string;
+  tone?: string;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [progress, setProgress] = useState(0);
+  const [currentTimeStr, setCurrentTimeStr] = useState("0:00");
+  const [durationStr, setDurationStr] = useState("0:00");
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [isLooping, setIsLooping] = useState(true);
+
+  const formatTime = (seconds: number) => {
+    if (!seconds || isNaN(seconds)) return "0:00";
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+  };
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current && videoRef.current.duration) {
+      const p = (videoRef.current.currentTime / videoRef.current.duration) * 100;
+      setProgress(p);
+      setCurrentTimeStr(formatTime(videoRef.current.currentTime));
+      setDurationStr(formatTime(videoRef.current.duration));
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (videoRef.current) {
+      setDurationStr(formatTime(videoRef.current.duration));
+      videoRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+    }
+  };
+
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+      }
+    }
+  };
+
+  const toggleSound = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+  const handleScrub = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!videoRef.current || !videoRef.current.duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const pct = Math.max(0, Math.min(1, clickX / rect.width));
+    videoRef.current.currentTime = pct * videoRef.current.duration;
+    setProgress(pct * 100);
+  };
+
+  const handleFullscreen = () => {
+    if (videoRef.current) {
+      if (videoRef.current.requestFullscreen) {
+        videoRef.current.requestFullscreen().catch(() => {});
+      }
+    }
+  };
+
+  const handleVideoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setUploadError("");
+
+    // Immediate playback preview using object URL so video plays without lag
+    const localUrl = URL.createObjectURL(file);
+    onVideoUrlChange(localUrl);
+
+    try {
+      if (supabase) {
+        const fileExt = file.name.split(".").pop() || "mp4";
+        const cleanName = file.name.replace(/[^a-zA-Z0-9]/g, "-").slice(0, 24);
+        const filePath = `videos/${Date.now()}-${cleanName}.${fileExt}`;
+
+        const { data, error } = await supabase.storage
+          .from("product-media")
+          .upload(filePath, file, { upsert: true, contentType: file.type });
+
+        if (!error && data) {
+          const { data: urlData } = supabase.storage
+            .from("product-media")
+            .getPublicUrl(filePath);
+
+          if (urlData?.publicUrl) {
+            onVideoUrlChange(urlData.publicUrl);
+          }
+        }
+      }
+    } catch {
+      // Retain localUrl so the studio never crashes or blocks
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const isInstagramValid = Boolean(instagramUrl && instagramUrl.includes("instagram.com"));
+
+  return (
+    <div className="admin-video-studio-section">
+      <div className="admin-video-header-row">
+        <div>
+          <div className="admin-video-header-title">
+            <h3 style={{ margin: 0, font: "500 22px/1.2 'Cormorant Garamond', serif", color: "var(--ink)" }}>
+              Motion & Instagram Video Studio
+            </h3>
+            <span className="admin-video-badge">Motion Edit</span>
+            <span className="admin-video-ig-badge">
+              <span>Instagram Reels</span>
+            </span>
+          </div>
+          <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#765d50" }}>
+            Assign high-definition application videos and connect Instagram Reels to this product. Videos play automatically upon upload for clean instant review.
+          </p>
+        </div>
+        {videoUrl && (
+          <div className="admin-video-live-pill">
+            <span className="admin-video-live-dot" />
+            <span>{isPlaying ? "Live In-Studio Playback" : "Paused"}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="admin-video-split-layout">
+        {/* Left: Device Video Upload & Clean Luxury Player */}
+        <div className="admin-video-player-card">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+            <span style={{ fontWeight: 600, fontSize: "12.5px", color: "var(--ink)" }}>
+              1. Product Motion Video (.mp4, .webm, .mov)
+            </span>
+            <small style={{ color: "#8c766a" }}>Plays in PDP "Aura in Motion" theater</small>
+          </div>
+
+          <div className="admin-video-screen">
+            {videoUrl ? (
+              <>
+                <video
+                  ref={videoRef}
+                  src={videoUrl}
+                  poster={posterUrl}
+                  playsInline
+                  loop={isLooping}
+                  muted={isMuted}
+                  autoPlay
+                  onTimeUpdate={handleTimeUpdate}
+                  onLoadedMetadata={handleLoadedMetadata}
+                  onClick={togglePlay}
+                  style={{ cursor: "pointer" }}
+                />
+                {!isPlaying && (
+                  <div className="admin-video-overlay-play" onClick={togglePlay} title="Click to play">
+                    <div className="admin-video-overlay-circle">▶</div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="admin-video-screen-empty">
+                <span className="admin-video-screen-empty-icon">🎬</span>
+                <b style={{ color: "#dfb895", fontSize: "14px" }}>No video assigned yet</b>
+                <p style={{ fontSize: "11.5px", maxWidth: "280px", margin: 0 }}>
+                  Upload an authentic application clip from your computer or phone to see it play immediately.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {videoUrl && (
+            <div className="admin-video-controls-bar">
+              <button
+                type="button"
+                className="admin-video-control-btn"
+                onClick={togglePlay}
+                title={isPlaying ? "Pause" : "Play"}
+              >
+                {isPlaying ? "⏸" : "▶"}
+              </button>
+
+              <button
+                type="button"
+                className="admin-video-control-btn"
+                onClick={toggleSound}
+                title={isMuted ? "Unmute" : "Mute"}
+              >
+                {isMuted ? "🔇" : "🔊"}
+              </button>
+
+              <div className="admin-video-progress-wrap">
+                <div className="admin-video-progress-bar" onClick={handleScrub} title="Click to seek">
+                  <div className="admin-video-progress-fill" style={{ width: `${progress}%` }} />
+                </div>
+                <span className="admin-video-time">
+                  {currentTimeStr} / {durationStr}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                className="admin-video-control-btn"
+                onClick={() => setIsLooping(!isLooping)}
+                style={{ color: isLooping ? "#dfb895" : "#765d50" }}
+                title={isLooping ? "Loop enabled" : "Loop disabled"}
+              >
+                🔁
+              </button>
+
+              <button
+                type="button"
+                className="admin-video-control-btn"
+                onClick={handleFullscreen}
+                title="Fullscreen"
+              >
+                ⛶
+              </button>
+            </div>
+          )}
+
+          {/* Meta & Actions */}
+          <div className="admin-video-meta-row">
+            <span>
+              {videoUrl ? (
+                videoUrl.startsWith("blob:") ? "Device clip loaded (Live memory buffer)" :
+                videoUrl.startsWith("data:") ? "Device clip embedded" :
+                videoUrl.includes("supabase.co") ? "Hosted on Supabase Storage" : "External Video Stream"
+              ) : "Awaiting video file"}
+            </span>
+
+            {videoUrl && (
+              <button
+                type="button"
+                className="admin-upload-remove-btn"
+                onClick={() => onVideoUrlChange("")}
+              >
+                ✕ Remove video
+              </button>
+            )}
+          </div>
+
+          {/* Upload buttons */}
+          <div className="admin-video-upload-row">
+            <label className="admin-upload-device-btn">
+              <span>🎥 Choose video from device</span>
+              <input
+                type="file"
+                accept="video/mp4,video/webm,video/quicktime,video/*"
+                disabled={uploading}
+                onChange={handleVideoFileChange}
+              />
+            </label>
+
+            <button
+              type="button"
+              className="admin-upload-url-toggle"
+              onClick={() => setShowUrlInput(!showUrlInput)}
+            >
+              {showUrlInput ? "Hide link input" : "Or paste direct video link (.mp4)"}
+            </button>
+          </div>
+
+          {uploading && <div className="admin-upload-loading">Processing & uploading video from device…</div>}
+          {uploadError && <div className="admin-error" style={{ padding: "8px" }}>{uploadError}</div>}
+
+          {showUrlInput && (
+            <input
+              type="url"
+              placeholder="https://example.com/videos/lip-application.mp4"
+              value={videoUrl}
+              onChange={(e) => onVideoUrlChange(e.target.value)}
+              style={{ width: "100%", marginTop: "4px" }}
+            />
+          )}
+        </div>
+
+        {/* Right: Instagram Reels & Social Commerce Alignment */}
+        <div className="admin-ig-config-card">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+            <span style={{ fontWeight: 600, fontSize: "12.5px", color: "var(--ink)", display: "flex", alignItems: "center", gap: "6px" }}>
+              <span>📸</span> 2. Instagram Reels Alignment
+            </span>
+            {isInstagramValid && (
+              <a
+                href={instagramUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={{ fontSize: "11px", color: "#bc1888", fontWeight: 600, textDecoration: "none" }}
+              >
+                Test Link ↗
+              </a>
+            )}
+          </div>
+
+          {/* Instagram URL Input */}
+          <div>
+            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "var(--ink)", marginBottom: "4px" }}>
+              Instagram Reel / Video Post URL
+            </label>
+            <input
+              type="url"
+              placeholder="https://www.instagram.com/reel/DeV_UkRpvGw/..."
+              value={instagramUrl}
+              onChange={(e) => onInstagramUrlChange(e.target.value)}
+              style={{ width: "100%" }}
+            />
+          </div>
+
+          {/* Reel Step Title Preset Selector */}
+          <div>
+            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "var(--ink)", marginBottom: "4px" }}>
+              Motion Look Step / Headline
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Look 01 · Sensorial Glide"
+              value={videoTitle}
+              onChange={(e) => onVideoTitleChange(e.target.value)}
+              style={{ width: "100%", marginBottom: "6px" }}
+            />
+            <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+              {PRESET_VIDEO_STEPS.slice(0, 4).map((step) => (
+                <button
+                  key={step}
+                  type="button"
+                  className="admin-ritual-chip"
+                  style={{ fontSize: "10px", padding: "3px 8px" }}
+                  onClick={() => onVideoTitleChange(step)}
+                >
+                  {step}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Social Handle */}
+          <div>
+            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "var(--ink)", marginBottom: "4px" }}>
+              Official Social Handle / Creator Tag
+            </label>
+            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+              <input
+                type="text"
+                placeholder="@sheauracosmeticsofficial"
+                value={socialHandle}
+                onChange={(e) => onSocialHandleChange(e.target.value)}
+                style={{ flex: 1, minWidth: "160px" }}
+              />
+              <div style={{ display: "flex", gap: "4px" }}>
+                {PRESET_HANDLES.slice(0, 2).map((handle) => (
+                  <button
+                    key={handle}
+                    type="button"
+                    className="admin-ritual-chip"
+                    style={{ fontSize: "10px", padding: "3px 7px" }}
+                    onClick={() => onSocialHandleChange(handle)}
+                  >
+                    {handle}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Sensory Quote / Caption */}
+          <div>
+            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "var(--ink)", marginBottom: "4px" }}>
+              Sensory Reel Quote / Hook
+            </label>
+            <textarea
+              rows={2}
+              placeholder="Finding a formula that glides smoothly and hydrates all day..."
+              value={videoQuote}
+              onChange={(e) => onVideoQuoteChange(e.target.value)}
+              style={{ width: "100%", marginBottom: "6px" }}
+            />
+            <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+              {PRESET_VIDEO_QUOTES.slice(0, 2).map((quote) => (
+                <button
+                  key={quote}
+                  type="button"
+                  className="admin-ritual-chip"
+                  style={{ fontSize: "10px", padding: "3px 8px" }}
+                  onClick={() => onVideoQuoteChange(quote)}
+                >
+                  "{quote.slice(0, 32)}..."
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Live Mobile Reel Phone Mockup Preview */}
+          <div style={{ marginTop: "10px" }}>
+            <span style={{ display: "block", fontSize: "11px", color: "#8c766a", marginBottom: "8px", textAlign: "center" }}>
+              📱 Live Shoppable Customer Perspective
+            </span>
+            <div className="admin-ig-mockup-wrap">
+              <div className="admin-ig-phone-notch" />
+              <div className="admin-ig-phone-screen">
+                {videoUrl ? (
+                  <video
+                    src={videoUrl}
+                    poster={posterUrl}
+                    playsInline
+                    loop
+                    muted
+                    autoPlay
+                    className="admin-ig-phone-video"
+                  />
+                ) : posterUrl ? (
+                  <img src={posterUrl} alt="Poster" className="admin-ig-phone-video" />
+                ) : (
+                  <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#665", fontSize: "11px", textAlign: "center", padding: "16px" }}>
+                    No media attached
+                  </div>
+                )}
+
+                <div className="admin-ig-phone-top">
+                  <div className="admin-ig-phone-user">
+                    <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#e1306c" }} />
+                    <span>{socialHandle || "@sheauracosmeticsofficial"}</span>
+                  </div>
+                  <span style={{ fontSize: "9px", background: "rgba(0,0,0,0.5)", color: "#fff", padding: "2px 6px", borderRadius: "999px" }}>
+                    LIVE
+                  </span>
+                </div>
+
+                <div className="admin-ig-phone-bottom">
+                  <span style={{ fontSize: "9px", color: tone || "#dfb895", fontWeight: 700, textTransform: "uppercase" }}>
+                    {videoTitle || "Look 01 · Sensorial Glide"}
+                  </span>
+                  <p className="admin-ig-phone-title">
+                    {productName || "Product Name"} — {typeof productPrice === "number" ? `₹${productPrice}` : productPrice || "₹1,099"}
+                  </p>
+                  <p className="admin-ig-phone-quote">
+                    "{videoQuote || "Finding a formula that glides smoothly and hydrates all day."}"
+                  </p>
+                  {instagramUrl && (
+                    <a
+                      href={instagramUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="admin-ig-phone-cta"
+                    >
+                      <span>View on Instagram</span> ↗
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Complete Tabbed Product Studio Editor
 function Editor({
   editing,
@@ -1022,7 +1586,7 @@ function Editor({
           className={`admin-tab-btn ${activeTab === "media" ? "active" : ""}`}
           onClick={() => setActiveTab("media")}
         >
-          2. Device Photos
+          2. Device Photos & Videos
         </button>
         <button
           type="button"
@@ -1116,26 +1680,52 @@ function Editor({
           </div>
         )}
 
-        {/* Tab 2: Device Photos */}
+        {/* Tab 2: Device Photos & Videos */}
         {activeTab === "media" && (
-          <div style={{ display: "grid", gap: "18px" }}>
-            <p style={{ color: "#765d50", fontSize: "12px", margin: 0 }}>
-              Upload authentic photos directly from your computer or phone. Photos will automatically be optimized and hosted in Supabase Storage.
-            </p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px" }}>
-              <ImageUploadField
-                label="Main Product Packshot (Still Photo)"
-                value={editing.image_url}
-                onChange={(url) => update("image_url", url)}
-                hint="Shows in catalog grid & PDP hero"
-              />
-              <ImageUploadField
-                label="Campaign / Editorial Portrait"
-                value={editing.campaign_image_url}
-                onChange={(url) => update("campaign_image_url", url)}
-                hint="Shows in lookbook rituals & story modal"
-              />
+          <div style={{ display: "grid", gap: "24px" }}>
+            {/* Section A: Still Photos */}
+            <div>
+              <div style={{ marginBottom: "12px" }}>
+                <h4 style={{ margin: 0, fontSize: "14px", fontWeight: 600, color: "var(--ink)" }}>
+                  High-Resolution Product Photography
+                </h4>
+                <p style={{ color: "#765d50", fontSize: "12px", margin: "2px 0 0" }}>
+                  Upload authentic packshots and editorial stills from your computer or phone. Photos will automatically be optimized and hosted in Supabase Storage.
+                </p>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px" }}>
+                <ImageUploadField
+                  label="Main Product Packshot (Still Photo)"
+                  value={editing.image_url}
+                  onChange={(url) => update("image_url", url)}
+                  hint="Shows in catalog grid & PDP hero"
+                />
+                <ImageUploadField
+                  label="Campaign / Editorial Portrait"
+                  value={editing.campaign_image_url}
+                  onChange={(url) => update("campaign_image_url", url)}
+                  hint="Shows in lookbook rituals & story modal"
+                />
+              </div>
             </div>
+
+            {/* Section B: Dedicated Motion Video Studio & Instagram Alignment */}
+            <MotionVideoStudio
+              videoUrl={editing.video_url}
+              onVideoUrlChange={(url) => update("video_url", url)}
+              instagramUrl={editing.instagram_url}
+              onInstagramUrlChange={(url) => update("instagram_url", url)}
+              videoTitle={editing.video_title}
+              onVideoTitleChange={(val) => update("video_title", val)}
+              videoQuote={editing.video_quote}
+              onVideoQuoteChange={(val) => update("video_quote", val)}
+              socialHandle={editing.social_handle}
+              onSocialHandleChange={(val) => update("social_handle", val)}
+              posterUrl={editing.campaign_image_url || editing.image_url}
+              productName={editing.name}
+              productPrice={editing.price}
+              tone={editing.tone}
+            />
           </div>
         )}
 
