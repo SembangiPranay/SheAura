@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import BrandIntro from "./BrandIntro";
+import AdminView from "./AdminView";
 
 export const resolveAsset = (path: string): string => {
   if (!path) return "";
@@ -999,6 +1000,7 @@ function ProductPage({
 }
 
 export default function App() {
+  if (window.location.pathname === "/admin") return <AdminView />;
   const [menuOpen, setMenuOpen] = useState(false);
   const [cartCount, setCartCount] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
