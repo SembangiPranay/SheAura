@@ -2016,14 +2016,6 @@ export default function App() {
       <section className="hero">
         <img className="hero-bg" src={photos.hero} alt="SheAura Luxury" />
         <div className="hero-wash" />
-        <div
-          className="hero-botanical hero-botanical-left"
-          style={{ backgroundImage: `url(${photos.scarletBotanical})` }}
-        />
-        <div
-          className="hero-botanical hero-botanical-right"
-          style={{ backgroundImage: `url(${photos.highlighterBotanical})` }}
-        />
 
         <header className="nav shell">
            <a className="brand brand-light brand-animated" href="#" aria-label="She Aura">
