@@ -1706,9 +1706,7 @@ export default function App() {
   const [catalog, setCatalog] = useState<Product[]>(defaultProducts);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [activeModalReel, setActiveModalReel] = useState<Reel | null>(null);
-  const [introPhase, setIntroPhase] = useState<"active" | "dissolving" | "complete">("active");
-  const handleStartDissolve = useCallback(() => setIntroPhase("dissolving"), []);
-  const handleCompleteIntro = useCallback(() => setIntroPhase("complete"), []);
+  const [showIntro, setShowIntro] = useState(true);
 
   // Cart & Wishlist State with LocalStorage Persistence
   const [cartItems, setCartItems] = useState<CartItem[]>(() => getInitialCart(defaultProducts));
@@ -1721,46 +1719,6 @@ export default function App() {
   useEffect(() => {
     const unsub = onAuthStateChanged((user) => setCurrentUser(user));
     return () => unsub();
-  }, []);
-
-  // Living Hero Video Backdrop States (Option 1: 2X Slow Glide Master Edit)
-  const heroVideoRef = useRef<HTMLVideoElement>(null);
-  const [isHeroMuted, setIsHeroMuted] = useState(true);
-  const [isHeroPlaying, setIsHeroPlaying] = useState(true);
-  const [heroVideoReady, setHeroVideoReady] = useState(false);
-
-  const toggleHeroAudio = useCallback(() => {
-    if (heroVideoRef.current) {
-      const nextMuted = !isHeroMuted;
-      heroVideoRef.current.muted = nextMuted;
-      setIsHeroMuted(nextMuted);
-    }
-  }, [isHeroMuted]);
-
-  const toggleHeroPlay = useCallback(() => {
-    if (heroVideoRef.current) {
-      if (isHeroPlaying) {
-        heroVideoRef.current.pause();
-        setIsHeroPlaying(false);
-      } else {
-        heroVideoRef.current.play().catch(() => {});
-        setIsHeroPlaying(true);
-      }
-    }
-  }, [isHeroPlaying]);
-
-  useEffect(() => {
-    if (heroVideoRef.current) {
-      heroVideoRef.current.playbackRate = 1.0;
-      const playPromise = heroVideoRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => setHeroVideoReady(true))
-          .catch(() => {
-            // Autoplay gracefully handled if browser policy restricts
-          });
-      }
-    }
   }, []);
 
   const showToast = useCallback((msg: string) => {
@@ -1997,12 +1955,7 @@ export default function App() {
   if (selectedProduct) {
     return (
       <>
-        {introPhase !== "complete" && (
-          <BrandIntro
-            onStartDissolve={handleStartDissolve}
-            onComplete={handleCompleteIntro}
-          />
-        )}
+        {showIntro && <BrandIntro onComplete={() => setShowIntro(false)} />}
         <ProductPage
           product={selectedProduct}
           catalog={catalog}
@@ -2058,31 +2011,19 @@ export default function App() {
 
   return (
     <>
-      {introPhase !== "complete" && (
-        <BrandIntro
-          onStartDissolve={handleStartDissolve}
-          onComplete={handleCompleteIntro}
-        />
-      )}
-      <main className={`storefront-main ${introPhase !== "complete" ? "is-intro-active" : ""} ${introPhase === "dissolving" ? "is-intro-dissolving" : ""}`}>
-      <section className={`hero ${introPhase !== "complete" ? "hero-intro-mode" : ""} ${introPhase === "dissolving" ? "hero-intro-dissolving" : ""}`}>
-        {/* Living Video Backdrop: 2X Slow-Glide Master Runway Edit */}
-        <video
-          ref={heroVideoRef}
-          className={`hero-video-bg ${heroVideoReady ? "is-ready" : ""}`}
-          autoPlay
-          muted
-          loop
-          playsInline
-          poster={photos.hero}
-          preload="auto"
-          onCanPlay={() => setHeroVideoReady(true)}
-          onPlaying={() => setHeroVideoReady(true)}
-          onLoadedData={() => setHeroVideoReady(true)}
-        >
-          <source src="/reels/sheaura-master-runway-wall.mp4" type="video/mp4" />
-        </video>
+      {showIntro && <BrandIntro onComplete={() => setShowIntro(false)} />}
+      <main className="storefront-main">
+      <section className="hero">
+        <img className="hero-bg" src={photos.hero} alt="SheAura Luxury" />
         <div className="hero-wash" />
+        <div
+          className="hero-botanical hero-botanical-left"
+          style={{ backgroundImage: `url(${photos.scarletBotanical})` }}
+        />
+        <div
+          className="hero-botanical hero-botanical-right"
+          style={{ backgroundImage: `url(${photos.highlighterBotanical})` }}
+        />
 
         <header className="nav shell">
            <a className="brand brand-light brand-animated" href="#" aria-label="She Aura">
@@ -2217,6 +2158,7 @@ export default function App() {
             <ArrowLink light>Explore the collection</ArrowLink>
           </div>
         </div>
+        <div className="scroll-note">Scroll to discover <span /></div>
       </section>
 
       <section className="categories" id="collections">

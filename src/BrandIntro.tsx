@@ -2,18 +2,17 @@ import { useEffect, useState } from "react";
 
 interface BrandIntroProps {
   onComplete: () => void;
-  onStartDissolve?: () => void;
 }
 
-export default function BrandIntro({ onComplete, onStartDissolve }: BrandIntroProps) {
+export default function BrandIntro({ onComplete }: BrandIntroProps) {
   const [isFadingOut, setIsFadingOut] = useState(false);
 
   useEffect(() => {
-    // Elegant dwell timer: 2.3s for letter reveals and signature flourish,
-    // followed by a smooth, unbroken 1.1s cinematic dissolve into the storefront
+    // Classic dwell timer: 2.2s for letter reveals and signature flourish,
+    // followed by a smooth, unbroken 0.9s cross-dissolve into the classic hero
     const timer = setTimeout(() => {
       triggerDissolve();
-    }, 2400);
+    }, 2200);
 
     return () => clearTimeout(timer);
   }, []);
@@ -21,10 +20,9 @@ export default function BrandIntro({ onComplete, onStartDissolve }: BrandIntroPr
   const triggerDissolve = () => {
     if (isFadingOut) return;
     setIsFadingOut(true);
-    onStartDissolve?.();
     setTimeout(() => {
       onComplete();
-    }, 1100);
+    }, 900);
   };
 
   const letters = ["S", "H", "E", "’", "A", "U", "R", "A"];
@@ -37,14 +35,7 @@ export default function BrandIntro({ onComplete, onStartDissolve }: BrandIntroPr
       aria-hidden="true"
       title="Click anywhere to proceed directly"
     >
-      {/* Centerpiece Monogram & Typography Animation */}
       <div className={`brand-intro-content ${isFadingOut ? "is-fading-out" : ""}`}>
-        {/* Subtle Couture Badge */}
-        <div className="brand-intro-eyebrow-pill">
-          <span className="intro-pulse-dot" />
-          <span>HAUTE MAISON ENTRANCE</span>
-        </div>
-
         {/* Couture Calligraphic Signature Flourish */}
         <div className="brand-intro-signature">
           <svg
@@ -54,18 +45,20 @@ export default function BrandIntro({ onComplete, onStartDissolve }: BrandIntroPr
             xmlns="http://www.w3.org/2000/svg"
             aria-hidden="true"
           >
+            {/* Elegant fluid ink stroke that writes itself out */}
             <path
               d="M20 52 C45 15, 75 10, 85 35 C95 60, 60 72, 52 50 C44 26, 95 18, 140 38 C175 52, 210 25, 235 32 C255 38, 268 48, 275 42"
-              stroke="#dfb895"
-              strokeWidth="2.4"
+              stroke="#1b100c"
+              strokeWidth="2.2"
               strokeLinecap="round"
               strokeLinejoin="round"
               className="signature-stroke"
             />
+            {/* Fine accent cross-stroke */}
             <path
               d="M70 38 C105 34, 160 32, 195 36"
-              stroke="#f1e0cf"
-              strokeWidth="1.4"
+              stroke="#c59868"
+              strokeWidth="1.2"
               strokeLinecap="round"
               className="signature-accent-stroke"
             />
@@ -80,7 +73,7 @@ export default function BrandIntro({ onComplete, onStartDissolve }: BrandIntroPr
                 <span
                   className="char-glyph"
                   style={{
-                    animationDelay: `${0.16 + index * 0.045}s`,
+                    animationDelay: `${0.18 + index * 0.045}s`,
                   }}
                 >
                   {char}
