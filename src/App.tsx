@@ -1418,7 +1418,31 @@ function ProductPage({
 }) {
   const [quantity, setQuantity] = useState(1);
   const [detailsOpen, setDetailsOpen] = useState("formula");
-  const related = (catalog || products).filter((item) => item.name !== product.name);
+  const [activeImage, setActiveImage] = useState(product.image);
+
+  // Sync active image & quantity when product changes
+  useEffect(() => {
+    setActiveImage(product.image);
+    setQuantity(1);
+  }, [product]);
+
+  // Gallery of multi-angle images
+  const galleryImages = useMemo(() => {
+    if (product.gallery && product.gallery.length > 0) {
+      return Array.from(new Set(product.gallery));
+    }
+    return Array.from(
+      new Set([product.image, product.still, product.campaign].filter(Boolean))
+    );
+  }, [product]);
+
+  const related = useMemo(() => {
+    return (catalog || products)
+      .filter((item) => (item.slug || item.name) !== (product.slug || product.name))
+      .slice(0, 4);
+  }, [catalog, product]);
+
+  const isCollection = (product.category || "").toLowerCase() === "collection";
 
   return (
     <main className="product-page">
@@ -1456,28 +1480,111 @@ function ProductPage({
       </header>
 
       <section className="pdp-hero">
-        <div className="pdp-gallery">
-          <span className="pdp-index">LOOK 01 — {product.category}</span>
-          <img className="pdp-product-photo" src={product.image} alt={product.name} />
+        <div className={`pdp-gallery ${isCollection ? "pdp-gallery-collection" : ""}`}>
+          <span className="pdp-index">LOOK 01 — {(product.category || "Couture").toUpperCase()}</span>
+          <div className="pdp-main-photo-wrap">
+            <img className="pdp-product-photo" src={activeImage} alt={product.name} />
+          </div>
           <div className="pdp-photo-shade" />
-          <div className="pdp-caption"><span>Object of desire</span><b>SHE’AURA / 2025</b></div>
+
+          {/* Interactive Multi-Angle Gallery Thumbnails */}
+          {galleryImages.length > 1 && (
+            <div className="pdp-thumbnails-strip" aria-label="Product photography gallery">
+              {galleryImages.map((img, idx) => (
+                <button
+                  key={`${img}-${idx}`}
+                  type="button"
+                  className={`pdp-thumb-pill ${activeImage === img ? "active" : ""}`}
+                  onClick={() => setActiveImage(img)}
+                  title={`View angle ${idx + 1}`}
+                  aria-label={`View angle ${idx + 1}`}
+                >
+                  <img src={img} alt="" />
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="pdp-caption">
+            <span>Object of desire</span>
+            <b>SHE’AURA / 2025 · {product.category}</b>
+          </div>
         </div>
+
         <div className="pdp-info">
           <p className="eyebrow dark">{product.mood}</p>
           <h1>{product.name}</h1>
-          <div className="pdp-price"><span>{product.price}</span><small>Inclusive of all taxes</small></div>
+          <div className="pdp-price">
+            <span>{product.price}</span>
+            <small>Inclusive of all taxes</small>
+            {product.size && <span className="pdp-size-badge">{product.size}</span>}
+          </div>
           <p className="pdp-description">{product.description}</p>
+          
           <div className="wear-profile">
             <div><span>Finish</span><b>{product.finish}</b></div>
             <div><span>Wear</span><b>Buildable</b></div>
             <div><span>Conscious edit</span><b>Ingredient-led</b></div>
           </div>
-          <div className="shade-selector">
-            <div><span>Selected shade</span><b>{product.name.split(" ").slice(0, 2).join(" ")}</b></div>
-            <button className="shade active" style={{ background: product.tone }} aria-label="Selected shade" />
-            <button className="shade shade-two" aria-label="Alternative shade" />
-            <button className="shade shade-three" aria-label="Alternative shade" />
-          </div>
+
+          {/* Interactive Shade Selector */}
+          {product.shades && product.shades.length > 0 ? (
+            <div className="shade-selector-section">
+              <div className="shade-selector-header">
+                <span>Select Shade Palette</span>
+                <b>{product.name.split(" ").slice(0, 2).join(" ")}</b>
+              </div>
+              <div className="shade-swatches-grid">
+                {product.shades.map((shade) => {
+                  const isSelected =
+                    shade.slug === product.slug ||
+                    shade.name.toLowerCase() === product.name.toLowerCase() ||
+                    product.name.toLowerCase().includes(shade.name.toLowerCase());
+                  return (
+                    <button
+                      key={shade.name}
+                      type="button"
+                      className={`shade-option-btn ${isSelected ? "selected" : ""}`}
+                      onClick={() => {
+                        const targetProd = (catalog || products).find(
+                          (p) =>
+                            p.slug === shade.slug ||
+                            p.name.toLowerCase() === shade.name.toLowerCase() ||
+                            p.name.toLowerCase().includes(shade.name.toLowerCase())
+                        );
+                        if (targetProd) {
+                          onSelect(targetProd);
+                        }
+                      }}
+                      title={shade.name}
+                      aria-label={shade.name}
+                    >
+                      <span className="shade-circle" style={{ background: shade.tone }} />
+                      <span className="shade-label">{shade.name}</span>
+                      {isSelected && <span className="shade-check">✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="shade-selector">
+              <div><span>Selected shade</span><b>{product.name.split(" ").slice(0, 2).join(" ")}</b></div>
+              <button className="shade active" style={{ background: product.tone }} aria-label="Selected shade" />
+            </div>
+          )}
+
+          {/* Benefit tags */}
+          {product.benefits && (
+            <div className="pdp-benefits-tags">
+              {(Array.isArray(product.benefits) ? product.benefits : [product.benefits]).map((b) => (
+                <span key={b} className="benefit-tag">
+                  <Icon name="check" /> {b}
+                </span>
+              ))}
+            </div>
+          )}
+
           <div className="purchase-row">
             <div className="quantity">
               <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} aria-label="Decrease quantity">−</button>
@@ -1508,9 +1615,25 @@ function ProductPage({
           <p className="delivery-note"><Icon name="sparkle" /> Complimentary delivery on orders above ₹1,499</p>
           <div className="pdp-accordions">
             {[
-              ["formula", "The formula", "A sensorial, buildable texture created to layer comfortably and wear beautifully. Verified product-specific INCI details will be published here."],
-              ["ritual", "How to wear", `Wear ${product.name} alone as a statement or layer it into your routine for a more dimensional finish.`],
-              ["conscious", "Conscious standard", "Designed with ingredient transparency in mind. Packaging and formula credentials will be listed as they are verified."],
+              [
+                "formula",
+                "The formula & verified INCI",
+                product.ingredients
+                  ? product.ingredients
+                  : "A sensorial, buildable texture created to layer comfortably and wear beautifully with botanical waxes and pure mineral pigments.",
+              ],
+              [
+                "ritual",
+                "How to wear",
+                product.how_to_use
+                  ? product.how_to_use
+                  : `Wear ${product.name} alone as a statement or layer it into your routine for a more dimensional finish.`,
+              ],
+              [
+                "conscious",
+                "Conscious standard",
+                "Designed with ingredient transparency in mind. Formulated 100% vegan, cruelty-free, paraben-free, and dermatologist tested.",
+              ],
             ].map(([id, title, copy]) => (
               <div className={detailsOpen === id ? "open" : ""} key={id}>
                 <button onClick={() => setDetailsOpen(detailsOpen === id ? "" : id)}><span>{title}</span><b>{detailsOpen === id ? "−" : "+"}</b></button>
@@ -1563,7 +1686,20 @@ function ProductPage({
       <section className="related shell">
         <div className="section-heading compact"><div><p className="eyebrow dark">Complete the look</p><h2>The finishing pieces.</h2></div></div>
         <div className="related-grid">
-          {related.map((item) => <button onClick={() => { onSelect(item); window.scrollTo(0, 0); }} key={item.name}><div><img src={item.image} alt="" /></div><span>{item.category}</span><h3>{item.name}</h3><p>{item.price}</p></button>)}
+          {related.map((item) => (
+            <button
+              onClick={() => {
+                onSelect(item);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              key={item.id || item.slug || item.name}
+            >
+              <div><img src={item.image} alt={item.name} /></div>
+              <span>{item.category}</span>
+              <h3>{item.name}</h3>
+              <p>{item.price}</p>
+            </button>
+          ))}
         </div>
       </section>
       <footer className="pdp-footer"><span>SHE’AURA</span><p>Fashion conscious. Ingredient conscious. Always you.</p><button onClick={onBack}>Return home <Icon name="arrow" /></button></footer>
@@ -1707,6 +1843,7 @@ export default function App() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [activeModalReel, setActiveModalReel] = useState<Reel | null>(null);
   const [showIntro, setShowIntro] = useState(true);
+  const [shopCategory, setShopCategory] = useState<string>("All Pieces");
 
   // Cart & Wishlist State with LocalStorage Persistence
   const [cartItems, setCartItems] = useState<CartItem[]>(() => getInitialCart(defaultProducts));
@@ -2155,15 +2292,20 @@ export default function App() {
 
       <section className="categories" id="collections">
         {[
-          { name: "Makeup", image: photos.scarletBotanical },
-          { name: "Glow", image: photos.highlighterBotanical },
-          { name: "Best Sellers", image: photos.blushStill },
-          { name: "New In", image: photos.highlighterPortrait },
-        ].map(({ name, image }) => (
-          <a className="category category-photo" href="#shop" key={name}>
-            <img className="category-foreground" src={image} alt="" />
+          { name: "Lip Colour", image: photos.lipstick, cat: "Lip colour" },
+          { name: "Blush Compacts", image: photos.blushStill, cat: "Blush" },
+          { name: "Highlighters", image: photos.highlighterBotanical, cat: "Highlighter" },
+          { name: "Complexion", image: photos.foundation, cat: "Complexion" },
+        ].map(({ name, image, cat }) => (
+          <a
+            className="category category-photo"
+            href="#shop"
+            key={name}
+            onClick={() => setShopCategory(cat)}
+          >
+            <img className="category-foreground" src={image} alt={name} />
             <div className="category-overlay" />
-            <div><h3>{name}</h3><span>Explore <Icon name="arrow" /></span></div>
+            <div><h3>{name}</h3><span>Explore {cat} <Icon name="arrow" /></span></div>
           </a>
         ))}
       </section>
@@ -2191,18 +2333,68 @@ export default function App() {
 
       <section className="shop shell" id="shop">
         <div className="section-heading">
-          <div><p className="eyebrow dark">The first drop</p><h2>The SHE’AURA Wardrobe.</h2><p>Statement colour. Skin-conscious formulas. Made to be worn your way.</p></div>
-          <ArrowLink>Shop all</ArrowLink>
+          <div>
+            <p className="eyebrow dark">The complete luxury collection</p>
+            <h2>The SHE’AURA Wardrobe.</h2>
+            <p>12 signature pieces. Botanical-rich formulas. Made to be worn your way.</p>
+          </div>
+          <button
+            type="button"
+            className="shop-all-pill-btn"
+            onClick={() => setShopCategory("All Pieces")}
+          >
+            <span>View All ({catalog.length})</span>
+            <Icon name="arrow" />
+          </button>
         </div>
+
+        {/* Category Filter Pills */}
+        <div className="shop-category-bar" role="tablist" aria-label="Product categories">
+          {[
+            { label: "All Pieces", count: catalog.length },
+            { label: "Lip colour", count: catalog.filter((p) => p.category === "Lip colour").length },
+            { label: "Blush", count: catalog.filter((p) => p.category === "Blush").length },
+            { label: "Highlighter", count: catalog.filter((p) => p.category === "Highlighter").length },
+            { label: "Complexion", count: catalog.filter((p) => p.category === "Complexion").length },
+            { label: "Collection", count: catalog.filter((p) => p.category === "Collection").length },
+          ].map((cat) => (
+            <button
+              key={cat.label}
+              type="button"
+              role="tab"
+              aria-selected={shopCategory === cat.label}
+              className={`shop-category-pill ${shopCategory === cat.label ? "active" : ""}`}
+              onClick={() => setShopCategory(cat.label)}
+            >
+              <span>{cat.label}</span>
+              <span className="pill-count">{cat.count}</span>
+            </button>
+          ))}
+        </div>
+
         <div className="product-grid">
-          {catalog.map((product) => {
+          {(shopCategory === "All Pieces"
+            ? catalog
+            : catalog.filter((p) => p.category.toLowerCase() === shopCategory.toLowerCase())
+          ).map((product) => {
             const key = product.id || product.slug || product.name;
             const wishlisted = isInWishlist(key);
             return (
-              <article className="product-card" key={key}>
-                <div className={`product-image product-image-${(product.category || "lip-colour").toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>
+              <article
+                className="product-card"
+                key={key}
+                onClick={() => {
+                  setSelectedProduct(product);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+              >
+                <div
+                  className={`product-image product-image-${(product.category || "lip-colour")
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, "-")}`}
+                >
                   {product.tag && <span className="tag">{product.tag}</span>}
-                  <img className="product-photo" src={product.image} alt={product.name} />
+                  <img className="product-photo" src={product.image} alt={product.name} loading="lazy" />
 
                   {/* Luxury Wishlist Heart Toggle Button */}
                   <button
@@ -2220,18 +2412,52 @@ export default function App() {
 
                   <button
                     type="button"
-                    onClick={() => addToCart(product, 1)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      addToCart(product, 1);
+                    }}
                     aria-label={`Add ${product.name} to bag`}
                     title="Add to Haute Bag"
                   >
                     +
                   </button>
-                  <button className="quick-view" onClick={() => { setSelectedProduct(product); window.scrollTo(0, 0); }}>View piece</button>
+                  <button
+                    type="button"
+                    className="quick-view"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedProduct(product);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                  >
+                    View piece
+                  </button>
                 </div>
                 <span className="product-category">{product.category}</span>
                 <h3>{product.name}</h3>
-                <div className="product-meta"><p>{product.price}</p><span>{product.note}</span></div>
-                <div className="swatches"><i style={{ background: product.tone }} /><i /><i /><span>More shades coming</span></div>
+                <div className="product-meta">
+                  <p>{product.price}</p>
+                  <span>{product.note}</span>
+                </div>
+                <div className="swatches">
+                  {product.shades && product.shades.length > 0 ? (
+                    product.shades.map((s) => (
+                      <i
+                        key={s.name}
+                        style={{ background: s.tone }}
+                        title={s.name}
+                        className={s.slug === product.slug ? "active-swatch" : ""}
+                      />
+                    ))
+                  ) : (
+                    <i style={{ background: product.tone }} />
+                  )}
+                  <span>
+                    {product.shades && product.shades.length > 1
+                      ? `${product.shades.length} shades available`
+                      : product.finish || "Signature formula"}
+                  </span>
+                </div>
               </article>
             );
           })}
