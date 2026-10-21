@@ -2323,7 +2323,7 @@ export default function App() {
             <ArrowLink>Our story</ArrowLink>
           </div>
           <div className="image-pair">
-            <img src={photos.blushStill} alt="Pink Blossom Blush among flowers" />
+            <img src={photos.blushStill} alt="Pink Blossom Blush keepsake compact" />
             <img src={photos.highlighterBotanical} alt="Molten Glow Highlighter botanical still" />
           </div>
           <div className="values">
