@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Montserrat:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Montserrat:wght@400;500;600&display=swap");
 @import "tailwindcss";
 
 :root {
@@ -11,8 +11,8 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; overflow-x: hidden; }
-body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Montserrat", sans-serif; font-size: 13px; overflow-x: hidden; width: 100%; }
+html { scroll-behavior: smooth; overflow-x: hidden; overflow-x: clip; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Montserrat", sans-serif; font-size: 13px; overflow-x: hidden; overflow-x: clip; width: 100%; }
 button, input { font: inherit; }
 button, a { color: inherit; }
 button { cursor: pointer; }
@@ -12613,3 +12613,527 @@ footer { background: #ecd7c1; }
 }
 
 
+/* ==========================================================================
+   Cinematic scroll hero (ScrollHero.tsx)
+   The section is tall; .cine-stage is pinned while scroll drives the film.
+   JS sets --v (visibility 0–1) and --s (drift -1…1) on each chapter, and --p
+   (progress 0–1) on the rail.
+   ========================================================================== */
+.cine-hero {
+  --cine-ink: #231611;
+  --cine-muted: rgba(35, 22, 17, 0.66);
+  --cine-gold: #93703e;
+  --cine-hairline: rgba(35, 22, 17, 0.13);
+  --cine-ease: cubic-bezier(.2, .82, .22, 1);
+  --cine-copy-bottom: 48px;
+  /* Film window: sized to the frame's aspect so the feathered mask always
+     lands on the picture's edges. Tall mode swaps in the 640x630 crop. */
+  --film-ratio: 2.032;
+  --film-max-h: 78svh;
+  position: relative;
+  height: 500vh;
+  height: 500svh;
+  background: #e2dbc5;
+  color: var(--cine-ink);
+}
+
+.cine-stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  min-height: 560px;
+  overflow: clip;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse 60% 55% at 50% 56%, rgba(226, 219, 199, 0.9), rgba(226, 219, 199, 0) 100%),
+    linear-gradient(160deg, #efe9da 0%, #e2dbc6 45%, #d5ceb6 100%);
+}
+
+.cine-film {
+  position: absolute;
+  z-index: 0;
+  left: 50%;
+  top: 50%;
+  height: min(var(--film-max-h), calc(100vw / var(--film-ratio)));
+  aspect-ratio: var(--film-ratio);
+  translate: -50% calc(-50% + 34px);
+  -webkit-mask-image:
+    linear-gradient(90deg, transparent 0%, #000 13%, #000 87%, transparent 100%),
+    linear-gradient(180deg, transparent 0%, #000 15%, #000 85%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(90deg, transparent 0%, #000 13%, #000 87%, transparent 100%),
+    linear-gradient(180deg, transparent 0%, #000 15%, #000 85%, transparent 100%);
+  mask-composite: intersect;
+}
+.cine-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;
+  opacity: 0;
+  transition: opacity 1.4s var(--cine-ease);
+}
+.cine-hero[data-ready="true"] .cine-canvas { opacity: 1; }
+/* One vignette over film and backdrop together, so the window reads as
+   part of the room rather than a picture placed on it. */
+.cine-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(ellipse 78% 72% at 50% 54%, rgba(70, 52, 26, 0) 58%, rgba(70, 52, 26, 0.13) 100%);
+}
+
+.cine-grain {
+  position: absolute;
+  inset: -50%;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.08;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .2  0 0 0 0 .14  0 0 0 0 .08  0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  background-size: 220px 220px;
+  animation: cineGrain 1.6s steps(5) infinite;
+}
+@keyframes cineGrain {
+  0% { transform: translate3d(0, 0, 0); }
+  20% { transform: translate3d(-4%, 3%, 0); }
+  40% { transform: translate3d(3%, -5%, 0); }
+  60% { transform: translate3d(-6%, -2%, 0); }
+  80% { transform: translate3d(5%, 4%, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+/* Nav, re-toned for the pale film */
+.cine-header { position: relative; z-index: 10; }
+.cine-hero .nav {
+  color: var(--cine-ink);
+  border-color: rgba(35, 22, 17, 0.1);
+  background: linear-gradient(90deg, rgba(250, 246, 237, 0.7), rgba(250, 246, 237, 0.38));
+  box-shadow: 0 18px 50px rgba(74, 54, 26, 0.12);
+  animation: navReveal 1.05s 1.9s var(--cine-ease) both;
+}
+.cine-hero .nav::after { background: linear-gradient(90deg, transparent, rgba(147, 112, 62, 0.5), transparent); }
+.cine-hero .nav-actions button,
+.cine-hero .nav-actions .account-nav-btn,
+.cine-hero .nav-actions .bag { color: var(--cine-ink); }
+.cine-hero .nav-actions .bag span { background: var(--cine-ink); color: #f6efe3; }
+.cine-hero .menu-button i { background: var(--cine-ink); }
+.cine-hero .account-nav-initials { box-shadow: 0 0 0 1.5px rgba(35, 22, 17, 0.12); }
+
+/* Chapters */
+.cine-chapter {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+}
+.cine-chapter[data-active="false"] { visibility: hidden; }
+.cine-prelude > *,
+.cine-side > *,
+.cine-finale-copy > *,
+.cine-specs {
+  opacity: var(--v, 0);
+  transform: translate3d(0, calc(var(--s, 0) * -1 * (30px + var(--i, 0) * 18px)), 0);
+  filter: blur(calc((1 - var(--v, 0)) * 6px));
+  will-change: transform, opacity, filter;
+}
+
+.cine-eyebrow,
+.cine-index {
+  margin: 0;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--cine-gold);
+}
+.cine-index {
+  display: flex;
+  align-items: center;
+  margin-bottom: 22px;
+}
+.cine-index b {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  margin-right: 14px;
+  font: italic 500 16px/1 "Cormorant Garamond", serif;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.cine-index b::after {
+  content: "";
+  width: 30px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.55;
+}
+
+.cine-display {
+  margin: 0;
+  font: 400 clamp(58px, 8vw, 128px)/0.86 "Cormorant Garamond", serif;
+  letter-spacing: -0.035em;
+  color: var(--cine-ink);
+}
+.cine-display em,
+.cine-title em {
+  font-style: italic;
+  color: var(--cine-gold);
+}
+.cine-title {
+  margin: 0 0 20px;
+  font: 400 clamp(38px, 3.5vw, 56px)/0.96 "Cormorant Garamond", serif;
+  letter-spacing: -0.025em;
+}
+.cine-body {
+  margin: 0;
+  max-width: 330px;
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: var(--cine-muted);
+}
+
+/* Prelude */
+.cine-prelude {
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 30px;
+  padding: 0 24px;
+  text-align: center;
+  animation: cinePreludeIn 1.5s 2.05s var(--cine-ease) both;
+}
+@keyframes cinePreludeIn {
+  from { opacity: 0; transform: translate3d(0, 28px, 0); filter: blur(10px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+.cine-cue {
+  position: absolute;
+  left: 50%;
+  bottom: 38px;
+  margin: 0;
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  translate: -50% 0;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--cine-muted);
+}
+.cine-cue i {
+  width: 1px;
+  height: 56px;
+  background: linear-gradient(180deg, var(--cine-gold), rgba(147, 112, 62, 0));
+  transform-origin: top;
+  animation: cineCue 2.6s var(--cine-ease) infinite;
+}
+@keyframes cineCue {
+  0% { transform: scaleY(0); opacity: 1; }
+  55% { transform: scaleY(1); opacity: 1; }
+  100% { transform: scaleY(1); opacity: 0; }
+}
+
+/* Side chapters frame the centred product */
+.cine-side {
+  top: 50%;
+  width: min(320px, 24vw);
+  translate: 0 -46%;
+}
+.cine-side-left { left: max(48px, 6.5vw); }
+.cine-side-right { right: max(130px, 9.5vw); }
+.cine-side::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -70px -90px;
+  background: radial-gradient(closest-side, rgba(244, 239, 226, 0.72), rgba(244, 239, 226, 0));
+  opacity: var(--v, 0);
+}
+
+/* Finale */
+.cine-finale {
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+  padding: 96px max(190px, 13vw) 40px max(48px, 6.5vw);
+}
+.cine-finale[data-active="true"] .cine-actions,
+.cine-finale[data-active="true"] .cine-specs { pointer-events: auto; }
+.cine-finale-copy { position: relative; max-width: 440px; }
+.cine-finale-copy::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -80px -110px;
+  background: radial-gradient(closest-side, rgba(244, 239, 226, 0.75), rgba(244, 239, 226, 0));
+  opacity: var(--v, 0);
+}
+.cine-display-finale {
+  margin-bottom: 24px;
+  font-size: clamp(56px, 6.2vw, 100px);
+}
+.cine-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px 30px;
+  margin-top: 34px;
+}
+.cine-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+  height: 54px;
+  padding: 0 28px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--cine-ink);
+  color: #f6efe3;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  box-shadow: 0 18px 40px rgba(35, 22, 17, 0.22);
+  transition: transform 0.5s var(--cine-ease), box-shadow 0.5s var(--cine-ease), background 0.4s;
+}
+.cine-btn:hover {
+  transform: translateY(-2px);
+  background: #3a241b;
+  box-shadow: 0 26px 54px rgba(35, 22, 17, 0.28);
+}
+.cine-btn:focus-visible,
+.cine-link:focus-visible,
+.cine-skip:focus-visible { outline: 1px solid var(--cine-gold); outline-offset: 5px; }
+.cine-btn-price {
+  padding-left: 18px;
+  border-left: 1px solid rgba(246, 239, 227, 0.24);
+  font: 500 16px/1 "Cormorant Garamond", serif;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: #e4c79a;
+}
+.cine-link {
+  position: relative;
+  padding: 8px 0;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+.cine-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 2px;
+  height: 1px;
+  background: currentColor;
+  transform-origin: left;
+  transition: transform 0.6s var(--cine-ease);
+}
+.cine-link:hover::after { transform: scaleX(0.35); }
+
+.cine-specs { width: 240px; }
+.cine-specs-name {
+  margin: 0 0 16px;
+  font: italic 400 24px/1.1 "Cormorant Garamond", serif;
+}
+.cine-specs dl { margin: 0; }
+.cine-specs dl > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 13px 0;
+  border-top: 1px solid var(--cine-hairline);
+}
+.cine-specs dt {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--cine-gold);
+}
+.cine-specs dd {
+  margin: 0;
+  font-size: 11px;
+  text-align: right;
+}
+.cine-shades { display: flex; align-items: center; justify-content: flex-end; gap: 7px; }
+.cine-shades span {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25), 0 0 0 1px var(--cine-hairline);
+}
+
+/* Chapter rail */
+.cine-rail {
+  position: absolute;
+  z-index: 6;
+  right: 36px;
+  top: 50%;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  padding-right: 18px;
+  translate: 0 -50%;
+  opacity: 0;
+  transition: opacity 0.8s var(--cine-ease);
+}
+.cine-rail[data-active="true"] { opacity: 1; }
+.cine-rail i {
+  position: absolute;
+  top: -12px;
+  bottom: -12px;
+  right: 0;
+  width: 1px;
+  background: var(--cine-hairline);
+}
+.cine-rail i::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--cine-gold);
+  transform-origin: top;
+  transform: scaleY(var(--p, 0));
+}
+.cine-rail span {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  color: rgba(35, 22, 17, 0.32);
+  transition: color 0.6s var(--cine-ease);
+}
+.cine-rail b { font: italic 500 15px/1 "Cormorant Garamond", serif; }
+.cine-rail em {
+  font-style: normal;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  opacity: 0;
+  translate: 8px 0;
+  transition: opacity 0.6s var(--cine-ease), translate 0.6s var(--cine-ease);
+}
+.cine-rail[data-chapter="0"] span[data-index="0"],
+.cine-rail[data-chapter="1"] span[data-index="1"],
+.cine-rail[data-chapter="2"] span[data-index="2"] { color: var(--cine-ink); }
+.cine-rail[data-chapter="0"] span[data-index="0"] em,
+.cine-rail[data-chapter="1"] span[data-index="1"] em,
+.cine-rail[data-chapter="2"] span[data-index="2"] em { opacity: 1; translate: 0 0; }
+
+.cine-skip {
+  position: absolute;
+  z-index: 30;
+  top: 14px;
+  left: 50%;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: var(--cine-ink);
+  color: #f6efe3;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  translate: -50% -160%;
+  transition: translate 0.4s var(--cine-ease);
+}
+.cine-skip:focus { translate: -50% 0; }
+
+/* Portrait & narrow screens: the film sits in a feathered window under the
+   nav and the copy stacks beneath it instead of flanking the product. */
+@media (max-aspect-ratio: 13/10), (max-width: 900px) {
+  .cine-hero {
+    height: 420vh;
+    height: 420svh;
+  }
+  .cine-hero {
+    --film-ratio: 1.016;
+    --film-max-h: 54svh;
+  }
+  .cine-film {
+    top: 94px;
+    translate: -50% 0;
+  }
+  .cine-rail { display: none; }
+
+  .cine-prelude { gap: 22px; padding-bottom: 40px; }
+  .cine-display { font-size: clamp(52px, 13.5vw, 96px); }
+  .cine-cue { bottom: calc(var(--cine-copy-bottom) + 6px); }
+
+  .cine-side,
+  .cine-finale-copy {
+    max-width: 520px;
+  }
+  .cine-side {
+    top: auto;
+    left: 24px;
+    right: 24px;
+    bottom: var(--cine-copy-bottom);
+    width: auto;
+    translate: none;
+  }
+  .cine-side::before,
+  .cine-finale-copy::before { display: none; }
+  .cine-index { margin-bottom: 14px; }
+  .cine-title {
+    margin-bottom: 12px;
+    font-size: clamp(32px, 8.4vw, 48px);
+  }
+  .cine-body {
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  .cine-finale {
+    align-items: flex-end;
+    padding: 0 24px var(--cine-copy-bottom);
+  }
+  .cine-display-finale {
+    margin-bottom: 14px;
+    font-size: clamp(46px, 11.5vw, 80px);
+  }
+  .cine-actions { margin-top: 22px; gap: 14px 24px; }
+  .cine-btn { height: 50px; padding: 0 22px; }
+  .cine-specs { display: none; }
+}
+
+/* Leave room for the floating mobile dock */
+@media (max-width: 768px) {
+  .cine-hero { --cine-copy-bottom: 104px; }
+}
+
+@media (max-width: 420px) {
+  .cine-finale .cine-body { display: none; }
+  .cine-actions { margin-top: 18px; }
+}
+
+@media (max-height: 720px) and (max-aspect-ratio: 13/10) {
+  .cine-hero { --film-max-h: 48svh; }
+  .cine-side .cine-body { display: none; }
+}
+
+/* Reduced motion: no pinning, no scrub; the closing frame and finale only. */
+.cine-hero.is-static { height: auto; }
+.cine-hero.is-static .cine-stage { position: relative; }
+.cine-hero.is-static .cine-grain,
+.cine-hero.is-static .cine-cue i { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .cine-prelude,
+  .cine-hero .nav { animation: none; }
+  .cine-prelude > *,
+  .cine-side > *,
+  .cine-finale-copy > *,
+  .cine-specs { filter: none; transform: none; }
+}
