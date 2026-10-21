@@ -30,6 +30,7 @@ import {
   DELUXE_SAMPLES,
 } from "./lib/cartWishlistContext";
 import { getCurrentUser, recordUserOrder, OrderHistoryItem } from "./lib/auth";
+import { generateInvoiceHtml, InvoiceData, numberToWords } from "./lib/invoice";
 
 interface CartViewProps {
   cartItems: CartItem[];
@@ -199,56 +200,100 @@ export default function CartView({
     }, 1200);
   };
 
-  // Download Receipt / Invoice
+  // Download Official Indian GST Tax Invoice (Print-ready & Downloadable)
   const handleDownloadInvoice = () => {
-    const invoiceContent = `========================================================
-           SHE'AURA HAUTE PARFUMS & COSMETIQUES
-              PARIS · LONDON · NEW DELHI
-========================================================
-OFFICIAL ORDER CONFIRMATION & TAX INVOICE
-Order ID: ${confirmedOrderId}
-Date: ${new Date().toLocaleDateString("en-IN", { dateStyle: "long" })}
-Client: ${shippingForm.fullName}
-Phone: ${shippingForm.phone}
-Delivery Address:
-  ${shippingForm.address}
-  ${shippingForm.city}, ${shippingForm.state} - ${shippingForm.pincode}
+    // 18% GST (9% CGST + 9% SGST) breakdown
+    const taxableSubtotal = Math.round((grandTotal / 1.18) * 100) / 100;
+    const totalGst = Math.round((grandTotal - taxableSubtotal) * 100) / 100;
+    const cgstTotal = Math.round((totalGst / 2) * 100) / 100;
+    const sgstTotal = Math.round((totalGst - cgstTotal) * 100) / 100;
 
---------------------------------------------------------
-CURATED ITEMS:
-${cartItems
-  .map(
-    (item, idx) =>
-      `${idx + 1}. ${item.product.name} (${item.selectedShade || "Classic"}) x ${item.quantity} = ₹${(
-        item.priceNum * item.quantity
-      ).toLocaleString("en-IN")}`
-  )
-  .join("\n")}
+    const invoiceItems = cartItems.map((item, idx) => {
+      const lineTotal = item.priceNum * item.quantity;
+      const itemTaxable = Math.round((lineTotal / 1.18) * 100) / 100;
+      const itemGst = Math.round((lineTotal - itemTaxable) * 100) / 100;
+      const itemCgst = Math.round((itemGst / 2) * 100) / 100;
+      const itemSgst = Math.round((itemGst - itemCgst) * 100) / 100;
 
-COMPLIMENTARY DELUXE MINIATURE:
-- ${DELUXE_SAMPLES.find((s) => s.id === selectedSampleId)?.name || "Damask Rose Botanical Squalane"} (Free)
+      return {
+        slNo: idx + 1,
+        productName: item.product.name,
+        variantOrShade: item.selectedShade || "Couture Standard",
+        hsnCode: item.product.category.toLowerCase().includes("perfume") ? "3303" : "3304",
+        quantity: item.quantity,
+        unitPrice: item.priceNum,
+        taxableAmount: itemTaxable,
+        cgstRate: "9%",
+        cgstAmount: itemCgst,
+        sgstRate: "9%",
+        sgstAmount: itemSgst,
+        totalAmount: lineTotal,
+      };
+    });
 
-SIGNATURE PACKAGING:
-- ${packagingType === "box" ? "She'Aura Silk Gift Box (Gold Ribbon)" : "Eco-Luxe Linen Travel Pouch"}
+    const active = getCurrentUser();
+    const invoiceData: InvoiceData = {
+      invoiceNumber: `INV-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`,
+      orderId: confirmedOrderId,
+      date: new Date().toLocaleDateString("en-IN", { dateStyle: "long" }),
+      seller: {
+        legalName: "She'Aura Haute Parfums & Cosmétiques Pvt. Ltd.",
+        brand: "SHE'AURA",
+        address: "DLF Promenade, Luxury Mall Wing, Vasant Kunj",
+        cityState: "New Delhi, Delhi 110070, India",
+        gstin: "07AABCS1429B1Z8",
+        pan: "AABCS1429B",
+        email: "concierge@sheaura.com",
+        phone: "+91 11 4982 0000",
+      },
+      buyer: {
+        fullName: shippingForm.fullName,
+        email: active?.email || "client@sheaura.com",
+        phone: shippingForm.phone,
+        address: shippingForm.address,
+        city: shippingForm.city,
+        state: shippingForm.state,
+        pincode: shippingForm.pincode,
+      },
+      payment: {
+        method: paymentMethod,
+        status: "Confirmed & Verified",
+        transactionRef: `TXN-${Math.floor(100000000 + Math.random() * 900000000)}`,
+      },
+      items: invoiceItems,
+      deluxeSample: DELUXE_SAMPLES.find((s) => s.id === selectedSampleId)?.name,
+      packaging: packagingType === "box" ? "She'Aura Silk Gift Box (Gold Ribbon)" : "Eco-Luxe Linen Travel Pouch",
+      summary: {
+        subtotal,
+        discountAmount,
+        discountCode: appliedPromoCode,
+        taxableSubtotal,
+        cgstTotal,
+        sgstTotal,
+        totalGst,
+        shippingFee: shippingCost,
+        grandTotal,
+        amountInWords: numberToWords(grandTotal),
+      },
+    };
 
---------------------------------------------------------
-Subtotal: ₹${subtotal.toLocaleString("en-IN")}
-Discount (${appliedPromoCode || "None"}): -₹${discountAmount.toLocaleString("en-IN")}
-Haute Delivery: ${shippingCost === 0 ? "FREE (Complimentary)" : `₹${shippingCost}`}
-TOTAL PAID: ₹${grandTotal.toLocaleString("en-IN")}
-Payment Method: ${paymentMethod.toUpperCase()} (VERIFIED)
-========================================================
-Thank you for indulging in the She'Aura ritual.
-Traceable · Skin-loving · Intentional.
-`;
+    const invoiceHtml = generateInvoiceHtml(invoiceData);
 
-    const blob = new Blob([invoiceContent], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `SheAura-Invoice-${confirmedOrderId}.txt`;
-    link.click();
-    URL.revokeObjectURL(url);
+    // Open print preview window
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      printWindow.document.write(invoiceHtml);
+      printWindow.document.close();
+    } else {
+      // Fallback: Download HTML file
+      const blob = new Blob([invoiceHtml], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `SheAura-Tax-Invoice-${confirmedOrderId}.html`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
   };
 
   // =========================================================================

@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "format": "oxfmt"
+    "format": "oxfmt",
+    "test": "node scripts/test-e2e-suite.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",
