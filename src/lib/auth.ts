@@ -633,6 +633,132 @@ export function updateAddress(address: AddressBookItem): SheAuraUser | null {
   return updated;
 }
 
+const STORAGE_ORDERS_KEY = "sheaura_orders_v2";
+const ORDERS_EVENT_NAME = "sheaura:orders-updated";
+
+/** Retrieves all orders placed across the application (for Admin Studio and reporting) */
+export function getAllOrders(): OrderHistoryItem[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(STORAGE_ORDERS_KEY);
+    if (raw) return JSON.parse(raw);
+    const initial = [...DEMO_ADMIN.orders, ...DEMO_CLIENT.orders];
+    localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(initial));
+    return initial;
+  } catch {
+    return [];
+  }
+}
+
+/** Records a newly placed order to user history, central repository, and Supabase */
+export function recordUserOrder(
+  order: OrderHistoryItem,
+  clientDetails?: { fullName?: string; phone?: string; address?: string; email?: string }
+): { user: SheAuraUser | null; order: OrderHistoryItem } {
+  // 1. Central repository for Admin Studio
+  if (typeof window !== "undefined") {
+    try {
+      const existing = getAllOrders();
+      const updated = [order, ...existing.filter((o) => o.id !== order.id)];
+      localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(updated));
+      window.dispatchEvent(new CustomEvent(ORDERS_EVENT_NAME, { detail: { order, allOrders: updated } }));
+    } catch (err) {
+      console.warn("Could not save to local orders repository:", err);
+    }
+  }
+
+  // 2. Persist to active user session
+  const current = getCurrentUser();
+  let updatedUser: SheAuraUser | null = null;
+  if (current) {
+    const numericTotal = parseInt(order.totalAmount.replace(/[^0-9]/g, ""), 10) || 0;
+    const earnedPoints = Math.round(numericTotal * 0.1);
+    updatedUser = {
+      ...current,
+      orders: [order, ...(current.orders || []).filter((o) => o.id !== order.id)],
+      loyaltyPoints: (current.loyaltyPoints || 0) + earnedPoints,
+    };
+    setActiveUser(updatedUser);
+
+    const localUsers = getLocalUsers();
+    const emailKey = current.email.toLowerCase();
+    if (localUsers[emailKey]) {
+      localUsers[emailKey].user = updatedUser;
+      try {
+        localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(localUsers));
+      } catch {}
+    }
+  }
+
+  // 3. Optional async cloud sync to Supabase (fails gracefully if RLS or offline)
+  try {
+    if (supabase) {
+      void supabase.from("orders").insert({
+        id: order.id,
+        client_name: clientDetails?.fullName || current?.fullName || "Maison Guest",
+        client_email: clientDetails?.email || current?.email || "guest@sheaura.com",
+        client_phone: clientDetails?.phone || current?.phone || "",
+        items: order.items,
+        items_count: order.itemsCount,
+        total_amount: order.totalAmount,
+        status: order.status,
+        tracking_number: order.trackingNumber,
+        eta: order.eta,
+      });
+    }
+  } catch {}
+
+  return { user: updatedUser, order };
+}
+
+/** Updates an order's status (Processing -> Dispatched -> Delivered) */
+export function updateOrderStatus(
+  orderId: string,
+  newStatus: "processing" | "dispatched" | "delivered"
+): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const orders = getAllOrders();
+    const updated = orders.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o));
+    localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent(ORDERS_EVENT_NAME, { detail: { orderId, newStatus, allOrders: updated } }));
+
+    // Also update in active user if matching
+    const current = getCurrentUser();
+    if (current && current.orders.some((o) => o.id === orderId)) {
+      const userOrders = current.orders.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o));
+      setActiveUser({ ...current, orders: userOrders });
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Event listener subscription for orders changes */
+export function onOrdersChanged(callback: (orders: OrderHistoryItem[]) => void): () => void {
+  const handler = (event: Event) => {
+    const custom = event as CustomEvent<{ allOrders: OrderHistoryItem[] }>;
+    callback(custom.detail?.allOrders ?? getAllOrders());
+  };
+
+  if (typeof window !== "undefined") {
+    window.addEventListener(ORDERS_EVENT_NAME, handler);
+    window.addEventListener("storage", (e) => {
+      if (e.key === STORAGE_ORDERS_KEY) {
+        callback(getAllOrders());
+      }
+    });
+  }
+
+  return () => {
+    if (typeof window !== "undefined") {
+      window.removeEventListener(ORDERS_EVENT_NAME, handler);
+    }
+  };
+}
+
 /** Event listener subscription for auth changes */
 export function onAuthStateChanged(callback: (user: SheAuraUser | null) => void): () => void {
   const handler = (event: Event) => {

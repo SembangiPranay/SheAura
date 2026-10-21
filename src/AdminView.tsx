@@ -39,9 +39,21 @@ import {
   Lock,
   ShieldCheck,
   Filter,
+  ShoppingBag,
+  Truck,
+  Clock,
+  UserCheck,
+  CreditCard,
 } from "lucide-react";
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
-import { getCurrentUser, signOut as signOutSheAura } from "./lib/auth";
+import {
+  getCurrentUser,
+  signOut as signOutSheAura,
+  getAllOrders,
+  updateOrderStatus,
+  onOrdersChanged,
+  OrderHistoryItem,
+} from "./lib/auth";
 import {
   saveLocalCustomProduct,
   deleteLocalCustomProduct,
@@ -289,7 +301,17 @@ export default function AdminView({
   }, []);
 
   // Navigation tabs
-  const [currentTab, setCurrentTab] = useState<"products" | "reels" | "inventory" | "database">("products");
+  const [currentTab, setCurrentTab] = useState<"products" | "reels" | "inventory" | "orders" | "database">("products");
+
+  // Orders State
+  const [orders, setOrders] = useState<OrderHistoryItem[]>(() => getAllOrders());
+  const [orderStatusFilter, setOrderStatusFilter] = useState<"all" | "processing" | "dispatched" | "delivered">("all");
+  const [orderSearchQuery, setOrderSearchQuery] = useState("");
+
+  useEffect(() => {
+    const unsub = onOrdersChanged((updated) => setOrders(updated));
+    return () => unsub();
+  }, []);
 
   // Search, Filter & Sort state
   const [searchQuery, setSearchQuery] = useState("");
@@ -786,13 +808,13 @@ export default function AdminView({
         id: `local-${def.slug}`,
         status: "published",
         is_published: true,
-        stock_quantity: 50,
+        stock_quantity: 85,
         price: def.rawPrice || parseFloat(def.price.replace(/[^0-9.]/g, "")) || 0,
         image_url: def.image,
         campaign_image_url: def.campaign,
       });
     }
-    setNotice("✓ Re-seeded official 5 core She'Aura luxury products into catalog storage!");
+    setNotice(`✓ Re-seeded all ${defaultProducts.length} official She'Aura luxury products into catalog storage!`);
     void loadProducts();
     setTimeout(() => setNotice(""), 3500);
   }
@@ -1265,6 +1287,18 @@ export default function AdminView({
             <BarChart3 size={14} strokeWidth={1.8} />
             Inventory & Stock Analytics
           </span>
+        </button>
+
+        <button
+          type="button"
+          className={`admin-tab-btn ${currentTab === "orders" ? "active" : ""}`}
+          onClick={() => setCurrentTab("orders")}
+        >
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+            <ShoppingBag size={14} strokeWidth={1.8} />
+            Orders & Fulfillment
+          </span>
+          {orders.length > 0 && <span className="admin-tab-badge">{orders.length}</span>}
         </button>
 
         <button
@@ -1899,7 +1933,260 @@ export default function AdminView({
         </div>
       )}
 
-      {/* TAB 4: DATABASE & SYSTEM HEALTH */}
+      {/* TAB 4: ORDERS & FULFILLMENT MANAGEMENT */}
+      {currentTab === "orders" && (() => {
+        const filteredOrders = orders.filter((ord) => {
+          if (orderStatusFilter !== "all" && ord.status !== orderStatusFilter) return false;
+          if (orderSearchQuery.trim()) {
+            const q = orderSearchQuery.toLowerCase();
+            const matchId = ord.id.toLowerCase().includes(q);
+            const matchTrack = ord.trackingNumber?.toLowerCase().includes(q);
+            const matchItems = ord.items.some((i) => i.name.toLowerCase().includes(q) || i.shade?.toLowerCase().includes(q));
+            return matchId || matchTrack || matchItems;
+          }
+          return true;
+        });
+
+        const totalRevenue = orders.reduce((sum, ord) => {
+          const num = parseInt(ord.totalAmount.replace(/[^0-9]/g, ""), 10) || 0;
+          return sum + num;
+        }, 0);
+
+        const processingCount = orders.filter((o) => o.status === "processing").length;
+        const dispatchedCount = orders.filter((o) => o.status === "dispatched").length;
+        const deliveredCount = orders.filter((o) => o.status === "delivered").length;
+
+        return (
+          <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "16px" }}>
+              <div>
+                <p className="eyebrow dark" style={{ margin: 0 }}>Client Commerce</p>
+                <h2 style={{ margin: "4px 0 0", fontFamily: "Cormorant Garamond, serif", fontSize: "32px", color: "#241610" }}>
+                  Orders & Fulfillment Console
+                </h2>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span style={{ fontSize: "12px", color: "#6b5446" }}>
+                  Auto-syncing live orders with client sessions
+                </span>
+                <span className="admin-status-dot" title="Live listener active" />
+              </div>
+            </div>
+
+            {/* KPI Cards */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
+              <div className="admin-kpi-card">
+                <span className="admin-kpi-title">Total Orders</span>
+                <b className="admin-kpi-val">{orders.length}</b>
+                <span className="admin-kpi-sub">Across all customer accounts</span>
+              </div>
+              <div className="admin-kpi-card">
+                <span className="admin-kpi-title">Gross Revenue</span>
+                <b className="admin-kpi-val" style={{ color: "#059669" }}>
+                  ₹{totalRevenue.toLocaleString("en-IN")}
+                </b>
+                <span className="admin-kpi-sub">Verified customer checkouts</span>
+              </div>
+              <div className="admin-kpi-card">
+                <span className="admin-kpi-title">Atelier Processing</span>
+                <b className="admin-kpi-val" style={{ color: "#d97706" }}>
+                  {processingCount}
+                </b>
+                <span className="admin-kpi-sub">Requires wrapping & dispatch</span>
+              </div>
+              <div className="admin-kpi-card">
+                <span className="admin-kpi-title">Delivered to Clients</span>
+                <b className="admin-kpi-val" style={{ color: "#2563eb" }}>
+                  {deliveredCount}
+                </b>
+                <span className="admin-kpi-sub">{dispatchedCount} currently in transit</span>
+              </div>
+            </div>
+
+            {/* Search & Filter Bar */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "14px", background: "#fdfaf6", padding: "16px 20px", borderRadius: "12px", border: "1px solid rgba(42, 26, 20, 0.08)" }}>
+              <div style={{ position: "relative", minWidth: "260px", flex: 1, maxWidth: "420px" }}>
+                <Search size={14} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#8c766a" }} />
+                <input
+                  type="text"
+                  placeholder="Search by Order ID, item, or tracking #..."
+                  value={orderSearchQuery}
+                  onChange={(e) => setOrderSearchQuery(e.target.value)}
+                  style={{ width: "100%", padding: "9px 12px 9px 34px", borderRadius: "8px", border: "1px solid rgba(42, 26, 20, 0.16)", fontSize: "12px", background: "#fff", outline: "none" }}
+                />
+              </div>
+
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                {[
+                  { id: "all", label: `All (${orders.length})` },
+                  { id: "processing", label: `Processing (${processingCount})` },
+                  { id: "dispatched", label: `Dispatched (${dispatchedCount})` },
+                  { id: "delivered", label: `Delivered (${deliveredCount})` },
+                ].map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    className={`admin-filter-chip ${orderStatusFilter === f.id ? "active" : ""}`}
+                    onClick={() => setOrderStatusFilter(f.id as any)}
+                    style={{ fontSize: "11px", padding: "6px 14px" }}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Orders List */}
+            {filteredOrders.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "60px 20px", background: "#fcf8f3", borderRadius: "14px", border: "1px dashed rgba(42, 26, 20, 0.15)" }}>
+                <ShoppingBag size={36} strokeWidth={1.2} style={{ color: "#a89182", margin: "0 auto 12px" }} />
+                <h3 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: "22px", color: "#241610", margin: "0 0 6px" }}>No Orders Found</h3>
+                <p style={{ fontSize: "12px", color: "#765d50", maxWidth: "380px", margin: "0 auto" }}>
+                  Orders placed by clients via the shopping bag and checkout will stream into this console automatically in real-time.
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                {filteredOrders.map((ord) => {
+                  const statusColors = {
+                    processing: { bg: "#fef3c7", text: "#92400e", border: "#fde68a", label: "Processing in Atelier" },
+                    dispatched: { bg: "#e0f2fe", text: "#0369a1", border: "#bae6fd", label: "Dispatched & In Transit" },
+                    delivered: { bg: "#dcfce7", text: "#15803d", border: "#bbf7d0", label: "Delivered to Client" },
+                  }[ord.status] || { bg: "#f3f4f6", text: "#374151", border: "#e5e7eb", label: ord.status };
+
+                  return (
+                    <div
+                      key={ord.id}
+                      style={{
+                        background: "#ffffff",
+                        border: "1px solid rgba(42, 26, 20, 0.1)",
+                        borderRadius: "14px",
+                        padding: "20px 24px",
+                        boxShadow: "0 4px 16px rgba(42, 26, 20, 0.04)",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "16px",
+                      }}
+                    >
+                      {/* Top Bar: Order ID, Date, Status */}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", borderBottom: "1px solid rgba(42, 26, 20, 0.08)", paddingBottom: "14px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+                          <span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: "14px", color: "#241610", background: "#f8efe3", padding: "4px 10px", borderRadius: "6px" }}>
+                            {ord.id}
+                          </span>
+                          <span style={{ fontSize: "12px", color: "#765d50" }}>Placed on {ord.date}</span>
+                          <span style={{ fontSize: "11px", color: "#8c766a" }}>•</span>
+                          <span style={{ fontSize: "12px", color: "#765d50" }}>Tracking: <b>{ord.trackingNumber}</b></span>
+                        </div>
+
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                          <span
+                            style={{
+                              fontSize: "11px",
+                              fontWeight: 700,
+                              textTransform: "uppercase",
+                              letterSpacing: "0.06em",
+                              padding: "4px 12px",
+                              borderRadius: "999px",
+                              background: statusColors.bg,
+                              color: statusColors.text,
+                              border: `1px solid ${statusColors.border}`,
+                            }}
+                          >
+                            {statusColors.label}
+                          </span>
+
+                          {/* Quick Status Action Button */}
+                          {ord.status === "processing" && (
+                            <button
+                              type="button"
+                              className="admin-primary"
+                              onClick={() => {
+                                updateOrderStatus(ord.id, "dispatched");
+                                setNotice(`✓ Order ${ord.id} marked as Dispatched!`);
+                                setTimeout(() => setNotice(""), 3000);
+                              }}
+                              style={{ padding: "6px 14px", fontSize: "11px", display: "inline-flex", alignItems: "center", gap: "5px" }}
+                            >
+                              <Truck size={12} />
+                              <span>Dispatch Order</span>
+                            </button>
+                          )}
+                          {ord.status === "dispatched" && (
+                            <button
+                              type="button"
+                              className="admin-primary"
+                              onClick={() => {
+                                updateOrderStatus(ord.id, "delivered");
+                                setNotice(`✓ Order ${ord.id} marked as Delivered!`);
+                                setTimeout(() => setNotice(""), 3000);
+                              }}
+                              style={{ padding: "6px 14px", fontSize: "11px", background: "#059669", display: "inline-flex", alignItems: "center", gap: "5px" }}
+                            >
+                              <CheckCircle2 size={12} />
+                              <span>Mark Delivered</span>
+                            </button>
+                          )}
+                          {ord.status === "delivered" && (
+                            <span style={{ fontSize: "11.5px", color: "#059669", display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: 600 }}>
+                              <CheckCircle2 size={13} />
+                              Fulfilled
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Middle: Items Grid */}
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "12px" }}>
+                        {ord.items.map((item, idx) => (
+                          <div
+                            key={idx}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "12px",
+                              padding: "10px",
+                              background: "#fdfaf6",
+                              borderRadius: "8px",
+                              border: "1px solid rgba(42, 26, 20, 0.06)",
+                            }}
+                          >
+                            <img
+                              src={item.image}
+                              alt=""
+                              style={{ width: "44px", height: "44px", borderRadius: "6px", objectFit: "cover", flexShrink: 0, background: "#f0e4d6" }}
+                            />
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <div style={{ fontSize: "12px", fontWeight: 600, color: "#241610", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {item.name}
+                              </div>
+                              <div style={{ fontSize: "10.5px", color: "#8c766a" }}>Shade: {item.shade}</div>
+                              <div style={{ fontSize: "11.5px", fontWeight: 600, color: "#4a281c", marginTop: "2px" }}>{item.price}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Bottom Footer: Total, ETA & Client Summary */}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px", paddingTop: "6px" }}>
+                        <div style={{ fontSize: "11.5px", color: "#6b5446" }}>
+                          Estimated Delivery: <b>{ord.eta}</b>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                          <span style={{ fontSize: "11.5px", color: "#8c766a" }}>{ord.itemsCount} {ord.itemsCount === 1 ? "Piece" : "Pieces"}</span>
+                          <span style={{ fontSize: "16px", fontWeight: 700, color: "#241610" }}>{ord.totalAmount}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* TAB 5: DATABASE & SYSTEM HEALTH */}
       {currentTab === "database" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
           <div>
@@ -1946,7 +2233,7 @@ export default function AdminView({
                 <span className="admin-kpi-icon"><Database size={17} strokeWidth={1.8} /></span>
               </div>
               <p style={{ margin: "0 0 16px", fontSize: "12.5px", color: "#765d50", lineHeight: 1.5 }}>
-                Export full snapshot of your catalog data or restore the 5 official core luxury products with verified reels.
+                Export full snapshot of your catalog data or restore all 12 official luxury products with verified studio photography and reels.
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <button
@@ -1965,7 +2252,7 @@ export default function AdminView({
                   style={{ padding: "10px 16px", justifyContent: "center", color: "#b45309", borderColor: "#fed7aa", background: "#fdf3eb" }}
                 >
                   <RotateCcw size={13} strokeWidth={1.8} />
-                  <span>Re-Seed 5 Official Luxury Products</span>
+                  <span>Re-Seed All 12 Luxury Products</span>
                 </button>
               </div>
             </div>

@@ -29,7 +29,7 @@ import {
   VALID_PROMOS,
   DELUXE_SAMPLES,
 } from "./lib/cartWishlistContext";
-import { getCurrentUser } from "./lib/auth";
+import { getCurrentUser, recordUserOrder, OrderHistoryItem } from "./lib/auth";
 
 interface CartViewProps {
   cartItems: CartItem[];
@@ -159,16 +159,44 @@ export default function CartView({
     setPromoError("");
   };
 
-  // Place Order Simulation
+  // Place Order Action: records order dynamically to user history and central store
   const handlePlaceOrder = () => {
     setIsProcessingOrder(true);
     setTimeout(() => {
       const generatedId = `SH-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
       setConfirmedOrderId(generatedId);
+
+      const newOrder: OrderHistoryItem = {
+        id: generatedId,
+        date: new Date().toLocaleDateString("en-IN", { month: "long", day: "numeric", year: "numeric" }),
+        itemsCount: cartItems.reduce((acc, i) => acc + i.quantity, 0),
+        totalAmount: `₹${grandTotal.toLocaleString("en-IN")}`,
+        status: "processing",
+        trackingNumber: `EXP-BLUEDART-${Math.floor(10000 + Math.random() * 90000)}`,
+        eta: "Arriving in 2-3 Business Days",
+        items: cartItems.map((item) => ({
+          name: item.product.name,
+          shade: item.selectedShade || item.product.name.split(" ").slice(0, 2).join(" "),
+          price: item.product.price,
+          image: item.product.image,
+        })),
+      };
+
+      const currentUser = getCurrentUser();
+      recordUserOrder(newOrder, {
+        fullName: shippingForm.fullName,
+        phone: shippingForm.phone,
+        address: `${shippingForm.address}, ${shippingForm.city}, ${shippingForm.state} - ${shippingForm.pincode}`,
+        email: currentUser?.email || "guest@sheaura.com",
+      });
+
+      // Clear the shopping bag once confirmed
+      onClearCart();
+
       setIsProcessingOrder(false);
       setStep("confirmed");
       window.scrollTo(0, 0);
-    }, 1500);
+    }, 1200);
   };
 
   // Download Receipt / Invoice

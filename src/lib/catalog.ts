@@ -749,9 +749,22 @@ export function mapSupabaseToStorefront(row: any): StorefrontProduct {
   const priceStr = formatPrice(row.price);
   const numPrice = typeof row.price === "number" ? row.price : parseFloat(String(row.price).replace(/[^0-9.]/g, "")) || 0;
 
-  const image = row.image_url || photos.makeup;
-  const campaign = row.campaign_image_url || row.image_url || photos.model;
-  const still = row.image_url || row.campaign_image_url || photos.lipstick;
+  const slug = row.slug || row.name?.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const matchingDefault = defaultProducts.find(
+    (d) => (d.slug || d.name).toLowerCase() === (slug || row.name || "").toLowerCase()
+  );
+
+  const image = row.image_url || matchingDefault?.image || photos.makeup;
+  const campaign = row.campaign_image_url || matchingDefault?.campaign || photos.model;
+  const still = row.still || matchingDefault?.still || row.image_url || photos.lipstick;
+
+  const gallery = Array.isArray(row.gallery) && row.gallery.length > 0
+    ? row.gallery
+    : matchingDefault?.gallery || [image, still, campaign].filter(Boolean);
+
+  const shades = Array.isArray(row.shades) && row.shades.length > 0
+    ? row.shades
+    : matchingDefault?.shades;
 
   let parsedVideos: ProductVideo[] = [];
   if (Array.isArray(row.videos) && row.videos.length > 0) {
@@ -781,8 +794,10 @@ export function mapSupabaseToStorefront(row: any): StorefrontProduct {
     } catch {}
   }
 
-  // Fallback to legacy single-video columns if array was empty
-  if (parsedVideos.length === 0 && (row.video_url || row.instagram_url)) {
+  // Fallback to matching default videos or legacy single-video columns
+  if (parsedVideos.length === 0 && matchingDefault?.videos && matchingDefault.videos.length > 0) {
+    parsedVideos = matchingDefault.videos;
+  } else if (parsedVideos.length === 0 && (row.video_url || row.instagram_url)) {
     parsedVideos = [
       {
         id: "vid-1",
@@ -798,30 +813,32 @@ export function mapSupabaseToStorefront(row: any): StorefrontProduct {
 
   return {
     id: row.id,
-    slug: row.slug || row.name?.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-    name: row.name || "Untitled Product",
+    slug,
+    name: row.name || matchingDefault?.name || "Untitled Product",
     price: priceStr,
-    rawPrice: numPrice,
+    rawPrice: numPrice || matchingDefault?.rawPrice,
     image,
     campaign,
     still,
-    tag: row.tag || "Icon",
-    tone: row.tone || "#a81920",
-    category: row.category || "Lip colour",
-    note: row.note || row.short_description || "Botanical formula",
-    finish: row.finish || "Sculpted satin",
-    mood: row.mood || "The statement",
-    description: row.description || row.short_description || "A conscious beauty piece from the She'Aura studio.",
-    short_description: row.short_description || "",
-    ingredients: row.ingredients || "",
-    benefits: Array.isArray(row.benefits) ? row.benefits : typeof row.benefits === "string" ? row.benefits.split("\n") : [],
-    how_to_use: row.how_to_use || "",
-    size: row.size || "",
-    video_url: parsedVideos[0]?.video_url || row.video_url || "",
-    instagram_url: parsedVideos[0]?.instagram_url || row.instagram_url || "",
-    video_title: parsedVideos[0]?.title || row.video_title || "Look 01 · Sensorial Glide",
-    video_quote: parsedVideos[0]?.quote || row.video_quote || "Finding a formula that glides smoothly and hydrates all day.",
-    social_handle: parsedVideos[0]?.social_handle || row.social_handle || "@sheauracosmeticsofficial",
+    gallery,
+    shades,
+    tag: row.tag || matchingDefault?.tag || "Icon",
+    tone: row.tone || matchingDefault?.tone || "#a81920",
+    category: row.category || matchingDefault?.category || "Lip colour",
+    note: row.note || row.short_description || matchingDefault?.note || "Botanical formula",
+    finish: row.finish || matchingDefault?.finish || "Sculpted satin",
+    mood: row.mood || matchingDefault?.mood || "The statement",
+    description: row.description || row.short_description || matchingDefault?.description || "A conscious beauty piece from the She'Aura studio.",
+    short_description: row.short_description || matchingDefault?.short_description || "",
+    ingredients: row.ingredients || matchingDefault?.ingredients || "",
+    benefits: Array.isArray(row.benefits) ? row.benefits : typeof row.benefits === "string" ? row.benefits.split("\n") : (matchingDefault?.benefits || []),
+    how_to_use: row.how_to_use || matchingDefault?.how_to_use || "",
+    size: row.size || matchingDefault?.size || "",
+    video_url: parsedVideos[0]?.video_url || row.video_url || matchingDefault?.video_url || "",
+    instagram_url: parsedVideos[0]?.instagram_url || row.instagram_url || matchingDefault?.instagram_url || "",
+    video_title: parsedVideos[0]?.title || row.video_title || matchingDefault?.video_title || "Look 01 · Sensorial Glide",
+    video_quote: parsedVideos[0]?.quote || row.video_quote || matchingDefault?.video_quote || "Finding a formula that glides smoothly and hydrates all day.",
+    social_handle: parsedVideos[0]?.social_handle || row.social_handle || matchingDefault?.social_handle || "@sheauracosmeticsofficial",
     videos: parsedVideos,
   };
 }
