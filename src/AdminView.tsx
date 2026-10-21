@@ -310,6 +310,23 @@ export default function AdminView({
 
   useEffect(() => {
     const unsub = onOrdersChanged((updated) => setOrders(updated));
+    if (supabase) {
+      supabase.from("orders").select("*").order("created_at", { ascending: false }).then(({ data, error }) => {
+        if (!error && data && data.length > 0) {
+          const mapped: OrderHistoryItem[] = data.map((row: any) => ({
+            id: row.id,
+            date: new Date(row.created_at).toLocaleDateString("en-IN", { dateStyle: "medium" }),
+            totalAmount: row.total_amount,
+            status: row.status as "processing" | "dispatched" | "delivered",
+            itemsCount: row.items_count || (Array.isArray(row.items) ? row.items.length : 1),
+            trackingNumber: row.tracking_number,
+            eta: row.eta,
+            items: Array.isArray(row.items) ? row.items : [],
+          }));
+          setOrders(mapped);
+        }
+      });
+    }
     return () => unsub();
   }, []);
 

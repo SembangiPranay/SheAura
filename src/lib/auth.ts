@@ -730,6 +730,11 @@ export function updateOrderStatus(
       setActiveUser({ ...current, orders: userOrders });
     }
 
+    // Also sync status directly to Supabase cloud
+    if (supabase) {
+      void supabase.from("orders").update({ status: newStatus }).eq("id", orderId);
+    }
+
     return true;
   } catch {
     return false;
