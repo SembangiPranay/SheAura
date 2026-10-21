@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import BrandIntro from "./BrandIntro";
+import ScrollHero from "./ScrollHero";
 import AdminView from "./AdminView";
 import AuthAccountView from "./AuthAccountView";
 import RunwayCinemaView from "./RunwayCinemaView";
@@ -2146,149 +2147,151 @@ export default function App() {
     );
   }
 
+  const featuredProduct =
+    catalog.find((p) => p.slug === "scarlet-rose-lipstick") ??
+    catalog.find((p) => /scarlet rose/i.test(p.name));
+
   return (
     <>
       {showIntro && <BrandIntro onComplete={() => setShowIntro(false)} />}
       <main className="storefront-main">
-      <section className="hero">
-        <img className="hero-bg" src={photos.hero} alt="SheAura Luxury" />
-        <div className="hero-wash" />
-
-        <header className="nav shell">
-           <a className="brand brand-light brand-animated" href="#" aria-label="She Aura">
-             <span className="brand-name" aria-hidden="true">SHE’AURA</span>
-             <span className="brand-tagline">YOUR AURA · YOUR STORY</span>
-           </a>
-          <nav className={menuOpen ? "nav-links open" : "nav-links"}>
-            <div className="mobile-nav-hub">
-              <div
-                className="mobile-hub-user-card"
-                onClick={() => {
-                  setMenuOpen(false);
-                  navigateTo("account");
-                }}
-              >
-                <div className="mobile-hub-avatar">
-                  {currentUser ? (
-                    <span className="mobile-hub-initials">
-                      {currentUser.fullName.slice(0, 2).toUpperCase()}
+      <ScrollHero
+        featured={featuredProduct}
+        onShopFeatured={() => {
+          if (!featuredProduct) return;
+          setSelectedProduct(featuredProduct);
+          // Instant: the page is several screens deep here, and html's smooth
+          // scroll-behavior would be cut short when the product view mounts.
+          window.scrollTo({ top: 0, behavior: "instant" });
+        }}
+        header={
+          <header className="nav shell">
+             <a className="brand brand-animated" href="#" aria-label="She Aura">
+               <span className="brand-name" aria-hidden="true">SHE’AURA</span>
+               <span className="brand-tagline">YOUR AURA · YOUR STORY</span>
+             </a>
+            <nav className={menuOpen ? "nav-links open" : "nav-links"}>
+              <div className="mobile-nav-hub">
+                <div
+                  className="mobile-hub-user-card"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    navigateTo("account");
+                  }}
+                >
+                  <div className="mobile-hub-avatar">
+                    {currentUser ? (
+                      <span className="mobile-hub-initials">
+                        {currentUser.fullName.slice(0, 2).toUpperCase()}
+                      </span>
+                    ) : (
+                      <Icon name="user" />
+                    )}
+                  </div>
+                  <div className="mobile-hub-info">
+                    <span className="mobile-hub-name">
+                      {currentUser ? currentUser.fullName : "Maison Member"}
                     </span>
-                  ) : (
-                    <Icon name="user" />
-                  )}
-                </div>
-                <div className="mobile-hub-info">
-                  <span className="mobile-hub-name">
-                    {currentUser ? currentUser.fullName : "Maison Member"}
-                  </span>
-                  <span className="mobile-hub-status">
-                    {currentUser ? "Aura Beauty Passport Active" : "Sign In / Join Maison"}
-                  </span>
-                </div>
-                <Icon name="arrow" />
-              </div>
-
-              <div className="mobile-hub-actions-row">
-                <button
-                  type="button"
-                  className="mobile-hub-btn mobile-hub-cart-btn"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setIsCartDrawerOpen(true);
-                  }}
-                >
-                  <div className="mobile-hub-btn-icon">
-                    <Icon name="bag" />
-                    {cartCount > 0 && <span className="mobile-hub-badge">{cartCount}</span>}
+                    <span className="mobile-hub-status">
+                      {currentUser ? "Aura Beauty Passport Active" : "Sign In / Join Maison"}
+                    </span>
                   </div>
-                  <div className="mobile-hub-btn-label">
-                    <strong>Haute Bag</strong>
-                    <span>{cartCount} {cartCount === 1 ? "Piece" : "Pieces"}</span>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  className="mobile-hub-btn mobile-hub-wishlist-btn"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    navigateTo("wishlist");
-                  }}
-                >
-                  <div className="mobile-hub-btn-icon">
-                    <Icon name="heart" />
-                    {wishlist.length > 0 && <span className="mobile-hub-badge">{wishlist.length}</span>}
-                  </div>
-                  <div className="mobile-hub-btn-label">
-                    <strong>Wishlist</strong>
-                    <span>{wishlist.length} Saved</span>
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            <div className="mobile-nav-categories">
-              {["Shop", "Collections", "Skincare", "Makeup", "About", "Journal"].map((item) => (
-                <a
-                  key={item}
-                  href={`#${item.toLowerCase()}`}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  <span>{item}</span>
                   <Icon name="arrow" />
-                </a>
-              ))}
+                </div>
+
+                <div className="mobile-hub-actions-row">
+                  <button
+                    type="button"
+                    className="mobile-hub-btn mobile-hub-cart-btn"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setIsCartDrawerOpen(true);
+                    }}
+                  >
+                    <div className="mobile-hub-btn-icon">
+                      <Icon name="bag" />
+                      {cartCount > 0 && <span className="mobile-hub-badge">{cartCount}</span>}
+                    </div>
+                    <div className="mobile-hub-btn-label">
+                      <strong>Haute Bag</strong>
+                      <span>{cartCount} {cartCount === 1 ? "Piece" : "Pieces"}</span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="mobile-hub-btn mobile-hub-wishlist-btn"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      navigateTo("wishlist");
+                    }}
+                  >
+                    <div className="mobile-hub-btn-icon">
+                      <Icon name="heart" />
+                      {wishlist.length > 0 && <span className="mobile-hub-badge">{wishlist.length}</span>}
+                    </div>
+                    <div className="mobile-hub-btn-label">
+                      <strong>Wishlist</strong>
+                      <span>{wishlist.length} Saved</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              <div className="mobile-nav-categories">
+                {["Shop", "Collections", "Skincare", "Makeup", "About", "Journal"].map((item) => (
+                  <a
+                    key={item}
+                    href={`#${item.toLowerCase()}`}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <span>{item}</span>
+                    <Icon name="arrow" />
+                  </a>
+                ))}
+              </div>
+            </nav>
+            <div className="nav-actions">
+              <button aria-label="Search"><Icon name="search" /></button>
+              <button
+                type="button"
+                aria-label="Wishlist Sanctuary"
+                onClick={() => navigateTo("wishlist")}
+                className="wishlist-nav-btn"
+                title={`Wishlist Sanctuary (${wishlist.length})`}
+              >
+                <Icon name="heart" />
+                {wishlist.length > 0 && <span className="wishlist-badge">{wishlist.length}</span>}
+              </button>
+              <button
+                aria-label="Account"
+                onClick={() => navigateTo("account")}
+                className={`account-nav-btn ${currentUser ? "is-logged" : ""}`}
+                title={currentUser ? `Maison Member: ${currentUser.fullName}` : "Member Account / Sign In"}
+              >
+                {currentUser ? (
+                  <span className="account-nav-initials">
+                    {currentUser.fullName.slice(0, 2).toUpperCase()}
+                  </span>
+                ) : (
+                  <Icon name="user" />
+                )}
+              </button>
+              <button
+                type="button"
+                aria-label="Shopping bag"
+                className="bag"
+                onClick={() => setIsCartDrawerOpen(true)}
+                title={`Shopping Bag (${cartCount})`}
+              >
+                <Icon name="bag" />
+                <span>{cartCount}</span>
+              </button>
+              <button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu"><i /><i /></button>
             </div>
-          </nav>
-          <div className="nav-actions">
-            <button aria-label="Search"><Icon name="search" /></button>
-            <button
-              type="button"
-              aria-label="Wishlist Sanctuary"
-              onClick={() => navigateTo("wishlist")}
-              className="wishlist-nav-btn"
-              title={`Wishlist Sanctuary (${wishlist.length})`}
-            >
-              <Icon name="heart" />
-              {wishlist.length > 0 && <span className="wishlist-badge">{wishlist.length}</span>}
-            </button>
-            <button
-              aria-label="Account"
-              onClick={() => navigateTo("account")}
-              className={`account-nav-btn ${currentUser ? "is-logged" : ""}`}
-              title={currentUser ? `Maison Member: ${currentUser.fullName}` : "Member Account / Sign In"}
-            >
-              {currentUser ? (
-                <span className="account-nav-initials">
-                  {currentUser.fullName.slice(0, 2).toUpperCase()}
-                </span>
-              ) : (
-                <Icon name="user" />
-              )}
-            </button>
-            <button
-              type="button"
-              aria-label="Shopping bag"
-              className="bag"
-              onClick={() => setIsCartDrawerOpen(true)}
-              title={`Shopping Bag (${cartCount})`}
-            >
-              <Icon name="bag" />
-              <span>{cartCount}</span>
-            </button>
-            <button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu"><i /><i /></button>
-          </div>
-        </header>
-        <div className="hero-content shell">
-          <p className="eyebrow">Beauty in your element</p>
-          <h1>A Ritual<br />Beyond<br />Beauty.</h1>
-          <p className="hero-copy">Thoughtful formulas. Sensory textures.<br />A more radiant you, every day.</p>
-          <div className="hero-cta-group">
-            <ArrowLink light>Explore the collection</ArrowLink>
-          </div>
-        </div>
-        <div className="scroll-note">Scroll to discover <span /></div>
-      </section>
+          </header>
+        }
+      />
 
       <section className="categories" id="collections">
         {[
