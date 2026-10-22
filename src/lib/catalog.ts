@@ -74,7 +74,7 @@ export const photos = {
   floral: "https://images.unsplash.com/photo-1536568033156-c6bf7b18dfba?auto=format&fit=crop&w=900&q=85",
   perfume: "https://images.unsplash.com/photo-1726758004499-b4ea21408bcf?auto=format&fit=crop&w=1400&q=90",
   cream: "https://images.unsplash.com/photo-1622618991746-fe6004db3a47?auto=format&fit=crop&w=900&q=85",
-  foundation: resolveAsset("/products/Daffodil.webp"),
+  foundation: resolveAsset("/products/Minimal_design/Complexion_foundation_still.jpg"),
   oil: resolveAsset("/products/Body_Highlighter_Oil_design.webp"),
   ingredients: "https://images.unsplash.com/photo-1726758004519-7ccecda8b076?auto=format&fit=crop&w=1800&q=90",
   arches: "https://images.unsplash.com/photo-1543682388-4b46a14c91db?auto=format&fit=crop&w=2000&q=90",
@@ -619,9 +619,10 @@ export const defaultProducts: StorefrontProduct[] = [
     rawPrice: 1299,
     image: resolveAsset("/products/Daffodil.webp"),
     campaign: resolveAsset("/products/Minimal_design/Daffodil.png"),
-    still: resolveAsset("/products/Daffodil.webp"),
+    still: resolveAsset("/products/Minimal_design/Complexion_foundation_still.jpg"),
     gallery: [
       resolveAsset("/products/Daffodil.webp"),
+      resolveAsset("/products/Minimal_design/Complexion_foundation_still.jpg"),
       resolveAsset("/products/Minimal_design/Daffodil.png"),
     ],
     shades: [
@@ -669,9 +670,10 @@ export const defaultProducts: StorefrontProduct[] = [
     rawPrice: 1299,
     image: resolveAsset("/products/Foundation_snowdrop.webp"),
     campaign: resolveAsset("/products/Minimal_design/Snowdrop.png"),
-    still: resolveAsset("/products/Foundation_snowdrop.webp"),
+    still: resolveAsset("/products/Minimal_design/Complexion_foundation_still.jpg"),
     gallery: [
       resolveAsset("/products/Foundation_snowdrop.webp"),
+      resolveAsset("/products/Minimal_design/Complexion_foundation_still.jpg"),
       resolveAsset("/products/Foundation_snowdrop_desgin inspirations.webp"),
       resolveAsset("/products/Minimal_design/Snowdrop.png"),
     ],
@@ -717,9 +719,10 @@ export const defaultProducts: StorefrontProduct[] = [
     rawPrice: 1299,
     image: resolveAsset("/products/Honey_Lily.webp"),
     campaign: resolveAsset("/products/Honey_Lily.webp"),
-    still: resolveAsset("/products/Honey_Lily.webp"),
+    still: resolveAsset("/products/Minimal_design/Complexion_foundation_still.jpg"),
     gallery: [
       resolveAsset("/products/Honey_Lily.webp"),
+      resolveAsset("/products/Minimal_design/Complexion_foundation_still.jpg"),
       resolveAsset("/products/Minimal_design/Daffodil.png"),
     ],
     shades: [
@@ -764,9 +767,10 @@ export const defaultProducts: StorefrontProduct[] = [
     rawPrice: 1299,
     image: resolveAsset("/products/Toffee_Rose.webp"),
     campaign: resolveAsset("/products/Toffee_Rose.webp"),
-    still: resolveAsset("/products/Toffee_Rose.webp"),
+    still: resolveAsset("/products/Minimal_design/Complexion_foundation_still.jpg"),
     gallery: [
       resolveAsset("/products/Toffee_Rose.webp"),
+      resolveAsset("/products/Minimal_design/Complexion_foundation_still.jpg"),
       resolveAsset("/products/Minimal_design/Daffodil.png"),
     ],
     shades: [
