@@ -1639,8 +1639,8 @@ function ProductPage({
               ],
               [
                 "conscious",
-                "Conscious standard",
-                "Designed with ingredient transparency in mind. Formulated 100% vegan, cruelty-free, paraben-free, and dermatologist tested.",
+                "Conscious standard & policy",
+                "Designed with ingredient transparency in mind. Formulated 100% vegan, cruelty-free, and paraben-free. Store policy: No exchanges, no returns.",
               ],
             ].map(([id, title, copy]) => (
               <div className={detailsOpen === id ? "open" : ""} key={id}>
