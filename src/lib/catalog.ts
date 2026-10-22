@@ -1,4 +1,12 @@
 import { supabase, isSupabaseConfigured } from "./supabase";
+import sheauraReviews from "../data/sheaura_reviews.json";
+
+export type ProductReview = {
+  author: string;
+  rating: number;
+  date: string;
+  comment: string;
+};
 
 export type ProductVideo = {
   id: string;
@@ -39,6 +47,7 @@ export type StorefrontProduct = {
   videos?: ProductVideo[];
   gallery?: string[];
   shades?: { name: string; tone: string; image?: string; slug?: string }[];
+  reviews?: ProductReview[];
 };
 
 export const resolveAsset = (path: string): string => {
@@ -80,6 +89,7 @@ export const photos = {
 export const defaultProducts: StorefrontProduct[] = [
   {
     slug: "scarlet-rose-lipstick",
+    reviews: (sheauraReviews as Record<string, ProductReview[]>).scarlet_rose_lipstick || (sheauraReviews as Record<string, ProductReview[]>)["scarlet-rose-lipstick"] || [],
     name: "Scarlet Rose Lipstick",
     price: "₹1,099.00",
     rawPrice: 1099,
@@ -94,9 +104,12 @@ export const defaultProducts: StorefrontProduct[] = [
     ],
     shades: [
       { name: "Scarlet Rose", tone: "#a81920", slug: "scarlet-rose-lipstick", image: resolveAsset("/products/Scarlet Rose Lipstick.webp") },
-      { name: "Roseberry", tone: "#8e2a59", slug: "roseberry-lipstick", image: resolveAsset("/products/Roseberry Lipstick.webp") },
-      { name: "Blush Rose", tone: "#c47d7b", slug: "blush-rose-lipstick", image: resolveAsset("/products/Lipstick_red.webp") },
-      { name: "Orchid", tone: "#a05c7b", slug: "orchid-lipstick", image: resolveAsset("/products/Orchid Lipstick.webp") },
+      { name: "Roseberry", tone: "#8e2a59", slug: "roseberry-lipstick",
+    reviews: (sheauraReviews as Record<string, ProductReview[]>).roseberry_lipstick || (sheauraReviews as Record<string, ProductReview[]>)["roseberry-lipstick"] || [], image: resolveAsset("/products/Roseberry Lipstick.webp") },
+      { name: "Blush Rose", tone: "#c47d7b", slug: "blush-rose-lipstick",
+    reviews: (sheauraReviews as Record<string, ProductReview[]>).blush_rose_lipstick || (sheauraReviews as Record<string, ProductReview[]>)["blush-rose-lipstick"] || [], image: resolveAsset("/products/Lipstick_red.webp") },
+      { name: "Orchid", tone: "#a05c7b", slug: "orchid-lipstick",
+    reviews: (sheauraReviews as Record<string, ProductReview[]>).orchid_lipstick || (sheauraReviews as Record<string, ProductReview[]>)["orchid-lipstick"] || [], image: resolveAsset("/products/Orchid Lipstick.webp") },
     ],
     tag: "Icon",
     tone: "#a81920",
@@ -316,6 +329,7 @@ export const defaultProducts: StorefrontProduct[] = [
   },
   {
     slug: "pink-blossom-blush",
+    reviews: (sheauraReviews as Record<string, ProductReview[]>).pink_blossom_blush || (sheauraReviews as Record<string, ProductReview[]>)["pink-blossom-blush"] || [],
     name: "Pink Blossom Blush",
     price: "₹899.00",
     rawPrice: 899,
@@ -330,8 +344,10 @@ export const defaultProducts: StorefrontProduct[] = [
     ],
     shades: [
       { name: "Pink Blossom", tone: "#b8486e", slug: "pink-blossom-blush", image: resolveAsset("/products/Pink Blossom Blush.webp") },
-      { name: "Peach Blossom", tone: "#e27a67", slug: "peach-blossom-blush", image: resolveAsset("/products/Peach Blossom Blush.webp") },
-      { name: "Cherry Blossom", tone: "#9b2c58", slug: "cherry-blossom-blush", image: resolveAsset("/products/Cherry Blossom Blush.webp") },
+      { name: "Peach Blossom", tone: "#e27a67", slug: "peach-blossom-blush",
+    reviews: (sheauraReviews as Record<string, ProductReview[]>).peach_blossom_blush || (sheauraReviews as Record<string, ProductReview[]>)["peach-blossom-blush"] || [], image: resolveAsset("/products/Peach Blossom Blush.webp") },
+      { name: "Cherry Blossom", tone: "#9b2c58", slug: "cherry-blossom-blush",
+    reviews: (sheauraReviews as Record<string, ProductReview[]>).cherry_blossom_blush || (sheauraReviews as Record<string, ProductReview[]>)["cherry-blossom-blush"] || [], image: resolveAsset("/products/Cherry Blossom Blush.webp") },
     ],
     tag: "Bestseller",
     tone: "#b8486e",
@@ -492,6 +508,7 @@ export const defaultProducts: StorefrontProduct[] = [
   },
   {
     slug: "molten-glow-highlighter",
+    reviews: (sheauraReviews as Record<string, ProductReview[]>).sunflower || (sheauraReviews as Record<string, ProductReview[]>)["sunflower"] || [],
     name: "Molten Glow Highlighter · Sunflower Gold",
     price: "₹1,199.00",
     rawPrice: 1199,
@@ -507,7 +524,8 @@ export const defaultProducts: StorefrontProduct[] = [
     ],
     shades: [
       { name: "Sunflower Gold", tone: "#c18847", slug: "molten-glow-highlighter", image: resolveAsset("/products/Body_Highlighter_Oil_design.webp") },
-      { name: "Moonflower Pearl", tone: "#d8d2ce", slug: "moonflower-highlighter-oil", image: resolveAsset("/products/Body_Highlighter_Oil_Moonflower_2.webp") },
+      { name: "Moonflower Pearl", tone: "#d8d2ce", slug: "moonflower-highlighter-oil",
+    reviews: (sheauraReviews as Record<string, ProductReview[]>).moonflower || (sheauraReviews as Record<string, ProductReview[]>)["moonflower"] || [], image: resolveAsset("/products/Body_Highlighter_Oil_Moonflower_2.webp") },
     ],
     tag: "Bestseller",
     tone: "#c18847",
@@ -595,6 +613,7 @@ export const defaultProducts: StorefrontProduct[] = [
   },
   {
     slug: "hydrating-matte-foundation-daffodil",
+    reviews: (sheauraReviews as Record<string, ProductReview[]>).daffodil || (sheauraReviews as Record<string, ProductReview[]>)["daffodil"] || [],
     name: "Hydrating Matte Foundation · Daffodil",
     price: "₹1,299.00",
     rawPrice: 1299,
@@ -607,9 +626,12 @@ export const defaultProducts: StorefrontProduct[] = [
     ],
     shades: [
       { name: "Daffodil", tone: "#dfb895", slug: "hydrating-matte-foundation-daffodil", image: resolveAsset("/products/Daffodil.webp") },
-      { name: "Snowdrop", tone: "#f1ded0", slug: "hydrating-matte-foundation-snowdrop", image: resolveAsset("/products/Foundation_snowdrop.webp") },
-      { name: "Honey Lily", tone: "#caa078", slug: "hydrating-matte-foundation-honey-lily", image: resolveAsset("/products/Honey_Lily.webp") },
-      { name: "Toffee Rose", tone: "#a67449", slug: "hydrating-matte-foundation-toffee-rose", image: resolveAsset("/products/Toffee_Rose.webp") },
+      { name: "Snowdrop", tone: "#f1ded0", slug: "hydrating-matte-foundation-snowdrop",
+    reviews: (sheauraReviews as Record<string, ProductReview[]>).snowdrop || (sheauraReviews as Record<string, ProductReview[]>)["snowdrop"] || [], image: resolveAsset("/products/Foundation_snowdrop.webp") },
+      { name: "Honey Lily", tone: "#caa078", slug: "hydrating-matte-foundation-honey-lily",
+    reviews: (sheauraReviews as Record<string, ProductReview[]>).honey_lily || (sheauraReviews as Record<string, ProductReview[]>)["honey-lily"] || [], image: resolveAsset("/products/Honey_Lily.webp") },
+      { name: "Toffee Rose", tone: "#a67449", slug: "hydrating-matte-foundation-toffee-rose",
+    reviews: (sheauraReviews as Record<string, ProductReview[]>).toffee_rose || (sheauraReviews as Record<string, ProductReview[]>)["toffee-rose"] || [], image: resolveAsset("/products/Toffee_Rose.webp") },
     ],
     tag: "Complexion",
     tone: "#dfb895",
@@ -933,6 +955,7 @@ export function mapSupabaseToStorefront(row: any): StorefrontProduct {
     video_quote: parsedVideos[0]?.quote || row.video_quote || matchingDefault?.video_quote || "Finding a formula that glides smoothly and hydrates all day.",
     social_handle: parsedVideos[0]?.social_handle || row.social_handle || matchingDefault?.social_handle || "@sheauracosmeticsofficial",
     videos: parsedVideos,
+    reviews: row.reviews || matchingDefault?.reviews || [],
   };
 }
 

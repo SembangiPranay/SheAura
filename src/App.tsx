@@ -1520,6 +1520,13 @@ function ProductPage({
             <small>Inclusive of all taxes</small>
             {product.size && <span className="pdp-size-badge">{product.size}</span>}
           </div>
+          {product.reviews && product.reviews.length > 0 && (
+            <div className="pdp-rating-badge" onClick={() => setDetailsOpen("reviews")} role="button" tabIndex={0}>
+              <span className="pdp-stars">★★★★★</span>
+              <span className="pdp-rating-score">5.0</span>
+              <span className="pdp-rating-count">({product.reviews.length} verified reviews from sheaura.shop)</span>
+            </div>
+          )}
           <p className="pdp-description">{product.description}</p>
           
           <div className="wear-profile">
@@ -1641,6 +1648,29 @@ function ProductPage({
                 <p>{copy}</p>
               </div>
             ))}
+            {product.reviews && product.reviews.length > 0 && (
+              <div className={`pdp-reviews-accordion ${detailsOpen === "reviews" ? "open" : ""}`} key="reviews">
+                <button
+                  type="button"
+                  onClick={() => setDetailsOpen(detailsOpen === "reviews" ? "" : "reviews")}
+                >
+                  <span>Verified Client Reflections ({product.reviews.length})</span>
+                  <b>{detailsOpen === "reviews" ? "−" : "+"}</b>
+                </button>
+                <div className="pdp-reviews-drawer">
+                  {product.reviews.map((r, idx) => (
+                    <div key={idx} className="pdp-review-card">
+                      <div className="pdp-review-meta">
+                        <span className="pdp-review-author">{r.author}</span>
+                        <span className="pdp-review-stars">★★★★★</span>
+                        {r.date && <span className="pdp-review-date">{r.date}</span>}
+                      </div>
+                      <p className="pdp-review-text">"{r.comment}"</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -2339,7 +2369,7 @@ export default function App() {
           <div>
             <p className="eyebrow dark">The complete luxury collection</p>
             <h2>The SHE’AURA Wardrobe.</h2>
-            <p>12 signature pieces. Botanical-rich formulas. Made to be worn your way.</p>
+            <p>{catalog.length} signature pieces. Botanical-rich formulas. Made to be worn your way.</p>
           </div>
           <button
             type="button"
