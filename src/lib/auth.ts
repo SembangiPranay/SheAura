@@ -106,7 +106,7 @@ const DEMO_ADMIN: SheAuraUser = {
           name: "The Sculpted Satin Lipstick",
           shade: "The Red Statement",
           price: "₹2,400",
-          image: "/Instagram_photos/Product_photos/1.jpg",
+          image: "/products/Scarlet Rose Lipstick.webp",
         },
       ],
     },
@@ -159,13 +159,13 @@ const DEMO_CLIENT: SheAuraUser = {
           name: "The Sculpted Satin Lipstick",
           shade: "The Red Statement",
           price: "₹2,400",
-          image: "/Instagram_photos/Product_photos/1.jpg",
+          image: "/products/Scarlet Rose Lipstick.webp",
         },
         {
           name: "Luminous Silk Blush",
           shade: "Pink Blossom",
           price: "₹2,800",
-          image: "/Instagram_photos/Product_photos/2.jpg",
+          image: "/products/Pink Blossom Blush.webp",
         },
       ],
     },
@@ -182,7 +182,7 @@ const DEMO_CLIENT: SheAuraUser = {
           name: "Luminous Silk Blush",
           shade: "Pink Blossom",
           price: "₹2,800",
-          image: "/Instagram_photos/Product_photos/2.jpg",
+          image: "/products/Pink Blossom Blush.webp",
         },
       ],
     },
@@ -310,7 +310,7 @@ export function formatSupabaseUser(sbUser: any): SheAuraUser {
             name: "The Sculpted Satin Lipstick",
             shade: "The Red Statement",
             price: "₹2,400",
-            image: "/Instagram_photos/Product_photos/1.jpg",
+            image: "/products/Scarlet Rose Lipstick.webp",
           },
         ],
       },
@@ -668,26 +668,50 @@ export function recordUserOrder(
   }
 
   // 2. Persist to active user session
-  const current = getCurrentUser();
+  let current = getCurrentUser();
   let updatedUser: SheAuraUser | null = null;
-  if (current) {
-    const numericTotal = parseInt(order.totalAmount.replace(/[^0-9]/g, ""), 10) || 0;
-    const earnedPoints = Math.round(numericTotal * 0.1);
-    updatedUser = {
-      ...current,
-      orders: [order, ...(current.orders || []).filter((o) => o.id !== order.id)],
-      loyaltyPoints: (current.loyaltyPoints || 0) + earnedPoints,
-    };
-    setActiveUser(updatedUser);
 
-    const localUsers = getLocalUsers();
-    const emailKey = current.email.toLowerCase();
-    if (localUsers[emailKey]) {
-      localUsers[emailKey].user = updatedUser;
-      try {
-        localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(localUsers));
-      } catch {}
-    }
+  if (!current) {
+    // If order is placed as guest, automatically establish customer session so they can track instantly
+    current = {
+      ...DEMO_CLIENT,
+      id: `sa-guest-${Date.now()}`,
+      email: clientDetails?.email || "client@sheaura.com",
+      fullName: clientDetails?.fullName || "Aaradhya Sharma",
+      phone: clientDetails?.phone || "+91 98765 43210",
+      orders: [],
+      addressBook: [
+        {
+          id: `addr-${Date.now()}`,
+          isDefault: true,
+          fullName: clientDetails?.fullName || "Aaradhya Sharma",
+          street: clientDetails?.address || "74 Haute Boulevard, Jubilee Hills",
+          city: "Hyderabad",
+          state: "Telangana",
+          postalCode: "500033",
+          country: "India",
+          phone: clientDetails?.phone || "+91 98765 43210",
+        },
+      ],
+    };
+  }
+
+  const numericTotal = parseInt(order.totalAmount.replace(/[^0-9]/g, ""), 10) || 0;
+  const earnedPoints = Math.round(numericTotal * 0.1);
+  updatedUser = {
+    ...current,
+    orders: [order, ...(current.orders || []).filter((o) => o.id !== order.id)],
+    loyaltyPoints: (current.loyaltyPoints || 0) + earnedPoints,
+  };
+  setActiveUser(updatedUser);
+
+  const localUsers = getLocalUsers();
+  const emailKey = current.email.toLowerCase();
+  if (localUsers[emailKey]) {
+    localUsers[emailKey].user = updatedUser;
+    try {
+      localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(localUsers));
+    } catch {}
   }
 
   // 3. Optional async cloud sync to Supabase (fails gracefully if RLS or offline)

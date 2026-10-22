@@ -2111,6 +2111,7 @@ export default function App() {
         onMoveToWishlist={moveCartItemToWishlist}
         onBackToStore={() => navigateTo("storefront")}
         onOpenWishlist={() => navigateTo("wishlist")}
+        onOpenAccount={() => navigateTo("account")}
         onSelectProduct={(product) => {
           setSelectedProduct(product);
           navigateTo("storefront");

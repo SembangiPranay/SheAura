@@ -32,6 +32,7 @@ import {
 import { getCurrentUser, recordUserOrder, OrderHistoryItem } from "./lib/auth";
 import { generateInvoiceHtml, InvoiceData, numberToWords } from "./lib/invoice";
 import { submitOrderToBackend } from "./lib/api";
+import { supabase, isSupabaseConfigured } from "./lib/supabase";
 
 interface CartViewProps {
   cartItems: CartItem[];
@@ -42,6 +43,7 @@ interface CartViewProps {
   onOpenWishlist: () => void;
   onSelectProduct: (product: Product) => void;
   onClearCart: () => void;
+  onOpenAccount?: () => void;
 }
 
 export default function CartView({
@@ -53,6 +55,7 @@ export default function CartView({
   onOpenWishlist,
   onSelectProduct,
   onClearCart,
+  onOpenAccount,
 }: CartViewProps) {
   // Steps: "bag" | "shipping" | "payment" | "confirmed"
   const [step, setStep] = useState<"bag" | "shipping" | "payment" | "confirmed">("bag");
@@ -201,13 +204,19 @@ export default function CartView({
 
     setConfirmedOrderId(serverOrderId);
 
+    const generatedTracking = `EXP-BLUEDART-${Math.floor(10000 + Math.random() * 90000)}`;
+    const customerFullName = shippingForm.fullName || currentUser?.fullName || "Aaradhya Sharma";
+    const customerEmailAddr = currentUser?.email || "client@sheaura.com";
+    const customerPhoneNum = shippingForm.phone || currentUser?.phone || "+91 98765 43210";
+    const fullShippingAddr = `${shippingForm.address || "74 Haute Boulevard, Jubilee Hills"}, ${shippingForm.city || "Hyderabad"}, ${shippingForm.state || "Telangana"} - ${shippingForm.pincode || "500033"}`;
+
     const newOrder: OrderHistoryItem = {
       id: serverOrderId,
       date: new Date().toLocaleDateString("en-IN", { month: "long", day: "numeric", year: "numeric" }),
       itemsCount: cartItems.reduce((acc, i) => acc + i.quantity, 0),
       totalAmount: `₹${grandTotal.toLocaleString("en-IN")}`,
       status: "processing",
-      trackingNumber: `EXP-BLUEDART-${Math.floor(10000 + Math.random() * 90000)}`,
+      trackingNumber: generatedTracking,
       eta: "Arriving in 2-3 Business Days",
       items: cartItems.map((item) => ({
         name: item.product.name,
@@ -217,11 +226,55 @@ export default function CartView({
       })),
     };
 
+    // Insert directly into Supabase orders table for instant live sync across Admin & Customer Account
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.from("orders").insert([
+          {
+            id: serverOrderId,
+            client_name: customerFullName,
+            customer_name: customerFullName,
+            client_email: customerEmailAddr,
+            customer_email: customerEmailAddr,
+            client_phone: customerPhoneNum,
+            customer_phone: customerPhoneNum,
+            shipping_address: fullShippingAddr,
+            items: cartItems.map((item) => ({
+              productId: item.product.slug || item.product.id || item.product.name,
+              name: item.product.name,
+              shade: item.selectedShade || item.product.name.split(" ").slice(0, 2).join(" "),
+              quantity: item.quantity,
+              unitPrice: item.product.price,
+              itemTotal: item.product.price * item.quantity,
+              image: item.product.image,
+            })),
+            items_count: cartItems.reduce((acc, i) => acc + i.quantity, 0),
+            total_amount: `₹${grandTotal.toLocaleString("en-IN")}`,
+            subtotal: subtotal,
+            discount: discount,
+            shipping_fee: shippingFee,
+            tax_amount: gstAmount,
+            total_price: grandTotal,
+            currency: "INR",
+            payment_method: paymentMethod,
+            payment_status: paymentMethod === "cod" ? "awaiting_delivery" : "paid",
+            status: "processing",
+            tracking_number: generatedTracking,
+            eta: "Arriving in 2-3 Business Days",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        ]);
+      } catch (dbErr) {
+        console.warn("[CartView] Direct Supabase order insert fallback:", dbErr);
+      }
+    }
+
     recordUserOrder(newOrder, {
-      fullName: shippingForm.fullName,
-      phone: shippingForm.phone,
-      address: `${shippingForm.address}, ${shippingForm.city}, ${shippingForm.state} - ${shippingForm.pincode}`,
-      email: currentUser?.email || "guest@sheaura.com",
+      fullName: customerFullName,
+      phone: customerPhoneNum,
+      address: fullShippingAddr,
+      email: customerEmailAddr,
     });
 
     onClearCart();
@@ -400,7 +453,36 @@ export default function CartView({
             </div>
 
             {/* Action Buttons */}
-            <div className="order-confirmed-actions">
+            <div className="order-confirmed-actions" style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center" }}>
+              {onOpenAccount && (
+                <button
+                  type="button"
+                  className="order-btn-primary"
+                  onClick={() => {
+                    onClearCart();
+                    onOpenAccount();
+                  }}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "12px 24px",
+                    borderRadius: "999px",
+                    background: "#2b130c",
+                    color: "#ffffff",
+                    border: "none",
+                    font: "700 11px/1 'Plus Jakarta Sans', sans-serif",
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    boxShadow: "0 6px 18px rgba(43, 19, 12, 0.2)",
+                  }}
+                >
+                  <Truck size={15} strokeWidth={2} />
+                  <span>Track Order in My Account</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 className="order-btn-primary"
@@ -409,7 +491,7 @@ export default function CartView({
                   onBackToStore();
                 }}
               >
-                <span>Continue Exploring Collection</span>
+                <span>Continue Exploring</span>
                 <ArrowRight size={15} strokeWidth={2} />
               </button>
 
