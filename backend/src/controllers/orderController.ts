@@ -43,13 +43,23 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
 
     const orderId = `ORD-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
+    const itemsCount = orderCalc.items.reduce((acc, i) => acc + i.quantity, 0);
+    const trackingNumber = `EXP-BLUEDART-${Math.floor(10000 + Math.random() * 90000)}`;
+    const formattedTotal = `₹${orderCalc.total.toLocaleString("en-IN")}`;
+    const shippingStr = `${customer.address}, ${customer.city}, ${customer.state || ""} ${customer.postalCode}`.trim();
+
     const newOrder = {
       id: orderId,
+      client_name: customer.name,
       customer_name: customer.name,
+      client_email: customer.email,
       customer_email: customer.email,
+      client_phone: customer.phone,
       customer_phone: customer.phone,
-      shipping_address: `${customer.address}, ${customer.city}, ${customer.state || ""} ${customer.postalCode}`.trim(),
+      shipping_address: shippingStr,
       items: orderCalc.items,
+      items_count: itemsCount,
+      total_amount: formattedTotal,
       subtotal: orderCalc.subtotal,
       discount: orderCalc.discount,
       shipping_fee: orderCalc.shipping,
@@ -59,7 +69,10 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
       payment_method: paymentMethod,
       payment_status: paymentMethod === "cod" ? "pending_cod" : "awaiting_payment",
       status: "processing",
+      tracking_number: trackingNumber,
+      eta: "Arriving in 2-3 Business Days",
       created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
 
     // Save order in Supabase

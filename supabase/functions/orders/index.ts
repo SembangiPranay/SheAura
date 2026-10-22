@@ -84,14 +84,26 @@ serve(async (req: Request) => {
     const total = taxable + shipping;
 
     const orderId = `ORD-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const itemsCount = verifiedItems.reduce((acc: number, i: any) => acc + (i.quantity || 1), 0);
+    const trackingNumber = `EXP-BLUEDART-${Math.floor(10000 + Math.random() * 90000)}`;
+    const formattedTotal = `₹${total.toLocaleString("en-IN")}`;
+    const shippingStr = customer ? `${customer.address || ""}, ${customer.city || ""}, ${customer.state || ""} ${customer.postalCode || ""}`.trim() : "Atelier Sanctuary";
+    const clientName = customer?.name || "SheAura Client";
+    const clientEmail = customer?.email || "client@sheaura.com";
+    const clientPhone = customer?.phone || "";
 
     const newOrder = {
       id: orderId,
-      customer_name: customer?.name || "SheAura Client",
-      customer_email: customer?.email || "client@sheaura.com",
-      customer_phone: customer?.phone || "",
-      shipping_address: customer ? `${customer.address || ""}, ${customer.city || ""}, ${customer.state || ""} ${customer.postalCode || ""}`.trim() : "Atelier Sanctuary",
+      client_name: clientName,
+      customer_name: clientName,
+      client_email: clientEmail,
+      customer_email: clientEmail,
+      client_phone: clientPhone,
+      customer_phone: clientPhone,
+      shipping_address: shippingStr,
       items: verifiedItems,
+      items_count: itemsCount,
+      total_amount: formattedTotal,
       subtotal,
       discount,
       shipping_fee: shipping,
@@ -101,7 +113,10 @@ serve(async (req: Request) => {
       payment_method: paymentMethod,
       payment_status: paymentMethod === "cod" ? "pending_cod" : "awaiting_payment",
       status: "processing",
+      tracking_number: trackingNumber,
+      eta: "Arriving in 2-3 Business Days",
       created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
 
     // 4. Insert into database using Service Role (Protected from client tampering)
