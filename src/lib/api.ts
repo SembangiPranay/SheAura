@@ -1,9 +1,16 @@
 /**
  * SheAura Clean API Client
- * Connects the React Storefront to the dedicated, secure Backend API
+ * Connects the React Storefront on Vercel to either:
+ * 1. Supabase Edge Functions (Native Supabase Serverless)
+ * 2. Dedicated Backend API (/api)
  */
 
+import { supabase, isSupabaseConfigured } from "./supabase";
+
 const API_BASE = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
+const USE_SUPABASE_FUNCTIONS =
+  import.meta.env.VITE_USE_SUPABASE_FUNCTIONS === "true" ||
+  API_BASE.includes("supabase.co");
 
 export interface ApiOrderItem {
   productId: string;
@@ -46,6 +53,9 @@ export interface OrderCalculationResult {
 
 /** Check backend health */
 export async function checkBackendHealth(): Promise<boolean> {
+  if (USE_SUPABASE_FUNCTIONS && isSupabaseConfigured) {
+    return true;
+  }
   try {
     const res = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(3000) });
     if (!res.ok) return false;
@@ -75,8 +85,26 @@ export async function previewOrderPricing(
   }
 }
 
-/** Secure Server-Side Order Placement */
+/** Secure Server-Side Order Placement (Supabase Edge Function or Backend API) */
 export async function submitOrderToBackend(payload: ApiOrderPayload): Promise<any> {
+  // Option A: If configured for Supabase Edge Functions, invoke directly
+  if (USE_SUPABASE_FUNCTIONS && isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase.functions.invoke("orders", {
+        body: payload,
+      });
+      if (!error && data?.success) {
+        return data;
+      }
+      if (error) {
+        console.warn("[API] Supabase Edge Function error, trying REST fallback:", error);
+      }
+    } catch (e) {
+      console.warn("[API] Supabase Edge invocation error:", e);
+    }
+  }
+
+  // Option B: Standard Backend API
   const res = await fetch(`${API_BASE}/orders`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -97,6 +125,17 @@ export async function verifyPaymentSignature(paymentData: {
   paymentId: string;
   signature?: string;
 }): Promise<boolean> {
+  if (USE_SUPABASE_FUNCTIONS && isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase.functions.invoke("payment-verify", {
+        body: paymentData,
+      });
+      return !error && data?.success === true;
+    } catch {
+      return false;
+    }
+  }
+
   try {
     const res = await fetch(`${API_BASE}/payments/verify`, {
       method: "POST",
