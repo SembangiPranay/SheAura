@@ -70,11 +70,11 @@ export const photos = {
   ingredients: "https://images.unsplash.com/photo-1726758004519-7ccecda8b076?auto=format&fit=crop&w=1800&q=90",
   arches: "https://images.unsplash.com/photo-1543682388-4b46a14c91db?auto=format&fit=crop&w=2000&q=90",
   scarletPortrait: resolveAsset("/campaign/scarlet-portrait.png"),
-  scarletBotanical: resolveAsset("/campaign/scarlet-botanical.png"),
+  scarletBotanical: resolveAsset("/products/Minimal_design/Scarlet Rose Lipstick_still.png"),
   blushPortrait: resolveAsset("/campaign/pink-blossom-portrait.png"),
-  blushStill: resolveAsset("/campaign/pink-blossom-still.png"),
+  blushStill: resolveAsset("/products/Minimal_design/pink blossam blus simple.png"),
   highlighterPortrait: resolveAsset("/campaign/highlighter-glow-portrait.png"),
-  highlighterBotanical: resolveAsset("/campaign/highlighter-glow-still.png"),
+  highlighterBotanical: resolveAsset("/products/Minimal_design/Highlighter simple.png"),
 };
 
 export const defaultProducts: StorefrontProduct[] = [
@@ -85,11 +85,11 @@ export const defaultProducts: StorefrontProduct[] = [
     rawPrice: 1099,
     image: resolveAsset("/products/Scarlet Rose Lipstick.webp"),
     campaign: resolveAsset("/campaign/scarlet-portrait.png"),
-    still: resolveAsset("/campaign/scarlet-botanical.png"),
+    still: resolveAsset("/products/Minimal_design/Scarlet Rose Lipstick_still.png"),
     gallery: [
       resolveAsset("/products/Scarlet Rose Lipstick.webp"),
       resolveAsset("/campaign/scarlet-portrait.png"),
-      resolveAsset("/campaign/scarlet-botanical.png"),
+      resolveAsset("/products/Minimal_design/Scarlet Rose Lipstick_still.png"),
       resolveAsset("/products/Minimal_design/Scarlet Rose Lipstick.png"),
     ],
     shades: [
@@ -321,11 +321,11 @@ export const defaultProducts: StorefrontProduct[] = [
     rawPrice: 899,
     image: resolveAsset("/products/Pink Blossom Blush.webp"),
     campaign: resolveAsset("/campaign/pink-blossom-portrait.png"),
-    still: resolveAsset("/campaign/pink-blossom-still.png"),
+    still: resolveAsset("/products/Minimal_design/pink blossam blus simple.png"),
     gallery: [
       resolveAsset("/products/Pink Blossom Blush.webp"),
       resolveAsset("/campaign/pink-blossom-portrait.png"),
-      resolveAsset("/campaign/pink-blossom-still.png"),
+      resolveAsset("/products/Minimal_design/pink blossam blus simple.png"),
       resolveAsset("/products/Minimal_design/Pink Blossom Blush.png"),
     ],
     shades: [
@@ -396,11 +396,10 @@ export const defaultProducts: StorefrontProduct[] = [
     rawPrice: 899,
     image: resolveAsset("/products/Peach Blossom Blush.webp"),
     campaign: resolveAsset("/products/Minimal_design/Peach Blossom Blush.png"),
-    still: resolveAsset("/campaign/peach-blossom-still.png"),
+    still: resolveAsset("/products/Peach Blossom Blush.webp"),
     gallery: [
       resolveAsset("/products/Peach Blossom Blush.webp"),
       resolveAsset("/products/Minimal_design/Peach Blossom Blush.png"),
-      resolveAsset("/campaign/peach-blossom-still.png"),
     ],
     shades: [
       { name: "Pink Blossom", tone: "#b8486e", slug: "pink-blossom-blush", image: resolveAsset("/products/Pink Blossom Blush.webp") },
@@ -452,11 +451,10 @@ export const defaultProducts: StorefrontProduct[] = [
     rawPrice: 899,
     image: resolveAsset("/products/Cherry Blossom Blush.webp"),
     campaign: resolveAsset("/products/Minimal_design/Cherry Blossom Blush.png"),
-    still: resolveAsset("/campaign/cherry-blossom-still.png"),
+    still: resolveAsset("/products/Cherry Blossom Blush.webp"),
     gallery: [
       resolveAsset("/products/Cherry Blossom Blush.webp"),
       resolveAsset("/products/Minimal_design/Cherry Blossom Blush.png"),
-      resolveAsset("/campaign/cherry-blossom-still.png"),
     ],
     shades: [
       { name: "Pink Blossom", tone: "#b8486e", slug: "pink-blossom-blush", image: resolveAsset("/products/Pink Blossom Blush.webp") },
@@ -499,11 +497,11 @@ export const defaultProducts: StorefrontProduct[] = [
     rawPrice: 1199,
     image: resolveAsset("/products/Body_Highlighter_Oil_design.webp"),
     campaign: resolveAsset("/campaign/highlighter-glow-portrait.png"),
-    still: resolveAsset("/campaign/highlighter-glow-still.png"),
+    still: resolveAsset("/products/Minimal_design/Highlighter simple.png"),
     gallery: [
       resolveAsset("/products/Body_Highlighter_Oil_design.webp"),
       resolveAsset("/campaign/highlighter-glow-portrait.png"),
-      resolveAsset("/campaign/highlighter-glow-still.png"),
+      resolveAsset("/products/Minimal_design/Highlighter simple.png"),
       resolveAsset("/products/Minimal_design/Body_Highlighter_Oil_Sunflower.png"),
       resolveAsset("/products/Body_Highlighter_Oil_Sunflower.webp"),
     ],
@@ -696,9 +694,9 @@ export const defaultProducts: StorefrontProduct[] = [
     still: resolveAsset("/products/products.png"),
     gallery: [
       resolveAsset("/products/products.png"),
-      resolveAsset("/campaign/scarlet-botanical.png"),
-      resolveAsset("/campaign/pink-blossom-still.png"),
-      resolveAsset("/campaign/highlighter-glow-still.png"),
+      resolveAsset("/products/Minimal_design/Scarlet Rose Lipstick_still.png"),
+      resolveAsset("/products/Minimal_design/pink blossam blus simple.png"),
+      resolveAsset("/products/Minimal_design/Highlighter simple.png"),
     ],
     tag: "The Vault",
     tone: "#dfb895",

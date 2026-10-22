@@ -2555,7 +2555,7 @@ export default function App() {
       <CommunityStrip />
 
       <section className="closing">
-        <img src={photos.highlighterBotanical} alt="SHE’AURA Molten Glow Highlighter among flowers" />
+        <img src={photos.highlighterBotanical} alt="SHE’AURA Molten Glow Highlighter minimal still" />
         <div><h2>A More Radiant<br />You, Every Day.</h2><ArrowLink>Shop now</ArrowLink></div>
       </section>
 
