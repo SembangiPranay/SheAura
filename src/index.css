@@ -1212,6 +1212,26 @@ img { display: block; width: 100%; }
 .brand { display: flex; flex-direction: column; width: max-content; font-family: "Cormorant Garamond", serif; font-size: 31px; line-height: .7; letter-spacing: -.05em; }
 .brand span { margin-top: 8px; font: 5px "Montserrat", sans-serif; letter-spacing: .45em; text-align: center; }
 .brand-light { color: white; }
+.brand-logo-svg {
+  height: 28px;
+  width: auto;
+  max-width: 140px;
+  display: block;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.brand-logo-svg:hover {
+  opacity: 0.88;
+}
+.nav .brand-logo-svg {
+  color: #ffffff;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.25));
+}
+.product-brand .brand-logo-svg {
+  color: #191970;
+}
+.footer-brand .brand-logo-svg {
+  color: #ffffff;
+}
 .brand-animated { perspective: 700px; }
 .brand-animated .brand-name { display: inline-block; margin: 0; font: inherit; letter-spacing: inherit; animation: brandNameReveal 1.15s 1.95s cubic-bezier(.2,.82,.22,1) both; transform-origin: 50% 100%; }
 .brand-animated .brand-tagline { animation: brandTaglineReveal .8s 2.25s cubic-bezier(.2,.82,.22,1) both; }

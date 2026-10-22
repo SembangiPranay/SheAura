@@ -5,6 +5,7 @@ import CartDrawer from "./CartDrawer";
 import CartView from "./CartView";
 import WishlistView from "./WishlistView";
 import InciDisclosureDrawer from "./InciDisclosureDrawer";
+import SheAuraLogo from "./SheAuraLogo";
 import { getProductInciDetails } from "./lib/inciData";
 
 // Lazy-load heavy administrative studio console and secondary portals to optimize public bundle
@@ -1456,7 +1457,9 @@ function ProductPage({
     <main className="product-page">
       <header className="product-nav shell">
         <button className="back-link" onClick={onBack} aria-label="Back to collection"><Icon name="arrow" /> <span>Back to collection</span></button>
-        <button className="brand product-brand" onClick={onBack}>SHE’AURA<span>YOUR AURA · YOUR STORY</span></button>
+        <button className="brand product-brand" onClick={onBack} aria-label="SHE'AURA Home">
+          <SheAuraLogo className="brand-logo-svg" height={26} />
+        </button>
         <div className="product-nav-actions">
           <button aria-label="Search"><Icon name="search" /></button>
           <button
@@ -2237,9 +2240,8 @@ export default function App() {
         }}
         header={
           <header className="nav shell">
-             <a className="brand brand-animated" href="#" aria-label="She Aura">
-               <span className="brand-name" aria-hidden="true">SHE’AURA</span>
-               <span className="brand-tagline">YOUR AURA · YOUR STORY</span>
+             <a className="brand brand-animated" href="#" aria-label="SHE'AURA">
+               <SheAuraLogo className="brand-logo-svg" height={28} />
              </a>
             <nav className={menuOpen ? "nav-links open" : "nav-links"}>
               <div className="mobile-nav-hub">
@@ -2632,7 +2634,9 @@ export default function App() {
 
       <footer>
         <div className="footer-main shell">
-          <a className="brand" href="#">SHE’AURA<span>YOUR AURA · YOUR STORY</span></a>
+          <a className="brand footer-brand" href="#" aria-label="SHE'AURA">
+            <SheAuraLogo className="brand-logo-svg" height={26} fill="white" />
+          </a>
           <div className="footer-links">
             <div><b>Shop</b><a href="#shop">Makeup</a><a href="#shop">Skincare</a><a href="#shop">Body Care</a></div>
             <div><b>About</b><a href="#about">Our Story</a><a href="#journal">Journal</a><a href="#">Sustainability</a></div>

@@ -411,11 +411,12 @@ export const defaultProducts: StorefrontProduct[] = [
     price: "₹899.00",
     rawPrice: 899,
     image: resolveAsset("/products/Peach Blossom Blush.webp"),
-    campaign: resolveAsset("/products/Minimal_design/Peach Blossom Blush.png"),
-    still: resolveAsset("/products/Peach Blossom Blush.webp"),
+    campaign: resolveAsset("/campaign/peach-blossom-portrait.jpg"),
+    still: resolveAsset("/products/Minimal_design/Peach_Blossom_Blush_packshot.jpg"),
     gallery: [
       resolveAsset("/products/Peach Blossom Blush.webp"),
-      resolveAsset("/products/Minimal_design/Peach Blossom Blush.png"),
+      resolveAsset("/products/Minimal_design/Peach_Blossom_Blush_packshot.jpg"),
+      resolveAsset("/campaign/peach-blossom-portrait.jpg"),
     ],
     shades: [
       { name: "Pink Blossom", tone: "#b8486e", slug: "pink-blossom-blush", image: resolveAsset("/products/Pink Blossom Blush.webp") },
