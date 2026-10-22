@@ -1213,18 +1213,21 @@ img { display: block; width: 100%; }
 .brand span { margin-top: 8px; font: 5px "Montserrat", sans-serif; letter-spacing: .45em; text-align: center; }
 .brand-light { color: white; }
 .brand-logo-svg {
-  height: 28px;
+  height: 30px;
   width: auto;
-  max-width: 140px;
+  max-width: 150px;
   display: block;
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 .brand-logo-svg:hover {
-  opacity: 0.88;
+  opacity: 0.85;
 }
 .nav .brand-logo-svg {
-  color: #ffffff;
-  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.25));
+  color: #191970; /* SheAura Authentic Royal Midnight Navy */
+  filter: none;
+}
+.cine-hero .nav .brand-logo-svg {
+  color: #191970; /* Sharp, high-contrast signature royal navy on pale ivory film */
 }
 .product-brand .brand-logo-svg {
   color: #191970;

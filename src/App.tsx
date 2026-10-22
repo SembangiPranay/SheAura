@@ -2241,7 +2241,7 @@ export default function App() {
         header={
           <header className="nav shell">
              <a className="brand brand-animated" href="#" aria-label="SHE'AURA">
-               <SheAuraLogo className="brand-logo-svg" height={28} />
+               <SheAuraLogo className="brand-logo-svg" height={30} />
              </a>
             <nav className={menuOpen ? "nav-links open" : "nav-links"}>
               <div className="mobile-nav-hub">
