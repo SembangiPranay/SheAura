@@ -13223,3 +13223,359 @@ footer { background: #ecd7c1; }
   .cine-finale-copy > *,
   .cine-specs { filter: none; transform: none; }
 }
+
+
+/* ==========================================================================
+   SHE'AURA VERIFIED INCI DRAWER & BENTO FORMULA TRANSPARENCY
+   ========================================================================== */
+
+.bento-inci-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 14px 0 6px;
+}
+
+.bento-inci-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(182, 108, 100, 0.08);
+  border: 1px solid rgba(182, 108, 100, 0.22);
+  font-size: 6.5px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #8e4a42;
+}
+
+.inci-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(22, 14, 10, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: flex-end;
+  animation: inciFadeIn 0.25s ease-out;
+}
+
+@keyframes inciFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.inci-drawer-panel {
+  width: 100%;
+  max-width: 500px;
+  height: 100%;
+  background: #fdfbf7;
+  color: #241610;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.3);
+  animation: inciSlideLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+@keyframes inciSlideLeft {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.inci-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 24px 26px 18px;
+  border-bottom: 1px solid rgba(42, 26, 20, 0.08);
+  background: #ffffff;
+}
+
+.inci-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #9c6c54;
+  margin-bottom: 6px;
+}
+
+.inci-title {
+  margin: 0;
+  font: 500 28px "Cormorant Garamond", serif;
+  color: #241610;
+  line-height: 1.15;
+}
+
+.inci-category {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #b66c64;
+}
+
+.inci-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(42, 26, 20, 0.12);
+  background: none;
+  color: #241610;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.inci-close-btn:hover {
+  background: #241610;
+  color: #ffffff;
+}
+
+.inci-purity-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 26px;
+  background: #f7f1e9;
+  border-bottom: 1px solid rgba(42, 26, 20, 0.06);
+}
+
+.inci-purity-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 7.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5a3d31;
+  background: #ffffff;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(90, 61, 49, 0.12);
+}
+
+.inci-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 22px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.inci-summary-card {
+  padding: 16px 18px;
+  background: #ffffff;
+  border-left: 3px solid #b66c64;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(42, 26, 20, 0.04);
+}
+
+.inci-card-label {
+  display: block;
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #9c6c54;
+  margin-bottom: 8px;
+}
+
+.inci-summary-text {
+  margin: 0;
+  font-size: 9.5px;
+  line-height: 1.7;
+  color: #3b2820;
+}
+
+.inci-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.inci-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #241610;
+}
+
+.inci-highlights-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.inci-highlight-card {
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid rgba(42, 26, 20, 0.07);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.inci-highlight-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.inci-highlight-name {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #241610;
+}
+
+.inci-concentration-badge {
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  background: #f4eae0;
+  color: #8e4a42;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.inci-highlight-role {
+  font-size: 7.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8d6c5c;
+}
+
+.inci-highlight-benefit {
+  margin: 2px 0 0;
+  font-size: 8.5px;
+  line-height: 1.6;
+  color: #5d463b;
+}
+
+.inci-section-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.inci-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 7.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(42, 26, 20, 0.15);
+  background: #ffffff;
+  color: #3b2820;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.inci-copy-btn:hover {
+  background: #241610;
+  color: #ffffff;
+}
+
+.inci-code-box {
+  padding: 14px;
+  background: #241610;
+  color: #f4ede4;
+  border-radius: 6px;
+  font-size: 8px;
+  line-height: 1.7;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.inci-code-box p {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.inci-ritual-text {
+  margin: 0;
+  font-size: 9px;
+  line-height: 1.7;
+  color: #5d463b;
+  background: #ffffff;
+  padding: 12px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(42, 26, 20, 0.07);
+}
+
+.inci-pledge-card {
+  padding: 14px 16px;
+  background: #f0e6dc;
+  border-radius: 6px;
+  font-size: 8px;
+  line-height: 1.65;
+  color: #4e352b;
+}
+
+.inci-pledge-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 8px;
+  color: #241610;
+  margin-bottom: 6px;
+}
+
+.inci-drawer-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 26px;
+  border-top: 1px solid rgba(42, 26, 20, 0.08);
+  background: #ffffff;
+  font-size: 7.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8d6c5c;
+}
+
+.inci-done-btn {
+  padding: 8px 18px;
+  background: #241610;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.inci-done-btn:hover {
+  opacity: 0.88;
+}

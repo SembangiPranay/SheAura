@@ -46,7 +46,7 @@ export type StorefrontProduct = {
   social_handle?: string;
   videos?: ProductVideo[];
   gallery?: string[];
-  shades?: { name: string; tone: string; image?: string; slug?: string }[];
+  shades?: { name: string; tone: string; image?: string; slug?: string; reviews?: ProductReview[] }[];
   reviews?: ProductReview[];
 };
 

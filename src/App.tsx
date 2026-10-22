@@ -4,6 +4,8 @@ import ScrollHero from "./ScrollHero";
 import CartDrawer from "./CartDrawer";
 import CartView from "./CartView";
 import WishlistView from "./WishlistView";
+import InciDisclosureDrawer from "./InciDisclosureDrawer";
+import { getProductInciDetails } from "./lib/inciData";
 
 // Lazy-load heavy administrative studio console and secondary portals to optimize public bundle
 const AdminView = lazy(() => import("./AdminView"));
@@ -1422,6 +1424,9 @@ function ProductPage({
   const [quantity, setQuantity] = useState(1);
   const [detailsOpen, setDetailsOpen] = useState("formula");
   const [activeImage, setActiveImage] = useState(product.image);
+  const [inciDrawerOpen, setInciDrawerOpen] = useState(false);
+
+  const inciDetails = useMemo(() => getProductInciDetails(product), [product]);
 
   // Sync active image & quantity when product changes
   useEffect(() => {
@@ -1712,9 +1717,31 @@ function ProductPage({
           <div className="bento-title"><p className="eyebrow dark">The ingredient wardrobe</p><h2>Formula,<br /><i>undressed.</i></h2></div>
           <div className="bento-card bento-botanical"><Icon name="leaf" /><span>01</span><h3>Botanical emollients</h3><p>For glide, comfort and a polished feel.</p></div>
           <div className="bento-card bento-pigment"><span>02</span><div className="pigment-smear" /><h3>Considered pigments</h3><p>For expressive colour with buildable payoff.</p></div>
-          <div className="bento-card bento-inci"><span>03</span><h3>Know every layer.</h3><p>The exact ingredient list for each formula will live here once laboratory documentation is verified.</p><button>View INCI standard <Icon name="arrow" /></button></div>
+          <div className="bento-card bento-inci">
+            <span>03</span>
+            <h3>Know every layer.</h3>
+            <p>{inciDetails.summary}</p>
+            <div className="bento-inci-tags">
+              {inciDetails.badges.map((badge) => (
+                <span key={badge} className="bento-inci-pill">{badge}</span>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setInciDrawerOpen(true)}
+              aria-label="View verified INCI laboratory disclosure"
+            >
+              View INCI standard <Icon name="arrow" />
+            </button>
+          </div>
         </div>
       </section>
+
+      <InciDisclosureDrawer
+        isOpen={inciDrawerOpen}
+        onClose={() => setInciDrawerOpen(false)}
+        product={product}
+      />
 
       <section className="related shell">
         <div className="section-heading compact"><div><p className="eyebrow dark">Complete the look</p><h2>The finishing pieces.</h2></div></div>

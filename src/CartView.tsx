@@ -180,7 +180,7 @@ export default function CartView({
       const serverRes = await submitOrderToBackend({
         items: orderItemsPayload,
         customer: {
-          name: shippingForm.fullName || currentUser?.name || "SheAura Client",
+          name: shippingForm.fullName || currentUser?.fullName || "SheAura Client",
           email: currentUser?.email || "guest@sheaura.com",
           phone: shippingForm.phone || "9876543210",
           address: shippingForm.address || "Haute Parfums Atelier",
@@ -189,7 +189,7 @@ export default function CartView({
           state: shippingForm.state || "Maharashtra",
         },
         paymentMethod: paymentMethod === "cod" ? "cod" : "upi",
-        promoCode: appliedPromo?.code,
+        promoCode: appliedPromoCode || undefined,
       });
 
       if (serverRes?.order?.id) {
