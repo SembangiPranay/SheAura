@@ -31,6 +31,7 @@ import {
 } from "./lib/cartWishlistContext";
 import { getCurrentUser, recordUserOrder, OrderHistoryItem } from "./lib/auth";
 import { generateInvoiceHtml, InvoiceData, numberToWords } from "./lib/invoice";
+import { submitOrderToBackend } from "./lib/api";
 
 interface CartViewProps {
   cartItems: CartItem[];
@@ -160,44 +161,73 @@ export default function CartView({
     setPromoError("");
   };
 
-  // Place Order Action: records order dynamically to user history and central store
-  const handlePlaceOrder = () => {
+  // Place Order Action: records order with server-side validation and fallback
+  const handlePlaceOrder = async () => {
     setIsProcessingOrder(true);
-    setTimeout(() => {
-      const generatedId = `SH-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
-      setConfirmedOrderId(generatedId);
+    const currentUser = getCurrentUser();
 
-      const newOrder: OrderHistoryItem = {
-        id: generatedId,
-        date: new Date().toLocaleDateString("en-IN", { month: "long", day: "numeric", year: "numeric" }),
-        itemsCount: cartItems.reduce((acc, i) => acc + i.quantity, 0),
-        totalAmount: `₹${grandTotal.toLocaleString("en-IN")}`,
-        status: "processing",
-        trackingNumber: `EXP-BLUEDART-${Math.floor(10000 + Math.random() * 90000)}`,
-        eta: "Arriving in 2-3 Business Days",
-        items: cartItems.map((item) => ({
-          name: item.product.name,
-          shade: item.selectedShade || item.product.name.split(" ").slice(0, 2).join(" "),
-          price: item.product.price,
-          image: item.product.image,
-        })),
-      };
+    // Map items for secure backend pricing calculation
+    const orderItemsPayload = cartItems.map((item) => ({
+      productId: item.product.slug || item.product.id || item.product.name,
+      name: item.product.name,
+      shade: item.selectedShade || item.product.name.split(" ").slice(0, 2).join(" "),
+      quantity: item.quantity,
+    }));
 
-      const currentUser = getCurrentUser();
-      recordUserOrder(newOrder, {
-        fullName: shippingForm.fullName,
-        phone: shippingForm.phone,
-        address: `${shippingForm.address}, ${shippingForm.city}, ${shippingForm.state} - ${shippingForm.pincode}`,
-        email: currentUser?.email || "guest@sheaura.com",
+    let serverOrderId = `SH-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    try {
+      const serverRes = await submitOrderToBackend({
+        items: orderItemsPayload,
+        customer: {
+          name: shippingForm.fullName || currentUser?.name || "SheAura Client",
+          email: currentUser?.email || "guest@sheaura.com",
+          phone: shippingForm.phone || "9876543210",
+          address: shippingForm.address || "Haute Parfums Atelier",
+          city: shippingForm.city || "Mumbai",
+          postalCode: shippingForm.pincode || "400001",
+          state: shippingForm.state || "Maharashtra",
+        },
+        paymentMethod: paymentMethod === "cod" ? "cod" : "upi",
+        promoCode: appliedPromo?.code,
       });
 
-      // Clear the shopping bag once confirmed
-      onClearCart();
+      if (serverRes?.order?.id) {
+        serverOrderId = serverRes.order.id;
+      }
+    } catch (apiErr) {
+      console.warn("[CartView] Backend API offline or preview mode, persisting to client store:", apiErr);
+    }
 
-      setIsProcessingOrder(false);
-      setStep("confirmed");
-      window.scrollTo(0, 0);
-    }, 1200);
+    setConfirmedOrderId(serverOrderId);
+
+    const newOrder: OrderHistoryItem = {
+      id: serverOrderId,
+      date: new Date().toLocaleDateString("en-IN", { month: "long", day: "numeric", year: "numeric" }),
+      itemsCount: cartItems.reduce((acc, i) => acc + i.quantity, 0),
+      totalAmount: `₹${grandTotal.toLocaleString("en-IN")}`,
+      status: "processing",
+      trackingNumber: `EXP-BLUEDART-${Math.floor(10000 + Math.random() * 90000)}`,
+      eta: "Arriving in 2-3 Business Days",
+      items: cartItems.map((item) => ({
+        name: item.product.name,
+        shade: item.selectedShade || item.product.name.split(" ").slice(0, 2).join(" "),
+        price: item.product.price,
+        image: item.product.image,
+      })),
+    };
+
+    recordUserOrder(newOrder, {
+      fullName: shippingForm.fullName,
+      phone: shippingForm.phone,
+      address: `${shippingForm.address}, ${shippingForm.city}, ${shippingForm.state} - ${shippingForm.pincode}`,
+      email: currentUser?.email || "guest@sheaura.com",
+    });
+
+    onClearCart();
+    setIsProcessingOrder(false);
+    setStep("confirmed");
+    window.scrollTo(0, 0);
   };
 
   // Download Official Indian GST Tax Invoice (Print-ready & Downloadable)

@@ -1,12 +1,14 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import BrandIntro from "./BrandIntro";
 import ScrollHero from "./ScrollHero";
-import AdminView from "./AdminView";
-import AuthAccountView from "./AuthAccountView";
-import RunwayCinemaView from "./RunwayCinemaView";
 import CartDrawer from "./CartDrawer";
 import CartView from "./CartView";
 import WishlistView from "./WishlistView";
+
+// Lazy-load heavy administrative studio console and secondary portals to optimize public bundle
+const AdminView = lazy(() => import("./AdminView"));
+const AuthAccountView = lazy(() => import("./AuthAccountView"));
+const RunwayCinemaView = lazy(() => import("./RunwayCinemaView"));
 import {
   CartItem,
   getInitialCart,
@@ -2016,45 +2018,57 @@ export default function App() {
 
   if (currentView === "admin") {
     return (
-      <AdminView
-        onBack={() => navigateTo("storefront")}
-        reels={reels}
-        onSelectProduct={(product) => {
-          setSelectedProduct(product);
-          navigateTo("storefront");
-        }}
-      />
+      <Suspense
+        fallback={
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", background: "#fcf9f5", color: "#361a12", fontFamily: "Cormorant Garamond, serif", fontSize: "22px" }}>
+            Loading She’Aura Studio Console...
+          </div>
+        }
+      >
+        <AdminView
+          onBack={() => navigateTo("storefront")}
+          reels={reels}
+          onSelectProduct={(product) => {
+            setSelectedProduct(product);
+            navigateTo("storefront");
+          }}
+        />
+      </Suspense>
     );
   }
 
   if (currentView === "account") {
     return (
-      <AuthAccountView
-        onBack={() => navigateTo("storefront")}
-        onOpenAdmin={() => navigateTo("admin")}
-        onSelectProduct={(product) => {
-          setSelectedProduct(product);
-          navigateTo("storefront");
-        }}
-        onAddToCart={(product) => addToCart(product, 1)}
-        onOpenCart={() => navigateTo("cart")}
-      />
+      <Suspense fallback={<div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", background: "#fcf9f5", color: "#361a12", fontFamily: "Cormorant Garamond, serif", fontSize: "22px" }}>Opening Account Sanctuary...</div>}>
+        <AuthAccountView
+          onBack={() => navigateTo("storefront")}
+          onOpenAdmin={() => navigateTo("admin")}
+          onSelectProduct={(product) => {
+            setSelectedProduct(product);
+            navigateTo("storefront");
+          }}
+          onAddToCart={(product) => addToCart(product, 1)}
+          onOpenCart={() => navigateTo("cart")}
+        />
+      </Suspense>
     );
   }
 
   if (currentView === "runway") {
     return (
-      <RunwayCinemaView
-        reels={reels}
-        catalog={catalog}
-        onBack={() => navigateTo("storefront")}
-        onSelectProduct={(product) => {
-          setSelectedProduct(product);
-          navigateTo("storefront");
-        }}
-        onAddBag={(product) => addToCart(product, 1)}
-        cartCount={cartCount}
-      />
+      <Suspense fallback={<div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", background: "#1c0d09", color: "#dfb895", fontFamily: "Cormorant Garamond, serif", fontSize: "22px" }}>Entering Runway Cinema...</div>}>
+        <RunwayCinemaView
+          reels={reels}
+          catalog={catalog}
+          onBack={() => navigateTo("storefront")}
+          onSelectProduct={(product) => {
+            setSelectedProduct(product);
+            navigateTo("storefront");
+          }}
+          onAddBag={(product) => addToCart(product, 1)}
+          cartCount={cartCount}
+        />
+      </Suspense>
     );
   }
 
