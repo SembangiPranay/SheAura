@@ -21,5 +21,8 @@ logs/
 /.plugins/
 /.opencode-skills/
 
+test-results/
+playwright-report/
+
 supabase/.temp/
 .vercel
