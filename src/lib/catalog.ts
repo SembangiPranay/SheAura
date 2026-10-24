@@ -18,6 +18,31 @@ export type ProductVideo = {
   poster_url?: string;
 };
 
+export const CATEGORY_OPTIONS = [
+  "Lipsticks",
+  "Blushes",
+  "Body Highlighter Oil",
+  "Foundation",
+  "Wardrobe Collection",
+] as const;
+
+export type SheAuraCategory = (typeof CATEGORY_OPTIONS)[number] | "All Pieces" | "Other";
+
+export function normalizeCategory(
+  cat?: string
+): "Lipsticks" | "Blushes" | "Body Highlighter Oil" | "Foundation" | "Collection" | "Other" {
+  if (!cat) return "Other";
+  const lower = cat.toLowerCase().trim();
+  if (lower.includes("lip")) return "Lipsticks";
+  if (lower.includes("blush")) return "Blushes";
+  if (lower.includes("high") || lower.includes("glow") || lower.includes("oil")) return "Body Highlighter Oil";
+  if (lower.includes("found") || lower.includes("complex") || lower.includes("skin") || lower.includes("base"))
+    return "Foundation";
+  if (lower.includes("wardrobe") || lower.includes("collect") || lower.includes("trio") || lower.includes("set"))
+    return "Collection";
+  return "Other";
+}
+
 export type StorefrontProduct = {
   id?: string;
   slug?: string;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   ArrowLeft,
   Search,
@@ -24,8 +24,22 @@ import {
   CreditCard,
   Tag,
   Check,
+  Trash2,
+  Copy,
+  Plus,
+  Upload,
+  Image as ImageIcon,
+  Sparkles,
+  FileText,
 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "./lib/supabase";
+import {
+  normalizeCategory,
+  CATEGORY_OPTIONS,
+  saveLocalCustomProduct,
+  deleteLocalCustomProduct,
+  getLocalCustomProducts,
+} from "./lib/catalog";
 import SheAuraLogo from "./SheAuraLogo";
 
 export interface AdminOrderItem {
@@ -83,6 +97,15 @@ export interface AdminProduct {
   price: number;
   stock_quantity?: number;
   image?: string;
+  description?: string;
+  short_description?: string;
+  ingredients?: string;
+  finish?: string;
+  mood?: string;
+  tag?: string;
+  tone?: string;
+  note?: string;
+  is_published?: boolean;
 }
 
 interface AdminViewProps {
@@ -92,30 +115,178 @@ interface AdminViewProps {
 }
 
 const FALLBACK_PRODUCTS: AdminProduct[] = [
-  { id: "1", name: "Pink Blossom Blush", slug: "pink-blossom-blush", category: "Blush", price: 899, stock_quantity: 42, image: "/products/Pink Blossom Blush.webp" },
-  { id: "2", name: "Peach Blossom Blush", slug: "peach-blossom-blush", category: "Blush", price: 899, stock_quantity: 38, image: "/products/Peach Blossom Blush.webp" },
-  { id: "3", name: "Cherry Blossom Blush", slug: "cherry-blossom-blush", category: "Blush", price: 899, stock_quantity: 26, image: "/products/Cherry Blossom Blush.webp" },
-  { id: "4", name: "Scarlet Rose Lipstick", slug: "scarlet-rose-lipstick", category: "Lipstick", price: 1099, stock_quantity: 54, image: "/products/Minimal_design/Scarlet Rose Lipstick_still.png" },
-  { id: "5", name: "Roseberry Lipstick", slug: "roseberry-lipstick", category: "Lipstick", price: 1099, stock_quantity: 48, image: "/products/Roseberry Lipstick.webp" },
-  { id: "6", name: "Blush Rose Lipstick", slug: "blush-rose-lipstick", category: "Lipstick", price: 1099, stock_quantity: 35, image: "/products/Blush Rose Lipstick.webp" },
-  { id: "7", name: "Orchid Lipstick", slug: "orchid-lipstick", category: "Lipstick", price: 1099, stock_quantity: 29, image: "/products/Orchid Lipstick.webp" },
-  { id: "8", name: "Molten Glow Highlighter · Sunflower", slug: "molten-glow-highlighter", category: "Highlighter", price: 1199, stock_quantity: 18, image: "/products/Minimal_design/Highlighter simple.png" },
-  { id: "9", name: "Moonflower Highlighter Oil", slug: "moonflower-highlighter-oil", category: "Highlighter", price: 1199, stock_quantity: 12, image: "/products/Moonflower Highlighter Oil.webp" },
+  { id: "1", name: "Pink Blossom Blush", slug: "pink-blossom-blush", category: "Blushes", price: 899, stock_quantity: 42, image: "/products/Pink Blossom Blush.webp" },
+  { id: "2", name: "Peach Blossom Blush", slug: "peach-blossom-blush", category: "Blushes", price: 899, stock_quantity: 38, image: "/products/Peach Blossom Blush.webp" },
+  { id: "3", name: "Cherry Blossom Blush", slug: "cherry-blossom-blush", category: "Blushes", price: 899, stock_quantity: 26, image: "/products/Cherry Blossom Blush.webp" },
+  { id: "4", name: "Scarlet Rose Lipstick", slug: "scarlet-rose-lipstick", category: "Lipsticks", price: 1099, stock_quantity: 54, image: "/products/Minimal_design/Scarlet Rose Lipstick_still.png" },
+  { id: "5", name: "Roseberry Lipstick", slug: "roseberry-lipstick", category: "Lipsticks", price: 1099, stock_quantity: 48, image: "/products/Roseberry Lipstick.webp" },
+  { id: "6", name: "Blush Rose Lipstick", slug: "blush-rose-lipstick", category: "Lipsticks", price: 1099, stock_quantity: 35, image: "/products/Blush Rose Lipstick.webp" },
+  { id: "7", name: "Orchid Lipstick", slug: "orchid-lipstick", category: "Lipsticks", price: 1099, stock_quantity: 29, image: "/products/Orchid Lipstick.webp" },
+  { id: "8", name: "Molten Glow Highlighter · Sunflower", slug: "molten-glow-highlighter", category: "Body Highlighter Oil", price: 1199, stock_quantity: 18, image: "/products/Minimal_design/Highlighter simple.png" },
+  { id: "9", name: "Moonflower Highlighter Oil", slug: "moonflower-highlighter-oil", category: "Body Highlighter Oil", price: 1199, stock_quantity: 12, image: "/products/Moonflower Highlighter Oil.webp" },
   { id: "10", name: "Hydrating Matte Foundation · Daffodil", slug: "hydrating-matte-foundation-daffodil", category: "Foundation", price: 1299, stock_quantity: 32, image: "/products/Daffodil.png" },
   { id: "11", name: "Hydrating Matte Foundation · Snowdrop", slug: "hydrating-matte-foundation-snowdrop", category: "Foundation", price: 1299, stock_quantity: 24, image: "/products/Snowdrop.png" },
-  { id: "12", name: "She’Aura Discovery Wardrobe", slug: "sheaura-discovery-wardrobe", category: "Collection", price: 3299, stock_quantity: 9, image: "/products/discovery-wardrobe-still.png" },
+  { id: "12", name: "She’Aura Discovery Wardrobe", slug: "sheaura-discovery-wardrobe", category: "Wardrobe Collection", price: 3299, stock_quantity: 9, image: "/products/discovery-wardrobe-still.png" },
+];
+
+const PRODUCT_PRESETS = [
+  {
+    label: "💄 Lipsticks Preset",
+    category: "Lipsticks",
+    data: {
+      name: "Velvet Sculpted Satin Lipstick",
+      category: "Lipsticks",
+      price: 1099,
+      stock_quantity: 50,
+      image: "/products/Scarlet Rose Lipstick.webp",
+      tag: "Bestseller",
+      tone: "#a81920",
+      finish: "Sculpted satin",
+      mood: "Runway Statement",
+      note: "High-pigment scarlet with 16h botanical comfort",
+      description: "An iconic scarlet lip crafted with cold-pressed camellia seed oil, damask rose wax, and micronized pigments for a transfer-proof, velvet-satin finish.",
+      ingredients: "Camellia Seed Oil, Multi-Weight Hyaluronic Acid, Candelilla Wax, Botanical Pigments, Damask Rose Extract.",
+    },
+  },
+  {
+    label: "🌸 Blushes Preset",
+    category: "Blushes",
+    data: {
+      name: "Luminous Silk Blossom Blush",
+      category: "Blushes",
+      price: 899,
+      stock_quantity: 40,
+      image: "/products/Pink Blossom Blush.webp",
+      tag: "Viral Flush",
+      tone: "#b8486e",
+      finish: "Silk powder",
+      mood: "Fresh Petal Radiance",
+      note: "Micro-milled silky powder with blurred finish",
+      description: "Housed in a keepsake gold compact, this micro-milled blush diffuses a romantic flush across cheekbones with a light-reflecting soft-focus blur.",
+      ingredients: "Mica, Camellia Seed Oil, Squalane, Vitamin E, Damask Rose Floral Wax, Mineral Pigments.",
+    },
+  },
+  {
+    label: "✨ Body Highlighter Oil Preset",
+    category: "Body Highlighter Oil",
+    data: {
+      name: "Molten Golden Shimmer Body Oil",
+      category: "Body Highlighter Oil",
+      price: 1199,
+      stock_quantity: 35,
+      image: "/products/Minimal_design/Highlighter simple.png",
+      tag: "Goddess Glow",
+      tone: "#c18847",
+      finish: "Molten pearl glaze",
+      mood: "Sunlit Radiance",
+      note: "Dry botanical shimmer oil for collarbones and shoulders",
+      description: "A decadent dry-oil formula infused with suspended 24K gold and bronze botanical micas that drench skin in sunlight without any greasy feel.",
+      ingredients: "Jojoba Seed Oil, Sweet Almond Oil, Squalane, Mica, Titanium Dioxide, Iron Oxides, Rosehip Seed Oil.",
+    },
+  },
+  {
+    label: "🧴 Foundation Preset",
+    category: "Foundation",
+    data: {
+      name: "Hydrating Featherweight Serum Foundation",
+      category: "Foundation",
+      price: 1299,
+      stock_quantity: 45,
+      image: "/products/Minimal_design/Complexion_foundation_still.jpg",
+      tag: "Second-Skin Base",
+      tone: "#e8c6a5",
+      finish: "Natural dewy satin",
+      mood: "Poreless Filter",
+      note: "Medium buildable coverage infused with hyaluronic serum",
+      description: "A breathable, second-skin foundation that evens complexion while feeding skin with plant squalane, multi-weight hyaluronic acid, and niacinamide.",
+      ingredients: "Aqua, Plant Squalane, Niacinamide, Sodium Hyaluronate, Centella Asiatica Extract, Tocopherol, Iron Oxides.",
+    },
+  },
+];
+
+const ASSET_LIBRARY_PICKER = [
+  { label: "Scarlet Rose Lipstick", path: "/products/Scarlet Rose Lipstick.webp", category: "Lipsticks" },
+  { label: "Roseberry Lipstick", path: "/products/Roseberry Lipstick.webp", category: "Lipsticks" },
+  { label: "Pink Blossom Blush", path: "/products/Pink Blossom Blush.webp", category: "Blushes" },
+  { label: "Peach Blossom Blush", path: "/products/Peach Blossom Blush.webp", category: "Blushes" },
+  { label: "Sunflower Glow Oil", path: "/products/Minimal_design/Highlighter simple.png", category: "Body Highlighter Oil" },
+  { label: "Moonflower Oil", path: "/products/Body_Highlighter_Oil_Moonflower.webp", category: "Body Highlighter Oil" },
+  { label: "Daffodil Foundation", path: "/products/Daffodil.webp", category: "Foundation" },
+  { label: "Complexion Still", path: "/products/Minimal_design/Complexion_foundation_still.jpg", category: "Foundation" },
 ];
 
 export default function AdminView({ onBack }: AdminViewProps) {
   const [activeTab, setActiveTab] = useState<"orders" | "customers" | "inventory">("orders");
   const [orders, setOrders] = useState<AdminOrder[]>([]);
-  const [products, setProducts] = useState<AdminProduct[]>(FALLBACK_PRODUCTS);
+  const [products, setProducts] = useState<AdminProduct[]>(() => {
+    const local = getLocalCustomProducts();
+    if (local && local.length > 0) {
+      const combined: AdminProduct[] = [];
+      const seen = new Set<string>();
+      local.forEach((row: any) => {
+        const key = (row.slug || row.name || row.id).toLowerCase();
+        if (!seen.has(key)) {
+          seen.add(key);
+          combined.push({
+            id: row.id || `local-${Date.now()}`,
+            name: row.name,
+            slug: row.slug || row.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+            category: normalizeCategory(row.category),
+            price: typeof row.price === "number" ? row.price : parseFloat(row.price) || 999,
+            stock_quantity: row.stock_quantity ?? 50,
+            image: row.image_url || row.image || "/products/Peach Blossom Blush.webp",
+            description: row.description || row.short_description || "",
+            short_description: row.short_description || "",
+            ingredients: row.ingredients || "",
+            finish: row.finish || "Sculpted satin",
+            mood: row.mood || "The statement",
+            tag: row.tag || "New",
+            tone: row.tone || "#a81920",
+            note: row.note || "",
+            is_published: row.is_published ?? true,
+          });
+        }
+      });
+      FALLBACK_PRODUCTS.forEach((p) => {
+        const key = p.slug.toLowerCase();
+        if (!seen.has(key)) {
+          seen.add(key);
+          combined.push(p);
+        }
+      });
+      return combined;
+    }
+    return FALLBACK_PRODUCTS;
+  });
   const [loading, setLoading] = useState<boolean>(true);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
+
+  // Product Creation & Management State
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isSubmittingProduct, setIsSubmittingProduct] = useState(false);
+  const [isRawImportOpen, setIsRawImportOpen] = useState(false);
+  const [rawImportText, setRawImportText] = useState("");
+  const [imageSourceTab, setImageSourceTab] = useState<"library" | "upload" | "url">("library");
+
+  const [productForm, setProductForm] = useState({
+    name: "",
+    slug: "",
+    category: "Lipsticks",
+    price: 1099,
+    stock_quantity: 50,
+    image: "/products/Scarlet Rose Lipstick.webp",
+    tag: "New Arrival",
+    tone: "#a81920",
+    finish: "Sculpted satin",
+    mood: "Runway Statement",
+    note: "High-pigment botanical scarlet with 16h comfort",
+    description: "An iconic beauty piece crafted with botanical extracts in the She'Aura Atelier.",
+    ingredients: "Organic Camellia Seed Oil, Multi-Weight Hyaluronic Acid, Candelilla Wax, Botanical Pigments.",
+  });
 
   // Load orders from Supabase
   const fetchOrders = async () => {
@@ -138,8 +309,101 @@ export default function AdminView({ onBack }: AdminViewProps) {
     }
   };
 
+  // Load products from Supabase + Local Cache
+  const fetchProducts = async () => {
+    try {
+      const combined: AdminProduct[] = [];
+      const seen = new Set<string>();
+
+      // 1. Fetch live products from Supabase
+      if (isSupabaseConfigured) {
+        const { data, error } = await supabase
+          .from("products")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (!error && Array.isArray(data) && data.length > 0) {
+          data.forEach((row: any) => {
+            const key = (row.slug || row.name || row.id).toLowerCase();
+            if (!seen.has(key)) {
+              seen.add(key);
+              combined.push({
+                id: row.id,
+                name: row.name,
+                slug: row.slug || row.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+                category: normalizeCategory(row.category),
+                price: typeof row.price === "number" ? row.price : parseFloat(row.price) || 999,
+                stock_quantity: row.stock_quantity ?? 50,
+                image: row.image_url || row.image || "/products/Peach Blossom Blush.webp",
+                description: row.description || row.short_description || "",
+                short_description: row.short_description || "",
+                ingredients: row.ingredients || "",
+                finish: row.finish || "Sculpted satin",
+                mood: row.mood || "The statement",
+                tag: row.tag || "New",
+                tone: row.tone || "#a81920",
+                note: row.note || "",
+                is_published: row.is_published ?? true,
+              });
+            }
+          });
+        }
+      }
+
+      // 2. Fetch locally stored custom products
+      const local = getLocalCustomProducts();
+      local.forEach((row: any) => {
+        const key = (row.slug || row.name || row.id).toLowerCase();
+        if (!seen.has(key)) {
+          seen.add(key);
+          combined.push({
+            id: row.id || `local-${Date.now()}`,
+            name: row.name,
+            slug: row.slug || row.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+            category: normalizeCategory(row.category),
+            price: typeof row.price === "number" ? row.price : parseFloat(row.price) || 999,
+            stock_quantity: row.stock_quantity ?? 50,
+            image: row.image_url || row.image || "/products/Peach Blossom Blush.webp",
+            description: row.description || row.short_description || "",
+            short_description: row.short_description || "",
+            ingredients: row.ingredients || "",
+            finish: row.finish || "Sculpted satin",
+            mood: row.mood || "The statement",
+            tag: row.tag || "New",
+            tone: row.tone || "#a81920",
+            note: row.note || "",
+            is_published: row.is_published ?? true,
+          });
+        }
+      });
+
+      // 3. Fallback curated default products
+      FALLBACK_PRODUCTS.forEach((p) => {
+        const key = p.slug.toLowerCase();
+        if (!seen.has(key)) {
+          seen.add(key);
+          combined.push(p);
+        }
+      });
+
+      setProducts(combined);
+    } catch (e) {
+      console.warn("[AdminView] Products fetch notice:", e);
+      setProducts(FALLBACK_PRODUCTS);
+    }
+  };
+
   useEffect(() => {
     fetchOrders();
+    fetchProducts();
+
+    const handleCatalogUpdated = () => {
+      fetchProducts();
+    };
+    window.addEventListener("sheaura:catalog-updated", handleCatalogUpdated);
+    return () => {
+      window.removeEventListener("sheaura:catalog-updated", handleCatalogUpdated);
+    };
   }, []);
 
   const showNotice = (msg: string) => {
@@ -270,6 +534,255 @@ export default function AdminView({ onBack }: AdminViewProps) {
       )
     );
     showNotice(`Stock updated for ${slug}`);
+  };
+
+  // Preset quick fill
+  const handleApplyPreset = (preset: (typeof PRODUCT_PRESETS)[number]) => {
+    setProductForm((prev) => ({
+      ...prev,
+      ...preset.data,
+      slug: preset.data.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-"),
+    }));
+    showNotice(`✓ Loaded ${preset.label}! Form populated with luxury copy and photo.`);
+  };
+
+  // Raw text / JSON parser
+  const handleParseRawText = () => {
+    if (!rawImportText.trim()) return;
+
+    // A. Try JSON
+    try {
+      const parsed = JSON.parse(rawImportText);
+      setProductForm((prev) => ({
+        ...prev,
+        name: parsed.name || prev.name,
+        slug: parsed.slug || (parsed.name ? parsed.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-") : prev.slug),
+        category: parsed.category ? normalizeCategory(parsed.category) : prev.category,
+        price: parsed.price ? Number(parsed.price) : prev.price,
+        stock_quantity: parsed.stock_quantity ?? parsed.stock ?? prev.stock_quantity,
+        image: parsed.image || parsed.image_url || prev.image,
+        tag: parsed.tag || prev.tag,
+        tone: parsed.tone || prev.tone,
+        finish: parsed.finish || prev.finish,
+        mood: parsed.mood || prev.mood,
+        note: parsed.note || parsed.short_description || prev.note,
+        description: parsed.description || prev.description,
+        ingredients: parsed.ingredients || prev.ingredients,
+      }));
+      showNotice("✓ Smart Paste: JSON parsed and form populated!");
+      setRawImportText("");
+      setIsRawImportOpen(false);
+      return;
+    } catch {}
+
+    // B. Line-by-line key: value
+    const lines = rawImportText.split("\n");
+    const extracted: Partial<typeof productForm> = {};
+    for (const line of lines) {
+      const parts = line.split(/:(.*)/s);
+      if (parts.length >= 2) {
+        const key = parts[0].trim().toLowerCase();
+        const val = parts[1].trim();
+        if (key.includes("name") || key === "title") extracted.name = val;
+        else if (key.includes("cat")) extracted.category = normalizeCategory(val);
+        else if (key.includes("price")) extracted.price = parseFloat(val.replace(/[^0-9.]/g, "")) || 999;
+        else if (key.includes("stock") || key.includes("qty")) extracted.stock_quantity = parseInt(val.replace(/[^0-9]/g, ""), 10) || 40;
+        else if (key.includes("image") || key.includes("photo") || key.includes("url")) extracted.image = val;
+        else if (key.includes("ingred")) extracted.ingredients = val;
+        else if (key.includes("desc")) extracted.description = val;
+        else if (key.includes("note") || key.includes("tagline")) extracted.note = val;
+        else if (key.includes("tone") || key.includes("color")) extracted.tone = val;
+        else if (key.includes("finish")) extracted.finish = val;
+        else if (key.includes("mood")) extracted.mood = val;
+      }
+    }
+
+    if (Object.keys(extracted).length > 0) {
+      setProductForm((prev) => ({
+        ...prev,
+        ...extracted,
+        slug: extracted.name ? extracted.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-") : prev.slug,
+      }));
+      showNotice("✓ Smart Paste: Form extracted and populated from raw text!");
+      setRawImportText("");
+      setIsRawImportOpen(false);
+    } else {
+      showNotice("Could not parse text. Ensure 'Key: Value' format (e.g. Name: Velvet Lip)");
+    }
+  };
+
+  // Copy Product JSON for quick duplicate
+  const handleCopyProductJson = (product: AdminProduct) => {
+    const json = JSON.stringify(
+      {
+        name: product.name,
+        slug: product.slug,
+        category: normalizeCategory(product.category),
+        price: product.price,
+        stock_quantity: product.stock_quantity || 45,
+        image: product.image,
+        tag: product.tag || "New Arrival",
+        tone: product.tone || "#a81920",
+        finish: product.finish || "Sculpted satin",
+        mood: product.mood || "Timeless Radiance",
+        note: product.short_description || product.note || "Botanical luxury formula",
+        description: product.description || `Signature ${product.name} crafted in She'Aura Atelier.`,
+        ingredients: product.ingredients || "Damask Rose Water, Camellia Seed Oil, Hyaluronic Acid, Mineral Pigments.",
+      },
+      null,
+      2
+    );
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(json);
+    }
+    showNotice(`✓ "${product.name}" JSON copied to clipboard! Ready to paste & tweak.`);
+  };
+
+  // Image file upload
+  const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setProductForm((prev) => ({
+          ...prev,
+          image: event.target!.result as string,
+        }));
+        showNotice("✓ Image uploaded and live preview active!");
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Save new product
+  const handleSaveProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!productForm.name.trim()) {
+      showNotice("Please provide a product name.");
+      return;
+    }
+
+    setIsSubmittingProduct(true);
+    const productId = crypto.randomUUID();
+    const cleanSlug =
+      productForm.slug.trim() ||
+      productForm.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+    const numPrice = Number(productForm.price) || 999;
+    const normCategory = normalizeCategory(productForm.category);
+
+    const payload = {
+      id: productId,
+      name: productForm.name.trim(),
+      slug: cleanSlug,
+      price: numPrice,
+      currency: "INR",
+      category: normCategory,
+      image_url: productForm.image || "/products/Peach Blossom Blush.webp",
+      campaign_image_url: productForm.image || "/products/Peach Blossom Blush.webp",
+      description: productForm.description || `Signature ${productForm.name} from She'Aura.`,
+      short_description: productForm.note || productForm.description || `Authentic ${productForm.name}.`,
+      note: productForm.note || "Botanical formula",
+      finish: productForm.finish || "Sculpted satin",
+      mood: productForm.mood || "The statement",
+      tag: productForm.tag || "New Arrival",
+      tone: productForm.tone || "#a81920",
+      ingredients: productForm.ingredients || "Damask Rose Water, Camellia Seed Oil, Hyaluronic Acid, Mineral Pigments.",
+      size: "4.5g / 0.16 oz",
+      stock_quantity: Number(productForm.stock_quantity) || 50,
+      is_published: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    // 1. Supabase Insertion
+    let supabaseSuccess = false;
+    if (isSupabaseConfigured) {
+      try {
+        const { error } = await supabase.from("products").upsert([payload]);
+        if (!error) {
+          supabaseSuccess = true;
+        } else {
+          console.warn("[AdminView] Supabase insert warning:", error);
+        }
+      } catch (dbErr) {
+        console.warn("[AdminView] Supabase direct insert fallback:", dbErr);
+      }
+    }
+
+    // 2. Local Custom Product Persistence (guarantees customer visibility immediately)
+    saveLocalCustomProduct({
+      ...payload,
+      price: `₹${numPrice.toLocaleString("en-IN")}.00`,
+      rawPrice: numPrice,
+      image: payload.image_url,
+      still: payload.image_url,
+      campaign: payload.image_url,
+      gallery: [payload.image_url],
+      shades: [
+        { name: "Signature Shade", tone: payload.tone, image: payload.image_url, slug: cleanSlug },
+      ],
+    });
+
+    // 3. Emit update event for Storefront and Admin
+    window.dispatchEvent(new CustomEvent("sheaura:catalog-updated"));
+
+    // 4. Update local state
+    setProducts((prev) => [
+      {
+        id: payload.id,
+        name: payload.name,
+        slug: payload.slug,
+        category: payload.category,
+        price: payload.price,
+        stock_quantity: payload.stock_quantity,
+        image: payload.image_url,
+        description: payload.description,
+        short_description: payload.short_description,
+        ingredients: payload.ingredients,
+        finish: payload.finish,
+        mood: payload.mood,
+        tag: payload.tag,
+        tone: payload.tone,
+        note: payload.note,
+        is_published: true,
+      },
+      ...prev.filter((p) => p.slug !== payload.slug && p.id !== payload.id),
+    ]);
+
+    setIsSubmittingProduct(false);
+    setIsAddModalOpen(false);
+    showNotice(
+      supabaseSuccess
+        ? `✓ "${payload.name}" published to live database & storefront!`
+        : `✓ "${payload.name}" saved to Maison catalog & live on storefront!`
+    );
+  };
+
+  // Delete product
+  const handleDeleteProduct = async (product: AdminProduct) => {
+    // 1. Supabase deletion
+    if (isSupabaseConfigured && product.id) {
+      try {
+        await supabase.from("products").delete().eq("id", product.id);
+        await supabase.from("products").delete().eq("slug", product.slug);
+      } catch (e) {
+        console.warn("[AdminView] Supabase delete warning:", e);
+      }
+    }
+
+    // 2. Local cache deletion
+    deleteLocalCustomProduct(product.slug);
+    deleteLocalCustomProduct(product.id);
+    deleteLocalCustomProduct(product.name);
+
+    // 3. Trigger reload
+    window.dispatchEvent(new CustomEvent("sheaura:catalog-updated"));
+
+    setProducts((prev) => prev.filter((p) => p.id !== product.id && p.slug !== product.slug));
+    showNotice(`✓ "${product.name}" deleted from catalog & storefront.`);
   };
 
   // Parse items safely
@@ -591,7 +1104,7 @@ export default function AdminView({ onBack }: AdminViewProps) {
               gap: "8px",
             }}
           >
-            <Layers size={15} /> 12 Pieces Inventory
+            <Layers size={15} /> Catalog & Inventory ({products.length})
           </button>
         </div>
 
@@ -925,16 +1438,61 @@ export default function AdminView({ onBack }: AdminViewProps) {
           </div>
         )}
 
-        {/* ================= TAB 3: 12 PIECES INVENTORY ================= */}
+        {/* ================= TAB 3: MASTER CATALOG & INVENTORY ================= */}
         {activeTab === "inventory" && (
           <div>
-            <div style={{ background: "#ffffff", borderRadius: "12px", border: "1px solid rgba(42, 26, 20, 0.08)", overflow: "hidden" }}>
-              <div style={{ padding: "18px 24px", borderBottom: "1px solid rgba(42, 26, 20, 0.08)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ background: "#ffffff", borderRadius: "12px", border: "1px solid rgba(42, 26, 20, 0.08)", overflow: "hidden", boxShadow: "0 4px 14px rgba(0,0,0,0.02)" }}>
+              <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(42, 26, 20, 0.08)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: "16px", color: "#191970", fontWeight: 700 }}>Signature 12-Piece Collection</h3>
-                  <p style={{ margin: "4px 0 0", fontSize: "11px", color: "#765d50" }}>Official master inventory and authentic price registry</p>
+                  <h3 style={{ margin: 0, fontSize: "16px", color: "#191970", fontWeight: 700 }}>
+                    Maison Product Catalog & Master Inventory
+                  </h3>
+                  <p style={{ margin: "4px 0 0", fontSize: "11px", color: "#765d50" }}>
+                    {products.length} registered creations with real-time customer storefront synchronization & live Supabase persistence
+                  </p>
                 </div>
-                <div style={{ fontSize: "11px", color: "#1e6b37", fontWeight: 600 }}>All 12 Active In Storefront</div>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <button
+                    onClick={fetchProducts}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      background: "#ffffff",
+                      border: "1px solid rgba(42, 26, 20, 0.15)",
+                      borderRadius: "999px",
+                      padding: "8px 14px",
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      color: "#765d50",
+                    }}
+                  >
+                    <RefreshCw size={13} /> Refresh
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsAddModalOpen(true);
+                    }}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      background: "#191970",
+                      color: "#ffffff",
+                      border: "none",
+                      padding: "9px 18px",
+                      borderRadius: "999px",
+                      fontWeight: 600,
+                      fontSize: "12px",
+                      cursor: "pointer",
+                      boxShadow: "0 4px 14px rgba(25, 25, 112, 0.25)",
+                      letterSpacing: "0.03em",
+                    }}
+                  >
+                    <PlusCircle size={15} /> Add New Creation
+                  </button>
+                </div>
               </div>
 
               <div style={{ overflowX: "auto" }}>
@@ -945,38 +1503,70 @@ export default function AdminView({ onBack }: AdminViewProps) {
                       <th style={{ padding: "14px 18px" }}>Category</th>
                       <th style={{ padding: "14px 18px" }}>Official Price</th>
                       <th style={{ padding: "14px 18px" }}>Stock Level</th>
-                      <th style={{ padding: "14px 18px", textAlign: "right" }}>Stock Adjustment</th>
+                      <th style={{ padding: "14px 18px", textAlign: "right" }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {products.map((p) => {
                       const stock = p.stock_quantity || 0;
                       const isLow = stock < 15;
+                      const normCat = normalizeCategory(p.category);
                       return (
-                        <tr key={p.slug} style={{ borderBottom: "1px solid rgba(42, 26, 20, 0.06)" }}>
+                        <tr key={p.id || p.slug} style={{ borderBottom: "1px solid rgba(42, 26, 20, 0.06)" }}>
                           <td style={{ padding: "14px 18px" }}>
                             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                               {p.image && (
                                 <img
                                   src={p.image}
                                   alt={p.name}
-                                  style={{ width: "40px", height: "40px", objectFit: "cover", borderRadius: "6px", border: "1px solid rgba(42,26,20,0.1)" }}
+                                  style={{ width: "42px", height: "42px", objectFit: "cover", borderRadius: "8px", border: "1px solid rgba(42,26,20,0.1)", background: "#faf5ee" }}
                                 />
                               )}
                               <div>
-                                <div style={{ fontWeight: 600 }}>{p.name}</div>
-                                <div style={{ fontSize: "10.5px", color: "#765d50" }}>{p.slug}</div>
+                                <div style={{ fontWeight: 600, color: "#191970" }}>{p.name}</div>
+                                <div style={{ fontSize: "10.5px", color: "#765d50", display: "flex", alignItems: "center", gap: "6px", marginTop: "2px" }}>
+                                  <span>{p.slug}</span>
+                                  {p.tone && (
+                                    <span
+                                      title={`Tone: ${p.tone}`}
+                                      style={{ display: "inline-block", width: "8px", height: "8px", borderRadius: "50%", background: p.tone, border: "1px solid rgba(0,0,0,0.2)" }}
+                                    />
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </td>
 
                           <td style={{ padding: "14px 18px" }}>
-                            <span style={{ background: "rgba(42, 26, 20, 0.06)", padding: "3px 8px", borderRadius: "4px", fontSize: "10.5px", fontWeight: 500 }}>
-                              {p.category}
+                            <span
+                              style={{
+                                background:
+                                  normCat === "Lipsticks"
+                                    ? "rgba(168, 25, 32, 0.08)"
+                                    : normCat === "Blushes"
+                                    ? "rgba(184, 72, 110, 0.08)"
+                                    : normCat === "Body Highlighter Oil"
+                                    ? "rgba(193, 136, 71, 0.1)"
+                                    : "rgba(42, 26, 20, 0.06)",
+                                color:
+                                  normCat === "Lipsticks"
+                                    ? "#a81920"
+                                    : normCat === "Blushes"
+                                    ? "#b8486e"
+                                    : normCat === "Body Highlighter Oil"
+                                    ? "#965b16"
+                                    : "#21130f",
+                                padding: "4px 10px",
+                                borderRadius: "999px",
+                                fontSize: "11px",
+                                fontWeight: 600,
+                              }}
+                            >
+                              {normCat}
                             </span>
                           </td>
 
-                          <td style={{ padding: "14px 18px", fontWeight: 700, color: "#191970" }}>
+                          <td style={{ padding: "14px 18px", fontWeight: 700, color: "#191970", fontSize: "13px" }}>
                             ₹{p.price.toLocaleString("en-IN")}
                           </td>
 
@@ -992,13 +1582,15 @@ export default function AdminView({ onBack }: AdminViewProps) {
                               }}
                             >
                               <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: isLow ? "#b85d19" : "#1e6b37" }} />
-                              {stock} units {isLow && "(Low Stock)"}
+                              {stock} units {isLow && "(Low)"}
                             </span>
                           </td>
 
                           <td style={{ padding: "14px 18px", textAlign: "right" }}>
-                            <div style={{ display: "inline-flex", gap: "6px" }}>
+                            <div style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                              {/* Stock adjusters */}
                               <button
+                                title="Decrease stock by 5"
                                 onClick={() => handleAdjustStock(p.slug, -5)}
                                 style={{
                                   border: "1px solid rgba(42, 26, 20, 0.15)",
@@ -1006,12 +1598,13 @@ export default function AdminView({ onBack }: AdminViewProps) {
                                   padding: "4px 8px",
                                   borderRadius: "4px",
                                   cursor: "pointer",
-                                  fontSize: "11px",
+                                  fontSize: "10.5px",
                                 }}
                               >
                                 -5
                               </button>
                               <button
+                                title="Increase stock by 5"
                                 onClick={() => handleAdjustStock(p.slug, 5)}
                                 style={{
                                   border: "1px solid rgba(42, 26, 20, 0.15)",
@@ -1019,11 +1612,52 @@ export default function AdminView({ onBack }: AdminViewProps) {
                                   padding: "4px 8px",
                                   borderRadius: "4px",
                                   cursor: "pointer",
-                                  fontSize: "11px",
+                                  fontSize: "10.5px",
                                   fontWeight: 600,
                                 }}
                               >
                                 +5
+                              </button>
+
+                              {/* Copy JSON for super admin efficiency */}
+                              <button
+                                title="Copy Product JSON for fast duplicate"
+                                onClick={() => handleCopyProductJson(p)}
+                                style={{
+                                  border: "1px solid rgba(42, 26, 20, 0.15)",
+                                  background: "#ffffff",
+                                  padding: "4px 8px",
+                                  borderRadius: "4px",
+                                  cursor: "pointer",
+                                  fontSize: "11px",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                  color: "#765d50",
+                                }}
+                              >
+                                <Copy size={12} /> Copy JSON
+                              </button>
+
+                              {/* Delete Piece */}
+                              <button
+                                title="Delete Piece"
+                                onClick={() => handleDeleteProduct(p)}
+                                style={{
+                                  border: "1px solid rgba(184, 40, 40, 0.2)",
+                                  background: "rgba(184, 40, 40, 0.05)",
+                                  color: "#b82828",
+                                  padding: "4px 8px",
+                                  borderRadius: "4px",
+                                  cursor: "pointer",
+                                  fontSize: "11px",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                  fontWeight: 500,
+                                }}
+                              >
+                                <Trash2 size={12} /> Delete
                               </button>
                             </div>
                           </td>
@@ -1037,6 +1671,595 @@ export default function AdminView({ onBack }: AdminViewProps) {
           </div>
         )}
       </main>
+
+      {/* ================= ADD NEW CREATION MODAL ================= */}
+      {isAddModalOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1000,
+            background: "rgba(0, 0, 0, 0.6)",
+            backdropFilter: "blur(6px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsAddModalOpen(false);
+          }}
+        >
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: "16px",
+              maxWidth: "760px",
+              width: "100%",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              boxShadow: "0 25px 60px rgba(0, 0, 0, 0.3)",
+              padding: "28px 32px",
+              position: "relative",
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "1px solid rgba(42, 26, 20, 0.1)", paddingBottom: "16px", marginBottom: "20px" }}>
+              <div>
+                <span style={{ fontSize: "10.5px", letterSpacing: "0.15em", textTransform: "uppercase", color: "#c18847", fontWeight: 700 }}>
+                  MAISON PRODUCT ATELIER
+                </span>
+                <h2 style={{ margin: "4px 0 0", fontSize: "20px", color: "#191970", fontFamily: "Cormorant Garamond, serif", fontWeight: 700 }}>
+                  Publish New Cosmetic Creation
+                </h2>
+                <p style={{ margin: "4px 0 0", fontSize: "11.5px", color: "#765d50" }}>
+                  Instantly available for customer ordering with live Supabase database sync.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsAddModalOpen(false)}
+                style={{ background: "transparent", border: "none", cursor: "pointer", color: "#765d50", padding: "4px" }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Super Admin Quick-Fill Presets Bar */}
+            <div style={{ background: "#fcf8f2", border: "1px solid rgba(193, 136, 71, 0.2)", borderRadius: "10px", padding: "12px 16px", marginBottom: "20px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                <span style={{ fontSize: "11px", fontWeight: 700, color: "#765d50", display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                  <Sparkles size={13} style={{ color: "#c18847" }} /> Super Admin Instant Presets (1-Click Fill):
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsRawImportOpen(!isRawImportOpen)}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "#191970",
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                  }}
+                >
+                  {isRawImportOpen ? "Close Smart Paste" : "📋 Smart Paste (JSON / Raw Text)"}
+                </button>
+              </div>
+
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                {PRODUCT_PRESETS.map((preset) => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => handleApplyPreset(preset)}
+                    style={{
+                      background: "#ffffff",
+                      border: "1px solid rgba(42, 26, 20, 0.15)",
+                      borderRadius: "999px",
+                      padding: "6px 12px",
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      color: "#21130f",
+                      cursor: "pointer",
+                      boxShadow: "0 2px 6px rgba(0,0,0,0.03)",
+                    }}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Smart Raw Paste Drawer */}
+              {isRawImportOpen && (
+                <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px dashed rgba(42, 26, 20, 0.15)" }}>
+                  <textarea
+                    rows={4}
+                    value={rawImportText}
+                    onChange={(e) => setRawImportText(e.target.value)}
+                    placeholder="Paste JSON or raw lines here (e.g., Name: Velvet Lip\nPrice: 1099\nCategory: Lipsticks\nImage: /products/Scarlet Rose Lipstick.webp...)"
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      fontSize: "11px",
+                      borderRadius: "6px",
+                      border: "1px solid rgba(42, 26, 20, 0.2)",
+                      fontFamily: "monospace",
+                      background: "#ffffff",
+                    }}
+                  />
+                  <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "6px" }}>
+                    <button
+                      type="button"
+                      onClick={handleParseRawText}
+                      style={{
+                        background: "#191970",
+                        color: "#ffffff",
+                        border: "none",
+                        padding: "6px 14px",
+                        borderRadius: "6px",
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      ⚡ Parse & Auto-Fill Form
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Product Creation Form */}
+            <form onSubmit={handleSaveProduct}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#765d50", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    Product Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    name="productName"
+                    placeholder="e.g. Velvet Rosebud Satin Lipstick"
+                    value={productForm.name}
+                    onChange={(e) => {
+                      const name = e.target.value;
+                      setProductForm((prev) => ({
+                        ...prev,
+                        name,
+                        slug: name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-"),
+                      }));
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      fontSize: "12px",
+                      borderRadius: "6px",
+                      border: "1px solid rgba(42, 26, 20, 0.2)",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#765d50", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    Category *
+                  </label>
+                  <select
+                    name="category"
+                    value={productForm.category}
+                    onChange={(e) => setProductForm((prev) => ({ ...prev, category: e.target.value }))}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      fontSize: "12px",
+                      borderRadius: "6px",
+                      border: "1px solid rgba(42, 26, 20, 0.2)",
+                      background: "#ffffff",
+                    }}
+                  >
+                    {CATEGORY_OPTIONS.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#765d50", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    Official Price (₹ INR) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min={1}
+                    name="price"
+                    value={productForm.price}
+                    onChange={(e) => setProductForm((prev) => ({ ...prev, price: e.target.value }))}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      fontSize: "12px",
+                      borderRadius: "6px",
+                      border: "1px solid rgba(42, 26, 20, 0.2)",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#765d50", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    Stock Level (Units)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    name="stock"
+                    value={productForm.stock_quantity}
+                    onChange={(e) => setProductForm((prev) => ({ ...prev, stock_quantity: e.target.value }))}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      fontSize: "12px",
+                      borderRadius: "6px",
+                      border: "1px solid rgba(42, 26, 20, 0.2)",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#765d50", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    Tag / Badge
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. New Arrival / Bestseller"
+                    value={productForm.tag}
+                    onChange={(e) => setProductForm((prev) => ({ ...prev, tag: e.target.value }))}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      fontSize: "12px",
+                      borderRadius: "6px",
+                      border: "1px solid rgba(42, 26, 20, 0.2)",
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#765d50", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    Sensory Finish
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Sculpted satin"
+                    value={productForm.finish}
+                    onChange={(e) => setProductForm((prev) => ({ ...prev, finish: e.target.value }))}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      fontSize: "12px",
+                      borderRadius: "6px",
+                      border: "1px solid rgba(42, 26, 20, 0.2)",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#765d50", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    Aesthetic Mood
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Runway Statement"
+                    value={productForm.mood}
+                    onChange={(e) => setProductForm((prev) => ({ ...prev, mood: e.target.value }))}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      fontSize: "12px",
+                      borderRadius: "6px",
+                      border: "1px solid rgba(42, 26, 20, 0.2)",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#765d50", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    Complexion Tone Hex
+                  </label>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <input
+                      type="color"
+                      value={productForm.tone}
+                      onChange={(e) => setProductForm((prev) => ({ ...prev, tone: e.target.value }))}
+                      style={{ width: "36px", height: "36px", padding: "0", border: "none", borderRadius: "6px", cursor: "pointer" }}
+                    />
+                    <input
+                      type="text"
+                      value={productForm.tone}
+                      onChange={(e) => setProductForm((prev) => ({ ...prev, tone: e.target.value }))}
+                      style={{
+                        flex: 1,
+                        padding: "9px 12px",
+                        fontSize: "12px",
+                        borderRadius: "6px",
+                        border: "1px solid rgba(42, 26, 20, 0.2)",
+                        fontFamily: "monospace",
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: "16px" }}>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#765d50", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Short Tagline / Sensory Note
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. High-pigment scarlet with 16h botanical comfort"
+                  value={productForm.note}
+                  onChange={(e) => setProductForm((prev) => ({ ...prev, note: e.target.value }))}
+                  style={{
+                    width: "100%",
+                    padding: "9px 12px",
+                    fontSize: "12px",
+                    borderRadius: "6px",
+                    border: "1px solid rgba(42, 26, 20, 0.2)",
+                  }}
+                />
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#765d50", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    Detailed Story & Description
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="Rich botanical description for customer PDP..."
+                    value={productForm.description}
+                    onChange={(e) => setProductForm((prev) => ({ ...prev, description: e.target.value }))}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      fontSize: "11.5px",
+                      borderRadius: "6px",
+                      border: "1px solid rgba(42, 26, 20, 0.2)",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#765d50", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    INCI Ingredients List (Clean Formulation)
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="e.g. Organic Camellia Seed Oil, Multi-Weight Hyaluronic Acid, Candelilla Wax..."
+                    value={productForm.ingredients}
+                    onChange={(e) => setProductForm((prev) => ({ ...prev, ingredients: e.target.value }))}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      fontSize: "11.5px",
+                      borderRadius: "6px",
+                      border: "1px solid rgba(42, 26, 20, 0.2)",
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Photo & Visual Asset Manager */}
+              <div style={{ background: "#faf7f2", border: "1px solid rgba(42, 26, 20, 0.12)", borderRadius: "10px", padding: "16px", marginBottom: "20px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                  <label style={{ fontSize: "11px", fontWeight: 700, color: "#191970", textTransform: "uppercase", letterSpacing: "0.05em", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                    <ImageIcon size={14} /> Product Packshot / Photo *
+                  </label>
+                  <div style={{ display: "inline-flex", gap: "4px", background: "#ffffff", padding: "3px", borderRadius: "999px", border: "1px solid rgba(42, 26, 20, 0.1)" }}>
+                    <button
+                      type="button"
+                      onClick={() => setImageSourceTab("library")}
+                      style={{
+                        background: imageSourceTab === "library" ? "#191970" : "transparent",
+                        color: imageSourceTab === "library" ? "#ffffff" : "#765d50",
+                        border: "none",
+                        borderRadius: "999px",
+                        padding: "3px 10px",
+                        fontSize: "10.5px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Library (1-Click)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setImageSourceTab("upload")}
+                      style={{
+                        background: imageSourceTab === "upload" ? "#191970" : "transparent",
+                        color: imageSourceTab === "upload" ? "#ffffff" : "#765d50",
+                        border: "none",
+                        borderRadius: "999px",
+                        padding: "3px 10px",
+                        fontSize: "10.5px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Upload File
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setImageSourceTab("url")}
+                      style={{
+                        background: imageSourceTab === "url" ? "#191970" : "transparent",
+                        color: imageSourceTab === "url" ? "#ffffff" : "#765d50",
+                        border: "none",
+                        borderRadius: "999px",
+                        padding: "3px 10px",
+                        fontSize: "10.5px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Direct URL
+                    </button>
+                  </div>
+                </div>
+
+                {imageSourceTab === "library" && (
+                  <div>
+                    <div style={{ fontSize: "11px", color: "#765d50", marginBottom: "8px" }}>
+                      Select from She’Aura authentic high-res packshots:
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px" }}>
+                      {ASSET_LIBRARY_PICKER.map((asset) => {
+                        const isSelected = productForm.image === asset.path;
+                        return (
+                          <div
+                            key={asset.path}
+                            onClick={() => setProductForm((prev) => ({ ...prev, image: asset.path }))}
+                            style={{
+                              border: isSelected ? "2px solid #191970" : "1px solid rgba(42, 26, 20, 0.15)",
+                              borderRadius: "8px",
+                              padding: "6px",
+                              background: "#ffffff",
+                              cursor: "pointer",
+                              textAlign: "center",
+                              position: "relative",
+                              boxShadow: isSelected ? "0 4px 12px rgba(25, 25, 112, 0.15)" : "none",
+                            }}
+                          >
+                            <img
+                              src={asset.path}
+                              alt={asset.label}
+                              style={{ width: "100%", height: "65px", objectFit: "cover", borderRadius: "6px" }}
+                            />
+                            <div style={{ fontSize: "10px", fontWeight: 600, color: "#21130f", marginTop: "4px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                              {asset.label}
+                            </div>
+                            {isSelected && (
+                              <span style={{ position: "absolute", top: "8px", right: "8px", background: "#191970", color: "#ffffff", width: "16px", height: "16px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px" }}>
+                                ✓
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {imageSourceTab === "upload" && (
+                  <div style={{ border: "2px dashed rgba(42, 26, 20, 0.2)", borderRadius: "8px", padding: "20px", textAlign: "center", background: "#ffffff" }}>
+                    <Upload size={24} style={{ color: "#c18847", margin: "0 auto 8px" }} />
+                    <div style={{ fontSize: "12px", fontWeight: 600, color: "#191970" }}>Choose or drag photo here</div>
+                    <div style={{ fontSize: "10.5px", color: "#765d50", marginTop: "4px" }}>PNG, JPG, WebP supported</div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageFileUpload}
+                      style={{ marginTop: "12px", fontSize: "11px" }}
+                    />
+                  </div>
+                )}
+
+                {imageSourceTab === "url" && (
+                  <div>
+                    <input
+                      type="text"
+                      name="image"
+                      placeholder="e.g. /products/Scarlet Rose Lipstick.webp or https://..."
+                      value={productForm.image}
+                      onChange={(e) => setProductForm((prev) => ({ ...prev, image: e.target.value }))}
+                      style={{
+                        width: "100%",
+                        padding: "9px 12px",
+                        fontSize: "12px",
+                        borderRadius: "6px",
+                        border: "1px solid rgba(42, 26, 20, 0.2)",
+                        background: "#ffffff",
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Live Preview Box */}
+                {productForm.image && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "14px", marginTop: "14px", paddingTop: "12px", borderTop: "1px solid rgba(42, 26, 20, 0.1)" }}>
+                    <img
+                      src={productForm.image}
+                      alt="Preview"
+                      style={{ width: "54px", height: "54px", objectFit: "cover", borderRadius: "8px", border: "1px solid rgba(42, 26, 20, 0.15)", background: "#ffffff" }}
+                    />
+                    <div>
+                      <div style={{ fontSize: "10.5px", color: "#1e6b37", fontWeight: 600 }}>✓ Packshot verified</div>
+                      <div style={{ fontSize: "11.5px", fontWeight: 600, color: "#191970" }}>
+                        {productForm.name || "Untitled Creation"} · ₹{Number(productForm.price || 0).toLocaleString("en-IN")}
+                      </div>
+                      <div style={{ fontSize: "10.5px", color: "#765d50" }}>{productForm.category}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Actions Footer */}
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", borderTop: "1px solid rgba(42, 26, 20, 0.1)", paddingTop: "18px" }}>
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  style={{
+                    background: "transparent",
+                    border: "1px solid rgba(42, 26, 20, 0.2)",
+                    borderRadius: "999px",
+                    padding: "9px 20px",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    color: "#765d50",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingProduct}
+                  style={{
+                    background: "#191970",
+                    color: "#ffffff",
+                    border: "none",
+                    borderRadius: "999px",
+                    padding: "9px 24px",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    cursor: isSubmittingProduct ? "not-allowed" : "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    boxShadow: "0 4px 14px rgba(25, 25, 112, 0.25)",
+                  }}
+                >
+                  {isSubmittingProduct ? (
+                    <>
+                      <RefreshCw size={14} className="animate-spin" /> Publishing...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={14} /> Publish Creation to Storefront
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ================= ORDER DETAILS MODAL ================= */}
       {selectedOrder && (

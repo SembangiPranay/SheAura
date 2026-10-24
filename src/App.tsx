@@ -24,6 +24,9 @@ import {
   defaultProducts,
   loadStorefrontCatalog,
   StorefrontProduct,
+  normalizeCategory,
+  getLocalCustomProducts,
+  mapSupabaseToStorefront,
 } from "./lib/catalog";
 import { getCurrentUser, onAuthStateChanged, SheAuraUser } from "./lib/auth";
 
@@ -1902,7 +1905,17 @@ export default function App() {
   }, []);
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const [catalog, setCatalog] = useState<Product[]>(defaultProducts);
+  const [catalog, setCatalog] = useState<Product[]>(() => {
+    try {
+      const localRaw = getLocalCustomProducts();
+      if (Array.isArray(localRaw) && localRaw.length > 0) {
+        const localProds = localRaw.map(mapSupabaseToStorefront);
+        const seen = new Set(localProds.map((p) => p.slug || p.id));
+        return [...localProds, ...defaultProducts.filter((p) => !seen.has(p.slug) && !seen.has(p.id))];
+      }
+    } catch {}
+    return defaultProducts;
+  });
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [activeModalReel, setActiveModalReel] = useState<Reel | null>(null);
   const [showIntro, setShowIntro] = useState(true);
@@ -2369,10 +2382,10 @@ export default function App() {
 
       <section className="categories" id="collections">
         {[
-          { name: "Lip Colour", image: photos.lipstick, cat: "Lip colour" },
-          { name: "Blush Compacts", image: photos.blushStill, cat: "Blush" },
-          { name: "Highlighters", image: photos.highlighterBotanical, cat: "Highlighter" },
-          { name: "Complexion", image: photos.foundation, cat: "Complexion" },
+          { name: "Lipsticks", image: photos.lipstick, cat: "Lipsticks" },
+          { name: "Blushes", image: photos.blushStill, cat: "Blushes" },
+          { name: "Body Highlighter Oil", image: photos.highlighterBotanical, cat: "Body Highlighter Oil" },
+          { name: "Foundation", image: photos.foundation, cat: "Foundation" },
         ].map(({ name, image, cat }) => (
           <a
             className="category category-photo"
@@ -2382,7 +2395,7 @@ export default function App() {
           >
             <img className="category-foreground" src={image} alt={name} />
             <div className="category-overlay" />
-            <div><h3>{name}</h3><span>Explore {cat} <Icon name="arrow" /></span></div>
+            <div><h3>{name}</h3><span>Explore {name} <Icon name="arrow" /></span></div>
           </a>
         ))}
       </section>
@@ -2429,30 +2442,37 @@ export default function App() {
         <div className="shop-category-bar" role="tablist" aria-label="Product categories">
           {[
             { label: "All Pieces", count: catalog.length },
-            { label: "Lip colour", count: catalog.filter((p) => p.category === "Lip colour").length },
-            { label: "Blush", count: catalog.filter((p) => p.category === "Blush").length },
-            { label: "Highlighter", count: catalog.filter((p) => p.category === "Highlighter").length },
-            { label: "Complexion", count: catalog.filter((p) => p.category === "Complexion").length },
-            { label: "Collection", count: catalog.filter((p) => p.category === "Collection").length },
-          ].map((cat) => (
-            <button
-              key={cat.label}
-              type="button"
-              role="tab"
-              aria-selected={shopCategory === cat.label}
-              className={`shop-category-pill ${shopCategory === cat.label ? "active" : ""}`}
-              onClick={() => setShopCategory(cat.label)}
-            >
-              <span>{cat.label}</span>
-              <span className="pill-count">{cat.count}</span>
-            </button>
-          ))}
+            { label: "Lipsticks", count: catalog.filter((p) => normalizeCategory(p.category) === "Lipsticks").length },
+            { label: "Blushes", count: catalog.filter((p) => normalizeCategory(p.category) === "Blushes").length },
+            { label: "Body Highlighter Oil", count: catalog.filter((p) => normalizeCategory(p.category) === "Body Highlighter Oil").length },
+            { label: "Foundation", count: catalog.filter((p) => normalizeCategory(p.category) === "Foundation").length },
+            { label: "Wardrobe Collection", count: catalog.filter((p) => normalizeCategory(p.category) === "Collection").length },
+          ].map((cat) => {
+            const isSelected =
+              shopCategory === cat.label ||
+              (cat.label === "All Pieces" && (shopCategory === "All Pieces" || !shopCategory)) ||
+              (cat.label !== "All Pieces" && normalizeCategory(shopCategory) === normalizeCategory(cat.label));
+
+            return (
+              <button
+                key={cat.label}
+                type="button"
+                role="tab"
+                aria-selected={isSelected}
+                className={`shop-category-pill ${isSelected ? "active" : ""}`}
+                onClick={() => setShopCategory(cat.label)}
+              >
+                <span>{cat.label}</span>
+                <span className="pill-count">{cat.count}</span>
+              </button>
+            );
+          })}
         </div>
 
         <div className="product-grid">
-          {(shopCategory === "All Pieces"
+          {(shopCategory === "All Pieces" || !shopCategory
             ? catalog
-            : catalog.filter((p) => p.category.toLowerCase() === shopCategory.toLowerCase())
+            : catalog.filter((p) => normalizeCategory(p.category) === normalizeCategory(shopCategory))
           ).map((product) => {
             const key = product.id || product.slug || product.name;
             const wishlisted = isInWishlist(key);
